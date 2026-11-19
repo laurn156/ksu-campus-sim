@@ -1016,7 +1016,7 @@ function innovationCenterParts(b:Building) {
     return {length,box,label}
   }
   // The entrance wraps the far-right corner, with brick between the next glass bay.
-  const corner=edge(7),sideCorner=edge(8)
+  const corner=edge(3),sideCorner=edge(2)
   const cornerWidth=corner.length-1
   corner.box(cornerWidth,7.1,.16,0,4.3,.1,glass)
   corner.box(corner.length,2.4,.28,0,10.1,.15,perforated)
@@ -1025,13 +1025,13 @@ function innovationCenterParts(b:Building) {
   for(let x=-cornerWidth/2+.1;x<=cornerWidth/2;x+=1.5)corner.box(.1,7.2,.25,x,4.3,.25,dark)
   for(const y of [.75,4.25,7.8])corner.box(cornerWidth,.1,.26,0,y,.25,frame)
   // Corner glass, a substantial brick pier, then another large glazed bay.
-  for(const [center,width] of [[-sideCorner.length/2+7,12],[sideCorner.length/2-9,14]]){
+  for(const [center,width] of [[sideCorner.length/2-6,10],[-sideCorner.length/2+6,8]]){
     sideCorner.box(width,7.1,.16,center,4.3,.1,glass)
     for(let x=center-width/2;x<=center+width/2;x+=1.5)sideCorner.box(.1,7.2,.25,x,4.3,.25,dark)
     for(const y of [.75,4.25,7.8])sideCorner.box(width,.1,.26,center,y,.25,frame)
   }
   sideCorner.box(sideCorner.length,2.4,.28,0,10.1,.15,perforated)
-  const front=corner,doorX=front.length*.31
+  const front=corner,doorX=-front.length*.31
   front.box(4.4,3,.25,doorX,1.55,.3,glass)
   for(const x of [-2.15,-1.07,0,1.07,2.15])front.box(.1,3,.3,doorX+x,1.55,.44,dark)
   front.box(6,.18,2,doorX,3.3,1,frame)
@@ -1040,7 +1040,12 @@ function innovationCenterParts(b:Building) {
   const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=180
   const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f0f1eb';ctx.textAlign='center';ctx.font='bold 87px sans-serif';ctx.fillText('ROBIN AND DOUG SHORE INNOVATION CENTER',1024,120,2000)
   const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
-  front.box(13,.9,.12,front.length*.1,4.25,.32,dark);front.label(tex,front.length*.1,4.25,.41,12.5,.68)
+  front.box(13,.9,.12,-front.length*.2,4.25,.32,dark);front.label(tex,-front.length*.2,4.25,.41,12.5,.68)
+  // A broad glass bay sits between the brick sections along the front.
+  const middle=edge(5),mw=middle.length-3
+  middle.box(mw,7.1,.16,0,4.3,.1,glass)
+  for(let x=-mw/2+.1;x<=mw/2;x+=1.5)middle.box(.1,7.2,.25,x,4.3,.25,dark)
+  for(const y of [.75,4.25,7.8])middle.box(mw,.1,.26,0,y,.25,frame)
   // Narrow vertically proportioned windows in the brick side and rear wings.
   for(const i of [13,12,11]){
     const e=edge(i)
