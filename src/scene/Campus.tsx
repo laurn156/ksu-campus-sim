@@ -353,7 +353,39 @@ function mathematicsScreen(b:Building){
     box(len,.15,.4,0,7.53,-.15)
   }
   const merged=mergeGeometries(pieces)
-  return merged?[{geo:merged,mat:concrete}]:[]
+  const details: {geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=merged?[{geo:merged,mat:concrete}]:[]
+  // Main courtyard side, matching the pictured entrance. Positions are approximate
+  // within the mapped long facade; the building footprint and collision stay unchanged.
+  const a=b.poly[14],c=b.poly[15],angle=Math.atan2(-(c[1]-a[1]),c[0]-a[0]),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+  const transform=(geo:THREE.BufferGeometry,x:number,y:number,z:number)=>{geo.translate(x,y,z);geo.rotateY(angle);geo.translate(mx,0,mz);return geo}
+  const add=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>details.push({geo:transform(new THREE.BoxGeometry(w,h,d),x,y,z),mat})
+  const frame=new THREE.MeshStandardMaterial({color:'#dedfd4',roughness:.72,side:THREE.DoubleSide})
+  const doorGlass=new THREE.MeshStandardMaterial({color:'#304b47',roughness:.3,side:THREE.DoubleSide})
+  const metal=new THREE.MeshStandardMaterial({color:'#b8c0b7',roughness:.5,side:THREE.DoubleSide})
+  // Two glazed doors with individual frames and handles on the ground floor.
+  add(3.3,3.15,.10,-6,1.58,-.21,frame)
+  for(const x of [-6.77,-5.23]){
+    add(1.35,2.85,.10,x,1.55,-.30,doorGlass)
+    add(.07,2.9,.12,x-.7,1.55,-.37,metal)
+    add(.06,.42,.14,x+.47,1.4,-.4,metal)
+  }
+  add(3.3,.1,.13,-6,3.12,-.36,metal)
+  // The photo shows a short brick inset below a run of upper windows.
+  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128
+  const ctx=canvas.getContext('2d')!;ctx.fillStyle='#d0c3aa';ctx.fillRect(0,0,512,128)
+  for(let y=0;y<128;y+=16)for(let x=(y/16)%2?-24:0;x<512;x+=48){ctx.fillStyle=(x+y)%3?'#a66b4e':'#b77a57';ctx.fillRect(x+1,y+1,46,14)}
+  const brickTexture=new THREE.CanvasTexture(canvas);brickTexture.colorSpace=THREE.SRGBColorSpace
+  const brickMat=new THREE.MeshStandardMaterial({map:brickTexture,roughness:.95,side:THREE.DoubleSide})
+  add(6.5,1.05,.10,4.5,4.55,-.42,brickMat)
+  add(6.5,.10,.12,4.5,5.12,-.49,frame)
+  // Freestanding campus wayfinding sign in the lawn outside the door.
+  const signCanvas=document.createElement('canvas');signCanvas.width=512;signCanvas.height=256
+  const signCtx=signCanvas.getContext('2d')!;signCtx.fillStyle='#26312d';signCtx.fillRect(0,0,512,256);signCtx.fillStyle='#f5f3e9';signCtx.textAlign='center';signCtx.font='bold 38px sans-serif';signCtx.fillText('Mathematics',256,92);signCtx.fillText('Building (D)',256,143);signCtx.fillStyle='#e5b129';signCtx.fillRect(0,184,512,9)
+  const signTexture=new THREE.CanvasTexture(signCanvas);signTexture.colorSpace=THREE.SRGBColorSpace
+  const signMat=new THREE.MeshStandardMaterial({map:signTexture,side:THREE.DoubleSide,roughness:.85})
+  add(2,.10,.14,-10,1.33,-3.8,metal);add(.09,1.35,.12,-11,.68,-3.8,metal);add(.09,1.35,.12,-9,.68,-3.8,metal)
+  details.push({geo:transform(new THREE.PlaneGeometry(1.9,.93).rotateY(Math.PI),-10,.83,-3.88),mat:signMat})
+  return details
 }
 
 function Buildings({ campus }: { campus: Campus }) {
