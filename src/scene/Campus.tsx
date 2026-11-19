@@ -985,6 +985,15 @@ function atriumDetails(b:Building){
       const crown=new THREE.IcosahedronGeometry(1.25,1);crown.scale(1,.75,1);crown.translate(-94.2,2.2,z+dz);out.push({geo:crown,mat:foliage})
     }
   }
+  // Four small tables beside the rear planters, two on each side.
+  for(const z of [46.5,50.5,78.5,82.5]){
+    const x=-89.4
+    const top=new THREE.CylinderGeometry(.65,.65,.1,16);top.translate(x,.75,z);out.push({geo:top,mat:stone})
+    const stem=new THREE.CylinderGeometry(.07,.07,.75,8);stem.translate(x,.38,z);out.push({geo:stem,mat:railMat})
+    for(const dz of [-1.1,1.1]){
+      box(.55,.1,.55,x,.43,z+dz,dark);box(.08,.4,.08,x,.2,z+dz,railMat)
+    }
+  }
   // Tables are outside the planters and clear of the doorway and tree crowns.
   for(const z of [57,72]){
     const x=-143.4
