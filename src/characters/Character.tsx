@@ -18,7 +18,8 @@ export interface CharacterProps {
   headwear?: Headwear
   face?: Face
   accessory?: Accessory
-  top?: 'none' | 'tee' | 'hoodie'
+  top?: 'none' | 'tee' | 'hoodie' | 'ksu-tee' | 'ksu-hoodie' | 'jersey'
+  topColor?: string
   bottom?: 'none' | 'shorts' | 'skirt'
   backpack?: boolean
   /** world-space point the right hand reaches toward (in this character's parent space) */
@@ -285,7 +286,7 @@ export function Character({
   headwear = 'headband',
   face = 'dots',
   accessory = 'none',
-  top = 'none', bottom = 'none', backpack = false,
+  top = 'none', topColor = '#29292c', bottom = 'none', backpack = false,
   variant = 'normal',
   reach,
   swingAt,
@@ -301,6 +302,13 @@ export function Character({
   const accentHex = variant === 'rival' ? ACCENT.charcoal : ACCENT[color]
   const body = useClay(bodyHex, variant)
   const accent = useClay(accentHex, variant)
+  const logo = useMemo(() => {
+    const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 256
+    const ctx = canvas.getContext('2d')!; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    ctx.font = 'bold 150px Georgia'; ctx.lineWidth = 9; ctx.strokeStyle = '#231e1b'; ctx.strokeText('KSU', 256, 125)
+    ctx.fillStyle = '#ffc629'; ctx.fillText('KSU', 256, 125)
+    const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; return texture
+  }, [])
 
   const root = useRef<THREE.Group>(null)
   const torso = useRef<THREE.Group>(null)
@@ -377,12 +385,20 @@ export function Character({
         <mesh position={[0, 0.56, 0]} scale={[1.05, 1, 0.86]} castShadow material={body}>
           <capsuleGeometry args={[0.215, 0.2, 12, 24]} />
         </mesh>
-        {top !== 'none' && <mesh position={[0, 0.57, 0]} scale={[1.08, 1, 0.9]}><capsuleGeometry args={[0.225, 0.20, 8, 16]} /><meshStandardMaterial color={top === 'hoodie' ? '#302e33' : '#f5f1e7'} roughness={0.9} /></mesh>}
-        {top === 'hoodie' && <mesh position={[0, 0.58, 0.205]}><boxGeometry args={[0.22, 0.12, 0.04]} /><meshStandardMaterial color="#48444a" /></mesh>}
+        {top !== 'none' && <group>
+          <mesh position={[0, 0.57, 0]} scale={[1.12, 1.03, 0.92]} castShadow><capsuleGeometry args={[0.225, 0.20, 8, 16]} /><meshStandardMaterial color={topColor} roughness={0.9} /></mesh>
+          {[-1,1].map(side => <mesh key={side} position={[side*0.245,0.66,0]} rotation={[0,0,-side*0.35]}><capsuleGeometry args={[0.095, top.includes('hoodie') ? 0.20 : 0.06, 6, 12]} /><meshStandardMaterial color={topColor} roughness={0.9} /></mesh>)}
+          {(top === 'ksu-tee' || top === 'ksu-hoodie' || top === 'jersey') && <mesh position={[0,0.62,0.215]}><planeGeometry args={[0.32,0.16]} /><meshBasicMaterial map={logo} transparent alphaTest={0.1} /></mesh>}
+          {top === 'jersey' && <mesh position={[0,0.49,0.214]}><planeGeometry args={[0.3,0.025]} /><meshBasicMaterial color="#ffc629" /></mesh>}
+        </group>}
+        {top.includes('hoodie') && <group>
+          <mesh position={[0,0.49,0.215]}><boxGeometry args={[0.22,0.09,0.035]} /><meshStandardMaterial color={topColor} /></mesh>
+          {[-0.045,0.045].map(x => <mesh key={x} position={[x,0.73,0.22]}><boxGeometry args={[0.012,0.11,0.01]} /><meshBasicMaterial color="#e6dfcf" /></mesh>)}
+        </group>}
         {bottom === 'skirt' && <mesh position={[0, 0.36, 0]}><cylinderGeometry args={[0.2, 0.3, 0.21, 12]} /><meshStandardMaterial color="#706383" /></mesh>}
         {backpack && <mesh position={[0, 0.58, -0.25]}><boxGeometry args={[0.36, 0.42, 0.2]} /><meshStandardMaterial color="#554a42" roughness={0.9} /></mesh>}
-        <Arm side={-1} body={body} accent={accent} armRef={rArm} />
-        <Arm side={1} body={body} accent={accent} armRef={lArm} />
+        <Arm side={-1} body={body} accent={top === 'none' ? body : accent} armRef={rArm} />
+        <Arm side={1} body={body} accent={top === 'none' ? body : accent} armRef={lArm} />
         {/* head */}
         <mesh position={[0, HEAD_Y, 0]} scale={[1, 0.95, 0.95]} castShadow material={body}>
           <sphereGeometry args={[HEAD_R, 48, 48]} />

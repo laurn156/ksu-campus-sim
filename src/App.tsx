@@ -19,8 +19,8 @@ function savedProfile(): Profile | null {
     if (typeof data.name !== 'string' || !l || !['orange','yellow','cream','green','blue','purple','slate','charcoal'].includes(l.color) ||
       !['none','cap','beanie','bucket','bun','headphones','headband'].includes(l.headwear) ||
       !['happy','dots','wink','surprised','angry'].includes(l.face) || !['none','glasses'].includes(l.accessory) ||
-      !['none','tee','hoodie'].includes(l.top) || !['none','shorts','skirt'].includes(l.bottom) || typeof l.backpack !== 'boolean') return null
-    return data
+      !['none','tee','hoodie','ksu-tee','ksu-hoodie','jersey'].includes(l.top) || !['none','shorts','skirt'].includes(l.bottom) || typeof l.backpack !== 'boolean') return null
+    return { ...data, look: { ...data.look, topColor: /^#[0-9a-f]{6}$/i.test(l.topColor ?? '') ? l.topColor : '#29292c' } }
   } catch { return null }
 }
 export default function App() {

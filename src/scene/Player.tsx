@@ -17,7 +17,8 @@ export interface AvatarLook {
   headwear: Headwear
   face: Face
   accessory: Accessory
-  top: 'none' | 'tee' | 'hoodie'
+  top: 'none' | 'tee' | 'hoodie' | 'ksu-tee' | 'ksu-hoodie' | 'jersey'
+  topColor: string
   bottom: 'none' | 'shorts' | 'skirt'
   backpack: boolean
 }
