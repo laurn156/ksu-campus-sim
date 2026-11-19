@@ -101,7 +101,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
       if (!drag.current) return
       const dx = e.clientX - drag.current.x, dy = e.clientY - drag.current.y
       if (drag.current.pan) {
-        const scale = dist.current * 0.0028
+        const scale = dist.current * 0.0018
         pan.current.x += (-Math.cos(player.yaw)*dx + Math.sin(player.yaw)*dy) * scale
         pan.current.y += (Math.sin(player.yaw)*dx + Math.cos(player.yaw)*dy) * scale
       } else {
