@@ -8,6 +8,7 @@ import { Player, Sun } from './scene/Player'
 import { Hud } from './ui/Hud'
 import { Entry, ModeSelect, type Mode } from './ui/GameFlow'
 import { CampusStudents, LocalPlayers } from './scene/Community'
+import { CampusDay } from './ui/CampusDay'
 import { Welcome, DEFAULT_PROFILE, type Profile } from './ui/Welcome'
 import './ui/ui.css'
 
@@ -65,5 +66,6 @@ export default function App() {
       {mode==='life' ? <CampusStudents campus={campus}/> : <LocalPlayers profile={{...profile,name:profile.name || username}}/>}
     </Canvas>
     <Hud campus={campus} onEdit={() => setScreen('create')} mode={mode} onModes={()=>setScreen('modes')} />
+    {mode === 'life' && <CampusDay campus={campus} username={username} />}
   </>
 }
