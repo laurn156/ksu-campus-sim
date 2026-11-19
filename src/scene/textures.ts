@@ -35,6 +35,11 @@ function win(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: nu
 }
 
 const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
+  studentmetal: (g) => {
+    g.fillStyle = '#e0e2dc'; g.fillRect(0, 0, W, H)
+    g.fillStyle = '#b9bdb8'
+    for (let x = 0; x < W; x += 17) g.fillRect(x, 0, 2, H)
+  },
   // classic campus red brick with stone sill band (Student Center, Library, Howell/Norton, Wilder)
   redbrick: (g) => {
     brick(g, [158, 74, 52], 7)

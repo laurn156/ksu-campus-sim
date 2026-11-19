@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { centroid, Collider, distToSeg, pointInPoly, type Area, type Campus, type Pt } from '../campus'
-import { textTexture } from './textures'
 
 // Hand-placed campus landmarks (from KSU's interactive map, used as reference) plus OpenStreetMap
 // features: Slap the Rock, the KSU letters at Hornet Village, the Globe plaza and tent canopies,
@@ -334,9 +333,53 @@ function Bench({ x, z, dir }: { x: number; z: number; dir: number | null }) {
 
 function Flagpole({ x, z, i }: { x: number; z: number; i: number }) {
   const flag = useMemo(() => {
-    if (i === 0) return textTexture('★', { bg: '#b22234', fg: '#ffffff', w: 96, h: 64 })
-    if (i === 1) return textTexture('GA', { bg: '#1f3a6b', fg: '#ffffff', w: 96, h: 64 })
-    return textTexture('KSU', { bg: INK, fg: GOLD, w: 96, h: 64 })
+    if (i === 0) {
+      const canvas = document.createElement('canvas')
+      canvas.width = 260; canvas.height = 160
+      const g = canvas.getContext('2d')!
+      for (let stripe = 0; stripe < 13; stripe++) {
+        g.fillStyle = stripe % 2 === 0 ? '#b22234' : '#fff'
+        g.fillRect(0, stripe * 160 / 13, 260, 160 / 13 + 1)
+      }
+      g.fillStyle = '#3c3b6e'; g.fillRect(0, 0, 104, 160 * 7 / 13)
+      g.fillStyle = '#fff'
+      for (let row = 0; row < 9; row++) for (let col = 0; col < (row % 2 ? 5 : 6); col++) {
+        g.beginPath(); g.arc(9 + col * 17 + (row % 2 ? 8 : 0), 5 + row * 9.3, 1.8, 0, Math.PI * 2); g.fill()
+      }
+      const texture = new THREE.CanvasTexture(canvas)
+      texture.colorSpace = THREE.SRGBColorSpace
+      return texture
+    }
+    const canvas = document.createElement('canvas')
+    canvas.width = 300; canvas.height = 180
+    const g = canvas.getContext('2d')!
+    if (i === 1) {
+      g.fillStyle = '#bd2537'; g.fillRect(0, 0, 300, 180)
+      g.fillStyle = '#fff'; g.fillRect(0, 60, 300, 60)
+      g.fillStyle = '#263965'; g.fillRect(0, 0, 120, 120)
+      g.fillStyle = '#fff'
+      for (let star = 0; star < 13; star++) {
+        const a = star * Math.PI * 2 / 13
+        g.beginPath(); g.arc(60 + 46 * Math.sin(a), 56 + 46 * Math.cos(a), 3, 0, Math.PI * 2); g.fill()
+      }
+      g.strokeStyle = '#e6be48'; g.lineWidth = 5
+      g.beginPath(); g.arc(60, 49, 24, Math.PI, 0); g.stroke()
+      g.fillStyle = '#e6be48'
+      for (const x of [40,60,80]) g.fillRect(x - 2, 47, 4, 30)
+      g.fillStyle = '#e6be48'; g.fillRect(35, 79, 50, 4)
+    } else {
+      // Hand-drawn approximation of the black-and-gold Owls flag in the reference.
+      g.fillStyle = '#111'; g.fillRect(0, 0, 300, 180)
+      g.fillStyle = '#e5b72b'
+      g.beginPath(); g.moveTo(40, 24); g.lineTo(115, 62); g.lineTo(150, 42); g.lineTo(185, 62); g.lineTo(260, 24); g.lineTo(230, 93); g.lineTo(185, 109); g.lineTo(150, 91); g.lineTo(115, 109); g.lineTo(70, 93); g.closePath(); g.fill()
+      g.fillStyle = '#171717'; g.beginPath(); g.ellipse(150, 77, 38, 29, 0, 0, Math.PI*2); g.fill()
+      g.fillStyle = '#fff'; for (const x of [134,166]) { g.beginPath(); g.ellipse(x, 75, 12, 7, 0, 0, Math.PI*2); g.fill() }
+      g.fillStyle = '#e5b72b'; g.textAlign = 'center'; g.font = 'bold 28px sans-serif'; g.fillText('KENNESAW',150,143)
+      g.fillStyle = '#fff'; g.font = 'bold 20px sans-serif'; g.fillText('STATE OWLS',150,168)
+    }
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.colorSpace = THREE.SRGBColorSpace
+    return texture
   }, [i])
   return (
     <group position={[x, 0, z]}>

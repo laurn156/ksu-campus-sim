@@ -5,6 +5,7 @@ import { bbox, Collider, distToSeg, pointInPoly, type Building, type Campus, typ
 import { facade, parkingTexture, roofTexture, stepsTexture } from './textures'
 import { lookFor } from './styles'
 import { Props } from './Props'
+import { Buses } from './Buses'
 import { Landmarks } from './Landmarks'
 
 let aerialTex: THREE.Texture | null = null
@@ -169,6 +170,83 @@ const AREA_STYLE: Record<string, { color: string; y: number }> = {
  *  can turn see-through, like The Sims' cutaway walls. */
 export const occluders: { meshes: THREE.Mesh[] } = { meshes: [] }
 
+/** A reference-guided entrance prototype. Dimensions are approximate; the OSM footprint
+ * remains the collision boundary. Pieces use world coordinates so they share the building's cutaway. */
+function studentCenterDetails() {
+  const pieces: { geo: THREE.BufferGeometry; mat: THREE.MeshStandardMaterial }[] = []
+  const angle = 0.57
+  const origin = new THREE.Vector3(-120.4, 0, -231.8)
+  const material = (color: string, roughness = 0.85) => new THREE.MeshStandardMaterial({ color, roughness, side: THREE.DoubleSide })
+  const add = (geo: THREE.BufferGeometry, color: string, x: number, y: number, z: number, roughness = 0.85) => {
+    geo.translate(x, y, z)
+    geo.rotateY(angle)
+    geo.translate(origin.x, origin.y, origin.z)
+    pieces.push({ geo, mat: material(color, roughness) })
+  }
+  const box = (w: number, h: number, d: number, color: string, x: number, y: number, z: number) =>
+    add(new THREE.BoxGeometry(w, h, d), color, x, y, z)
+  // Recessed dark entry and individual glazed door panels.
+  box(12.4, 3.6, 0.18, '#343b38', 0, 2.15, 0.45)
+  for (let x = -4.8; x <= 4.8; x += 1.6) {
+    box(1.35, 2.65, 0.12, '#527474', x, 1.7, 0.57)
+    box(0.08, 2.75, 0.18, '#d3d0c3', x - 0.7, 1.7, 0.65)
+    box(1.35, 0.08, 0.18, '#d3d0c3', x, 1.7, 0.66)
+  }
+  // Brick piers and broad canopy with an arched, light metal fascia.
+  for (const x of [-7, 7]) box(1.5, 5.1, 2.4, '#9e4d38', x, 2.55, 1.25)
+  box(15.5, 0.5, 3.6, '#8e4433', 0, 4.25, 1.3)
+  const fascia = new THREE.Shape()
+  fascia.moveTo(-8, 0); fascia.lineTo(8, 0); fascia.lineTo(8, 0.65)
+  fascia.quadraticCurveTo(0, 3.0, -8, 0.65); fascia.closePath()
+  add(new THREE.ExtrudeGeometry(fascia, { depth: 3.5, bevelEnabled: false, curveSegments: 32 }), '#e4e4db', 0, 4.48, -0.15)
+  const canvas = document.createElement('canvas')
+  canvas.width = 1024; canvas.height = 256
+  const ctx = canvas.getContext('2d')!
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.fillStyle = '#31383a'; ctx.textAlign = 'center'; ctx.font = 'bold 67px sans-serif'
+  ctx.fillText('JOE MACK WILSON', 512, 100); ctx.fillText('STUDENT CENTER', 512, 180)
+  const sign = new THREE.CanvasTexture(canvas)
+  sign.colorSpace = THREE.SRGBColorSpace
+  const signGeo = new THREE.PlaneGeometry(8.8, 1.3)
+  signGeo.translate(0, 5.15, 3.39); signGeo.rotateY(angle); signGeo.translate(origin.x, 0, origin.z)
+  pieces.push({ geo: signGeo, mat: new THREE.MeshStandardMaterial({ map: sign, transparent: true, alphaTest: 0.1, side: THREE.DoubleSide }) })
+  // Raised brick-edged terraces flank the central staircase. The dimensions and
+  // table positions are approximate until ground-level photos become available.
+  for (const side of [-1, 1]) {
+    const cx = side * 17.5
+    box(19, 0.9, 5.4, '#994d3a', cx, 0.45, 2.4)
+    box(19, 0.16, 5.5, '#bba38c', cx, 0.98, 2.4)
+    box(19, 0.18, 0.32, '#d0cfc5', cx, 1.13, 5.12)
+    for (let j = 0; j <= 6; j++) box(0.08, 0.9, 0.08, '#b9bdb8', side * (8 + j * 3.15), 1.65, 5.12)
+    box(19, 0.08, 0.08, '#c8cbc5', cx, 2.08, 5.12)
+    for (const x of [side * 14, side * 22]) {
+      add(new THREE.CylinderGeometry(0.9, 0.9, 0.1, 16), '#8e887b', x, 1.85, 2.35)
+      add(new THREE.CylinderGeometry(0.08, 0.08, 0.8, 8), '#676e6b', x, 1.45, 2.35)
+    }
+  }
+  // Side approach: a shallow flight and an adjacent sloped ramp. The available
+  // aerial views leave exact grading and placement uncertain.
+  for (let i = 0; i < 6; i++) box(0.8, 0.16, 5, '#bab8ad', 32.5 + i * 0.7, 0.96 - i * 0.16, -12)
+  const sideRamp = new THREE.BoxGeometry(5, 0.16, 3)
+  sideRamp.rotateZ(-0.18)
+  add(sideRamp, '#aaa99f', 34.4, 0.48, -19)
+  for (const z of [-20.5, -17.5]) {
+    for (let i = 0; i < 3; i++) box(0.08, 0.9, 0.08, '#b9bdb8', 32.5 + i * 2, 1.25 - i * 0.3, z)
+    const rail = new THREE.BoxGeometry(4.7, 0.08, 0.08)
+    rail.rotateZ(-0.18)
+    add(rail, '#c8cbc5', 34.4, 1.4, z)
+  }
+  // Broad approach steps and metal handrails; dimensions are visual estimates.
+  for (let i = 0; i < 6; i++) box(16 + i * 0.65, 0.18, 1.0, '#b9b6a9', 0, 1.08 - i * 0.18, 3.8 + i * 0.85)
+  for (const x of [-6, 0, 6]) {
+    for (let i = 0; i < 3; i++) box(0.08, 1.0, 0.08, '#9b9f9b', x, 1.5 - i * 0.3, 4 + i * 1.5)
+    const rail = new THREE.BoxGeometry(0.09, 0.09, 5.2)
+    rail.rotateX(-0.2)
+    add(rail, '#b7bcb9', x, 1.9, 5.5)
+  }
+  return pieces
+}
+
 function Buildings({ campus }: { campus: Campus }) {
   const items = useMemo(() => {
     const wallMat = new Map<string, THREE.MeshStandardMaterial>()
@@ -184,15 +262,16 @@ function Buildings({ campus }: { campus: Campus }) {
         b.h = look.floors * FLOOR
       }
       const parts: { geo: THREE.BufferGeometry; mat: THREE.MeshStandardMaterial }[] = []
-      const split = look.base && b.h > FLOOR * 1.5 ? FLOOR : 0
-      if (split) parts.push({ geo: wallsGeometry(b, 0, split), mat: getWall(look.base!) })
-      parts.push({ geo: wallsGeometry(b, split, b.h), mat: getWall(look.wall) })
+      const split = (look.base || b.code === 'A') && b.h > FLOOR * 1.5 ? FLOOR : 0
+      if (split) parts.push({ geo: wallsGeometry(b, 0, split), mat: getWall(look.base ?? 'redbrick') })
+      parts.push({ geo: wallsGeometry(b, split, b.h), mat: getWall(b.code === 'A' ? 'studentmetal' : look.wall) })
       if (look.roof === 'hip') {
         parts.push({ geo: hipRoofGeometry(b, 4.2), mat: new THREE.MeshStandardMaterial({ color: look.roofColor ?? '#6b6966', roughness: 0.9, flatShading: true, side: THREE.DoubleSide }) })
       } else {
         const m = new THREE.MeshStandardMaterial({ map: roofTex, color: '#ffffff', roughness: 0.95, side: THREE.DoubleSide })
         parts.push({ geo: flatGeometry(b.poly, b.h + 0.02, 8), mat: m })
       }
+      if (b.code === 'A') parts.push(...studentCenterDetails())
       return { b, parts, flat: look.roof === 'flat' }
     })
   }, [campus])
@@ -403,6 +482,7 @@ export function CampusScene({ campus, ground = 'drawn' }: { campus: Campus; grou
       <Buildings campus={campus} />
       <Landmarks campus={campus} />
       <Props campus={campus} cars={ground !== 'photo'} roofUnits />
+      <Buses campus={campus} />
       <Trees campus={campus} />
     </group>
   )
