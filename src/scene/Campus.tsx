@@ -916,6 +916,75 @@ function scienceAnnexDetails(){
   return out
 }
 
+/** Recreation and Wellness Center: two tall halls and a lower brick entrance. */
+function recreationParts(b:Building) {
+  const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const solid=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.88,side:THREE.DoubleSide})
+  const tan=solid('#e2d5bc'),white=solid('#e9e8df'),metal=solid('#b9c2bc'),dark=solid('#344b48')
+  const brick=new THREE.MeshStandardMaterial({map:facade('atriumbrick'),roughness:.95,side:THREE.DoubleSide})
+  const glass=new THREE.MeshStandardMaterial({map:facade('etcglass'),roughness:.4,side:THREE.DoubleSide})
+  const flat=new THREE.MeshStandardMaterial({map:roofTexture(),color:'#eeeae1',roughness:.95,side:THREE.DoubleSide})
+  const roof=new THREE.MeshStandardMaterial({map:facade('metal'),color:'#e2e5df',roughness:.9,side:THREE.DoubleSide})
+  const box=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>{const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z);parts.push({geo,mat})}
+  // Light plaster walls sit over a banded brick base; the main building stays low between halls.
+  parts.push({geo:wallsGeometry(b,0,1.35),mat:brick},{geo:wallsGeometry(b,1.35,b.h),mat:tan},{geo:flatGeometry(b.poly,b.h+.02,8),mat:flat})
+  // Main gym volume and its broad, gently pitched metal roof.
+  box(38.7,3.6,39.8,118.1,9.4,-360.7,tan)
+  const gable=new THREE.Shape();gable.moveTo(98.7,11.2);gable.lineTo(118.1,13.1);gable.lineTo(137.45,11.2);gable.closePath()
+  const mainRoof=new THREE.ExtrudeGeometry(gable,{depth:39.8,bevelEnabled:false});mainRoof.translate(0,0,-380.6);parts.push({geo:mainRoof,mat:roof})
+  // The smaller south hall and central connector have shallow curved metal roofs.
+  box(29.7,2.6,19.4,128.5,8.9,-299.6,tan)
+  const barrel=(x0:number,x1:number,z0:number,depth:number,y:number,rise:number)=>{
+    const shape=new THREE.Shape();shape.moveTo(x0,y)
+    for(let i=0;i<=32;i++){const t=i/32,x=x0+(x1-x0)*t;shape.lineTo(x,y+rise*Math.sin(Math.PI*t))}
+    shape.lineTo(x1,y);shape.closePath()
+    const geo=new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:false});geo.translate(0,0,z0);parts.push({geo,mat:roof})
+  }
+  barrel(113.65,143.35,-309.3,19.4,10.2,2.1)
+  barrel(117,127,-340,30.5,7.8,1.2)
+  let area=0;for(let i=0;i<b.poly.length;i++){const a=b.poly[i],c=b.poly[(i+1)%b.poly.length];area+=a[0]*c[1]-c[0]*a[1]}
+  const edge=(i:number)=>{
+    const a=b.poly[i],c=b.poly[(i+1)%b.poly.length],dx=c[0]-a[0],dz=c[1]-a[1],length=Math.hypot(dx,dz),sign=area>0?-1:1
+    const angle=-Math.atan2(dz,dx),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    const box=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>{
+      const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z*sign);geo.rotateY(angle);geo.translate(mx,0,mz);parts.push({geo,mat})
+    }
+    const label=(texture:THREE.Texture,x:number,y:number,z:number,w:number,h:number)=>{
+      const geo=new THREE.PlaneGeometry(w,h);if(sign<0)geo.rotateY(Math.PI);geo.translate(x,y,z*sign);geo.rotateY(angle);geo.translate(mx,0,mz)
+      parts.push({geo,mat:new THREE.MeshStandardMaterial({map:texture,transparent:true,alphaTest:.1,depthWrite:false,side:THREE.DoubleSide})})
+    }
+    return {length,box,label}
+  }
+  // Brick entrance wall faces the commuter parking lot, with a recessed glazed doorway.
+  const entry=edge(11),w=Math.min(20,entry.length-.6)
+  entry.box(w,6.6,.18,0,3.3,.1,brick)
+  for(const y of [1.35,2.1,3.05,4.05,5.05,6.0])entry.box(w,.12,.24,0,y,.22,white)
+  entry.box(5,3.5,.2,w*.23,1.75,.23,glass)
+  for(const dx of [-2.4,-1.2,0,1.2,2.4])entry.box(.1,3.5,.26,w*.23+dx,1.75,.35,white)
+  for(const y of [.12,1.7,3.35])entry.box(4.9,.1,.26,w*.23,y,.35,white)
+  entry.box(5.3,.2,2,w*.23,3.7,1,white)
+  for(const x of [-w*.35,-w*.1]){
+    entry.box(3.4,2,.16,x,1.75,.24,white);entry.box(2.9,1.55,.2,x,1.7,.35,glass)
+  }
+  const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=220
+  const ctx=canvas.getContext('2d')!;ctx.fillStyle='#202924';ctx.textAlign='center';ctx.font='bold 112px sans-serif';ctx.fillText('RECREATION & WELLNESS CENTER',1024,145,1990)
+  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
+  entry.label(tex,-w*.11,5.55,.27,w*.75,.7)
+  const number=document.createElement('canvas');number.width=256;number.height=128
+  const n=number.getContext('2d')!;n.fillStyle='#edc832';n.fillRect(0,0,256,128);n.fillStyle='#1c2922';n.textAlign='center';n.font='bold 84px sans-serif';n.fillText('955',128,94)
+  const nt=new THREE.CanvasTexture(number);nt.colorSpace=THREE.SRGBColorSpace
+  entry.box(1.2,.6,.1,-w*.35,6.45,.25,new THREE.MeshStandardMaterial({map:nt,side:THREE.DoubleSide}))
+  // Glazed end openings and discrete service doors on the other sides.
+  for(const i of [28,33]){
+    const e=edge(i);e.box(5.5,4.6,.15,0,3.35,.1,glass)
+    for(const x of [-2.7,-1.35,0,1.35,2.7])e.box(.12,4.6,.22,x,3.35,.2,white)
+    e.box(5.7,.15,.25,0,5.7,.22,white)
+  }
+  const rear=edge(30);rear.box(1.7,2.5,.15,0,1.25,.1,dark);rear.box(1.5,2.25,.18,0,1.2,.22,metal)
+  rear.box(3.2,1.5,1.8,5,.75,1.1,metal)
+  return parts
+}
+
 /** Administration Building: low brick wings with pale framing and screened upper bays. */
 function administrationParts(b:Building) {
   const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
@@ -1835,6 +1904,7 @@ function Buildings({ campus }: { campus: Campus }) {
           ...academicDetails(b),
         ], flat: true }
       }
+      if (b.code === 'S1') return { b, parts: recreationParts(b), flat: true }
       if (b.code === 'B') return { b, parts: administrationParts(b), flat: true }
       if (b.code === 'R1' || b.code === 'R2') return { b, parts: residenceHallParts(b), flat: true }
       if (b.code === 'T') return { b, parts: wilderParts(b), flat: true }
