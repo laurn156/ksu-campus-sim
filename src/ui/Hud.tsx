@@ -88,7 +88,6 @@ function GoTo({ campus, onView }: { campus: Campus; onView: (target:{x:number;z:
       .filter(isCampusBuilding)
       .map((b) => ({ label: `${b.code ? b.code + ' · ' : ''}${b.short || b.name}`, go: () => approach(campus, b.poly) }))
       .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))
-    const lm = landmarkSpots(campus).map((l) => ({ label: `★ ${l.name}`, go: () => ({ x: l.at[0] + 6, z: l.at[1] + 6, yaw: Math.PI / 4 }) }))
     const collider = new Collider(campus.buildings)
     const near = (x: number, z: number) => {
       for (let r = 6; r <= 25; r += 3) for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
@@ -97,6 +96,7 @@ function GoTo({ campus, onView }: { campus: Campus; onView: (target:{x:number;z:
       }
       return { x, z: z + 12, yaw: 0 }
     }
+    const lm = landmarkSpots(campus).map((l) => ({ label: `★ ${l.name}`, go: () => near(l.at[0], l.at[1]) }))
     const moving = [
       { label: '★ Big Owl Bus', go: () => { const b = busPositions.filter(Boolean).reduce((best, p) => Math.hypot(p.x-player.x,p.z-player.z) < Math.hypot(best.x-player.x,best.z-player.z) ? p : best, busPositions.find(Boolean) ?? { x: -90, z: -311 }); return near(b.x, b.z) } },
       { label: '★ Scrappy the Owl', go: () => near(scrappy.x, scrappy.z) },
@@ -152,6 +152,11 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
     player.view=target;player.yaw=target.yaw;player.viewChanged=true;setViewing(true)
   }
   const returnToPlayer=()=>{player.view=null;player.yaw=savedYaw.current;player.viewChanged=true;setViewing(false)}
+  const travelToView=()=>{
+    if(!player.view) return
+    player.tp={x:player.view.x,z:player.view.z,yaw:player.view.yaw}
+    player.view=null;player.viewChanged=true;setViewing(false)
+  }
   useEffect(()=>()=>{player.view=null},[])
   useEffect(() => {
     if (mode !== 'life') return
@@ -181,7 +186,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
       <GoTo campus={campus} onView={viewLocation} />
       <button className="edit-character" onClick={onEdit}>✦ Edit character</button>
       <button className="mode-return" onClick={onModes}>← Choose mode</button>
-      {viewing && <div className="view-banner">Viewing location only · your character stayed where you left them <button onClick={returnToPlayer}>Return to character</button></div>}
+      {viewing && <div className="view-banner">Viewing location · <button onClick={travelToView}>Travel here</button> <button onClick={returnToPlayer}>Return to character</button></div>}
       {mapOpen && <CampusMap campus={campus} onClose={()=>setMapOpen(false)}/>}
       {mode === 'connect' && <div className="mode-hint">KSU Connect · limited online test</div>}
       {mode === 'life' && !viewing && nearby && <div className="conversation"><b>{nearby.name}</b><span>{message || (nearby.kind === 'bus' ? 'Press F to board for a short ride' : 'Press F to say hello')}</span>{message && <button onClick={() => setMessage('')}>Close</button>}</div>}

@@ -1016,7 +1016,7 @@ function innovationCenterParts(b:Building) {
     return {length,box,label}
   }
   // A two-storey glazed corner sits inside the perforated brick frame.
-  for(const i of [12,13]){
+  for(const i of [8,5]){
     const e=edge(i),w=e.length-1
     e.box(w,7.1,.16,0,4.3,.1,glass)
     e.box(e.length,2.4,.28,0,10.1,.15,perforated)
@@ -1025,7 +1025,7 @@ function innovationCenterParts(b:Building) {
     for(let x=-w/2+.1;x<=w/2;x+=1.5)e.box(.1,7.2,.25,x,4.3,.25,dark)
     for(const y of [.75,4.25,7.8])e.box(w,.1,.26,0,y,.25,frame)
   }
-  const front=edge(13)
+  const front=edge(5)
   front.box(4.4,3,.25,front.length*.18,1.55,.3,glass)
   for(const x of [-2.15,-1.07,0,1.07,2.15])front.box(.1,3,.3,front.length*.18+x,1.55,.44,dark)
   front.box(6,.18,2,front.length*.18,3.3,1,frame)
@@ -1036,7 +1036,7 @@ function innovationCenterParts(b:Building) {
   const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
   front.box(15,.9,.12,0,4.25,.32,dark);front.label(tex,0,4.25,.41,14.5,.68)
   // Narrow vertically proportioned windows in the brick side and rear wings.
-  for(const i of [3,8,11]){
+  for(const i of [13,12,11]){
     const e=edge(i)
     for(let x=-e.length/2+2;x<e.length/2-1;x+=3.4)for(const y of [5.2,8.8]){
       e.box(1.45,2.75,.14,x,y,.08,dark)
@@ -1044,7 +1044,7 @@ function innovationCenterParts(b:Building) {
     }
   }
   // The service side has white stair and rooftop equipment volumes.
-  const side=edge(3);side.box(5.4,b.h,.14,-side.length*.3,b.h/2,.08,white)
+  const side=edge(13);side.box(5.4,b.h,.14,-side.length*.3,b.h/2,.08,white)
   const [x0,z0,x1,z1]=bbox(b.poly),cx=(x0+x1)/2,cz=(z0+z1)/2
   const mechanical=new THREE.BoxGeometry(11,2.2,8);mechanical.translate(cx,12.5,cz);parts.push({geo:mechanical,mat:white})
   return parts

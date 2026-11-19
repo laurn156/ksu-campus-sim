@@ -836,5 +836,16 @@ export function landmarkSpots(campus: Campus): { name: string; at: Pt; r: number
   out.push({ name: 'KSU Sign · Hornet Village', at: [-208, 171], r: 10 })
   const g = campus.features.find((f) => f.kind === 'sculpture')
   if (g) out.push({ name: 'The Globe', at: [g.x, g.z], r: 16 })
+  const greenhouse = campus.buildings.find((b) => b.kind === 'greenhouse')
+  if (greenhouse) out.push({ name: 'Greenhouse', at: centroid(greenhouse.poly), r: 7 })
+  if (campus.buildings.some((b) => b.code === 'L')) out.push({ name: 'Concrete Canoe', at: [-133.8, 245.7], r: 8 })
+  if (campus.buildings.some((b) => b.code === 'C')) {
+    out.push({ name: 'Library Amphitheater', at: [-81.5, -75], r: 9 })
+    out.push({ name: 'Library Bell Tower', at: [-168.4, -65.9], r: 7 })
+  }
+  if (campus.buildings.some((b) => b.id === '517434198')) out.push({ name: 'Owl Mural · K3', at: [-187.2, 104.1], r: 7 })
+  if (campus.buildings.some((b) => b.code === 'H')) out.push({ name: 'UITS Entrance', at: [-135.2, -49.5], r: 6 })
+  const field = campus.areas.find((a) => a.name === 'S. Walter Kelly Sr. Memorial Field')
+  if (field) out.push({ name: 'S. Walter Kelly Baseball Field', at: [-9, 328], r: 12 })
   return out
 }
