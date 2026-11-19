@@ -1029,9 +1029,11 @@ function academicDetails(b:Building){
   const bar=(a:THREE.Vector3,c:THREE.Vector3)=>{const v=c.clone().sub(a),g=new THREE.CylinderGeometry(.065,.065,v.length(),8);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize()));g.translate((a.x+c.x)/2,(a.y+c.y)/2,(a.z+c.z)/2);out.push({geo:g,mat:metal})}
   // Build the entrance in local coordinates, then place it on the front-facing west facade.
   const frontX=-140.12,doorZ=-26.5
+  const doorPartStart=out.length
   box(.16,3.2,6.7,frontX,1.6,doorZ,glass)
   for(const dz of [-3.35,-2.25,-1.12,0,1.12,2.25,3.35])box(.24,3.25,.09,frontX+.16,1.62,doorZ+dz,stone)
   for(const y of [.12,2.3,3.25])box(.24,.09,6.8,frontX+.16,y,doorZ,stone)
+  const doorPartEnd=out.length
   // Open aluminum canopy: top beams and triangular bracing, without glass panels.
   for(const x of [-140.1,-137.5,-134.9]){
     bar(new THREE.Vector3(x,4.45,doorZ-3.6),new THREE.Vector3(x,4.45,doorZ+3.6))
@@ -1066,12 +1068,12 @@ function academicDetails(b:Building){
     const uv=textPlane.getAttribute('uv')
     for(let i=0;i<uv.count;i++)uv.setX(i,1-uv.getX(i))
   }
-  for(const part of out){
+  for(const [partIndex,part] of out.entries()){
     part.geo.scale(-1,1,1);part.geo.translate(-304.8,0,0)
     // The front facade angles gently; follow it so the entrance and signs
     // sit against the wall instead of floating out in front of it.
     const pos=part.geo.getAttribute('position')
-    for(let i=0;i<pos.count;i++)pos.setX(i,pos.getX(i)+1.25-.04623*(pos.getZ(i)+26.5))
+    for(let i=0;i<pos.count;i++)pos.setX(i,pos.getX(i)-1.25-.04623*(pos.getZ(i)+26.5)+(partIndex>=doorPartStart&&partIndex<doorPartEnd?2.5:0))
     pos.needsUpdate=true;part.geo.computeVertexNormals()
   }
   // Back wall: mostly brick, with small separated vertical groups of windows.
@@ -1092,11 +1094,16 @@ function academicDetails(b:Building){
       panel.rotateY(angle);panel.translate((a[0]+c[0])/2+Math.sin(angle)*.2,y,(a[1]+c[1])/2+Math.cos(angle)*.2);out.push({geo:panel,mat:glass})
     }
   }
-  // A brick upper section projects beyond the front wall, supported by columns.
-  // Its underside is open at ground level so the approach remains passable.
-  box(2.8,1.35,22,-164.7,6.92,-33.5,brick)
-  box(2.95,.17,22.2,-164.7,7.63,-33.5,stone)
-  for(const z of [-42.5,-32,-22.8])box(.38,6.2,.38,-165.78,3.1,z,stone)
+  // A continuous upper facade projects over the walkway along the front.
+  // Each section follows the mapped wall and reaches its own roof height.
+  const frontWallX=(z:number)=>z<=-1.78?-164.58-.04623*(z+1.78):-164.58-.0203*(z+1.78)
+  for(const [z0,z1,top] of [[-44.5,-22,7.6],[-22,-1.78,11.4],[-1.78,21.5,11.4]]){
+    const middle=(z0+z1)/2,dx=frontWallX(z1)-frontWallX(z0),angle=Math.atan2(dx,z1-z0),length=Math.hypot(dx,z1-z0)
+    const upper=new THREE.BoxGeometry(2.5,top-3.6,length);upper.rotateY(angle);upper.translate(frontWallX(middle)-1.25,(top+3.6)/2,middle);out.push({geo:upper,mat:brick})
+    const fascia=new THREE.BoxGeometry(2.6,.16,length);fascia.rotateY(angle);fascia.translate(frontWallX(middle)-1.25,3.62,middle);out.push({geo:fascia,mat:stone})
+  }
+  // Posts are under the outer edge, leaving the doorway and name panel clear.
+  for(const z of [-44,-41,-20,-11,-2,7,16,21])box(.4,3.6,.4,frontWallX(z)-2.3,1.8,z,stone)
   // A short paved approach connects to the small door around the rear corner.
   box(7,.1,3,-131.9,.07,-49.5,stone)
   box(3,.1,9,-128.9,.07,-53.5,stone)
