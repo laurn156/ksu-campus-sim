@@ -705,7 +705,66 @@ function crawfordDetails(b:Building){
     const nt=new THREE.CanvasTexture(number);nt.colorSpace=THREE.SRGBColorSpace
     out.push({geo:place(new THREE.PlaneGeometry(2.3,1),-len*.3,5.3,.42),mat:new THREE.MeshStandardMaterial({map:nt,side:THREE.DoubleSide})})
   })
-  edge(b.poly[3],b.poly[2],(box,len)=>{box(len-.5,3.4,.16,0,5.8,.14,brick);box(len,.3,.7,0,7.45,.3,pale)})
+  edge(b.poly[3],b.poly[2],(box,len,place)=>{
+    box(len-.5,3.4,.16,0,5.8,.14,brick);box(len,.3,.7,0,7.45,.3,pale)
+    const x=len*.27
+    box(2.8,2.8,.18,x,1.4,.18,glass)
+    for(const dx of [-1.4,0,1.4])box(.1,2.85,.24,x+dx,1.43,.32,frame)
+    box(2.9,.12,.24,x,2.85,.32,frame)
+    const number=document.createElement('canvas');number.width=256;number.height=128
+    const ctx=number.getContext('2d')!;ctx.fillStyle='#f1c52c';ctx.fillRect(0,0,256,128);ctx.fillStyle='#18221c';ctx.font='bold 80px sans-serif';ctx.textAlign='center';ctx.fillText('846',128,92)
+    const tex=new THREE.CanvasTexture(number);tex.colorSpace=THREE.SRGBColorSpace
+    out.push({geo:place(new THREE.PlaneGeometry(2.3,1),x,5.2,.34),mat:new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide})})
+  })
+  return out
+}
+
+/** Engineering Lab's courtyard elevation and its two-storey rear elevation. */
+function engineeringLabDetails(b:Building){
+  const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const mat=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.75,side:THREE.DoubleSide})
+  const pale=mat('#e0e1d8'),glass=mat('#557573'),dark=mat('#354e4b'),brick=mat('#a57864')
+  const screen=new THREE.MeshStandardMaterial({map:facade('mathscreen'),roughness:.85,side:THREE.DoubleSide})
+  const edge=(a:Pt,c:Pt,fn:(box:(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>void,len:number)=>void)=>{
+    const len=Math.hypot(c[0]-a[0],c[1]-a[1]),angle=Math.atan2(-(c[1]-a[1]),c[0]-a[0]),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);g.rotateY(angle);g.translate(mx,0,mz);out.push({geo:g,mat:m})}
+    fn(box,len)
+  }
+  // South/courtyard side follows each step in the real footprint.
+  for(let i=9;i<25;i++)edge(b.poly[i],b.poly[i+1],(box,len)=>{
+    if(len<3)return
+    box(len,3.6,.16,0,1.8,.15,glass)
+    for(let x=-len/2+.8;x<len/2;x+=1.6)box(.1,3.6,.2,x,1.8,.26,pale)
+    if(i%4===1||i%4===2)box(len,3.3,.18,0,5.65,.15,screen)
+    else{box(len,3.3,.18,0,5.65,.15,dark);box(len,.5,.22,0,4.25,.28,brick);box(len,.12,.25,0,6.5,.28,pale)}
+    box(len,.22,.5,0,7.48,.25,pale)
+  })
+  // Rear: repeated window over brick spandrel on each of the two levels.
+  edge(b.poly[4],b.poly[5],(box,len)=>{
+    box(len,7.45,.16,0,3.72,.15,pale)
+    for(let x=-len/2+2;x<len/2-1;x+=4.1){
+      for(const y of [1.9,5.65]){
+        box(3.2,1.75,.2,x,y+.25,.26,glass)
+        box(3.2,.55,.2,x,y-1.05,.26,brick)
+        for(const dx of [-1.6,0,1.6])box(.08,1.75,.24,x+dx,y+.25,.38,pale)
+      }
+    }
+    box(len,.2,.3,0,3.8,.3,pale)
+  })
+  // Enclosed glazed connector bridges the gap to the adjacent Science Lab Annex.
+  const connector=new THREE.BoxGeometry(7.5,5.8,10.8);connector.translate(-252.3,2.9,-39.3)
+  out.push({geo:connector,mat:glass})
+  for(const x of [-256,-252.3,-248.6]){const post=new THREE.BoxGeometry(.16,5.8,.18);post.translate(x,2.9,-44.65);out.push({geo:post,mat:pale})}
+  const roof=new THREE.BoxGeometry(8,.25,11);roof.translate(-252.3,5.9,-39.3);out.push({geo:roof,mat:pale})
+  return out
+}
+
+/** Glass and brick annex facade, matching the attached science building. */
+function scienceAnnexDetails(){
+  const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const pale=new THREE.MeshStandardMaterial({color:'#e1e2da',roughness:.8}),brick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.9})
+  for(const [x,z] of [[-268.3,-55],[-244,-55]]){const g=new THREE.BoxGeometry(2,7.6,.3);g.translate(x,3.8,z);out.push({geo:g,mat:brick})}
+  const band=new THREE.BoxGeometry(12,.28,.35);band.translate(-256,4,-61.1);out.push({geo:band,mat:pale})
   return out
 }
 
@@ -731,6 +790,11 @@ function Buildings({ campus }: { campus: Campus }) {
           { geo: wallsGeometry(b, b.h - .5, b.h), mat: trim },
           { geo: flatGeometry(b.poly, b.h + .02, 8), mat: new THREE.MeshStandardMaterial({ map: roofTex, roughness: .9, side: THREE.DoubleSide }) },
         ], flat: true }
+      }
+      if (b.id === '1134398612') {
+        const glazing = new THREE.MeshStandardMaterial({ map: facade('mathglass'), roughness: .35, side: THREE.DoubleSide })
+        const roof = new THREE.MeshStandardMaterial({ map: roofTex, roughness: .9, side: THREE.DoubleSide })
+        return { b, parts: [{geo:wallsGeometry(b),mat:glazing},{geo:flatGeometry(b.poly,b.h+.02,8),mat:roof},...scienceAnnexDetails()], flat: true }
       }
       if (b.id === '1504299650') {
         b.name = 'Hornet Hub'; b.short = 'Hornet Hub'; b.h = 5
@@ -760,6 +824,7 @@ function Buildings({ campus }: { campus: Campus }) {
       if (b.code === 'D') parts.push(...mathematicsScreen(b))
       if (b.code === 'C') parts.push(...libraryDetails(b))
       if (b.code === 'E') parts.push(...crawfordDetails(b))
+      if (b.code === 'G') parts.push(...engineeringLabDetails(b))
       if (b.code === 'Q') parts.push(...engineeringCenterDetails(b))
       return { b, parts, flat: look.roof === 'flat' }
     })
