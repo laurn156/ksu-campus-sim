@@ -819,10 +819,12 @@ function designTwoDetails(b:Building){
     const stem=new THREE.CylinderGeometry(.06,.06,.75,8);stem.translate(x,4.34,33.4);out.push({geo:stem,mat:dark})
     for(const dx of [-1.1,1.1])worldBox(.55,.1,.55,x+dx,4.4,33.4,dark)
   }
-  // Covered seating bays extend from the upper facade over part of the terrace.
-  for(const x of [-238,-220,-202]){
-    worldBox(6.4,.25,2.6,x,7.05,33.45,white)
-    for(const dx of [-3,3])worldBox(.18,3.1,.18,x+dx,5.5,32.25,white)
+  // Upper portions of Design 1 project from the facade above the terrace.
+  // They leave the terrace level open beneath them, without freestanding canopies.
+  const upperScreen=new THREE.MeshStandardMaterial({map:facade('mathscreen'),roughness:.85,side:THREE.DoubleSide})
+  for(const [x,width] of [[-238,9],[-218,13],[-195,9]]){
+    worldBox(width,2.35,3.3,x,6.45,31.15,upperScreen)
+    worldBox(width+.2,.18,3.45,x,7.72,31.15,white)
   }
   // Two flights turn at a landing instead of running directly into the building.
   for(let i=0;i<10;i++){
@@ -840,6 +842,30 @@ function designTwoDetails(b:Building){
   rail(new THREE.Vector3(-264,1,40.25),new THREE.Vector3(-258,2.85,40.25))
   rail(new THREE.Vector3(-256.2,2.85,39),new THREE.Vector3(-256.2,4.65,32.2))
   for(const [x,y,z] of [[-264,0,40.25],[-261,1,40.25],[-258,2,40.25],[-256.2,2,39],[-256.2,2.9,35.8],[-256.2,3.8,32.2]])rail(new THREE.Vector3(x,y,z),new THREE.Vector3(x,y+.85,z))
+  // Eastern approach: paved ramp, low retaining wall and a planted strip.
+  const ramp=new THREE.BufferGeometry()
+  ramp.setAttribute('position',new THREE.Float32BufferAttribute([
+    -204,0,61,-179,1.1,61,-179,1.1,64,
+    -204,0,61,-179,1.1,64,-204,0,64,
+    -204,0,64,-179,1.1,64,-179,0,64,
+    -204,0,64,-179,0,64,-204,0,64],3))
+  ramp.computeVertexNormals();out.push({geo:ramp,mat:concrete})
+  worldBox(25,.5,.3,-191.5,.25,64.2,white)
+  worldBox(23,.1,1.5,-191.5,.08,58.7,soil)
+  const shrub=new THREE.MeshStandardMaterial({color:'#718f57',roughness:.9})
+  for(let x=-202;x<=-181;x+=1.7){const g=new THREE.IcosahedronGeometry(.43,1);g.scale(1,.7,1);g.translate(x,.35,58.7);out.push({geo:g,mat:shrub})}
+  // Three stair flights and landings continue uphill to the shared upper terrace.
+  for(let flight=0;flight<3;flight++){
+    for(let step=0;step<6;step++){
+      const h=1.1+(flight*6+step+1)*.15,z=59-(flight*7+step)*1.05
+      worldBox(3,h,1.07,-176.3,h/2,z,concrete)
+    }
+    const h=1.1+(flight+1)*.9,z=59-(flight*7+6)*1.05
+    worldBox(3,h,1.15,-176.3,h/2,z,concrete)
+  }
+  worldBox(5,3.8,3,-178.8,1.9,36.6,concrete)
+  rail(new THREE.Vector3(-174.8,1.95,59.5),new THREE.Vector3(-174.8,4.65,36.5))
+  for(const [z,y] of [[59,1.1],[52,2],[45,2.9],[37,3.8]])rail(new THREE.Vector3(-174.8,y,z),new THREE.Vector3(-174.8,y+.85,z))
   // The adjacent Design 1 end is a solid brick wall with a recessed entrance.
   const endBrick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.9,side:THREE.DoubleSide})
   worldBox(.18,7.35,8.7,-262.35,3.68,24,endBrick)
