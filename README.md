@@ -55,10 +55,23 @@ via the USGS National Map. Not an official Kennesaw State University product.
 
 Choose Campus Life after signing in with a **demo profile**. Walk up to a named student and press **F** (or click their name nearby) to talk. The phone contains relationships, the clock and schedule, a list of locations, and a journal. Walk to a listed building or bench for nearby activities. Needs, academic and involvement points, relationships, a few conversation memories and social story stages are saved in this browser for each demo username. The clock advances one in-game minute per real second; activities advance it further. These are local demo saves, not accounts or cloud saves.
 
-The named students use scripted schedules and lightweight, rule-based conversations by default. Their multi-day stories, invitations and the rotating events are early prototypes. The recreation action is not a playable minigame, and multiplayer across devices is not implemented. Custom messages have limited local topic recognition when AI is unavailable.
+The named students use scripted schedules and lightweight, rule-based conversations by default. Their multi-day stories, invitations and the rotating events are early prototypes. The recreation action is not a playable minigame. KSU Connect requires the separate limited-test setup below. Custom messages have limited local topic recognition when AI is unavailable.
 
 For locally generated student dialogue, install [Ollama](https://ollama.com/download), start Ollama, and run `ollama pull qwen3:4b` once (about 2.5 GB). Start the game with `npm install` and `npm run dev -- --host 127.0.0.1`, then open the local address shown in the terminal. The model runs on the same computer as the game and does not require an API key or per-message payment. The first response can take longer while the model loads. If Ollama or the model is unavailable, conversations automatically use the built-in rules. Other players need their own Ollama installation and model download. Performance depends on their hardware.
 
 The dialogue endpoint is provided only by the local Vite development server and is restricted to same-origin requests from the local computer. It is not included in a static build or `npm run preview`; those use fallback replies. Do not expose the development server publicly. Dialogue is generated locally, but the model can still make mistakes or invent details; deterministic game rules control the actual effects.
 
 Run the simulation checks with `node --experimental-strip-types scripts/test-life.mjs` on a Node version that supports type stripping. Also run `npm run build` and `npm run lint`.
+
+### KSU Connect: limited online test (setup required)
+
+Connect uses Supabase Auth, a profile table, and private Realtime channels. It is **unfinished and has not been verified with a real Supabase project or deployed site**. Keep it restricted to people you trust: there are no blocking/reporting tools, authoritative movement checks, or server-side chat rate limits yet. Presence claims are not identity-verified, but movement and chat are received on per-user channels that only that user's authenticated account may publish to. Do not offer this as public multiplayer yet.
+
+1. Create a Supabase project. In its SQL Editor run `supabase/setup.sql` once. In Realtime settings disable **Allow public access to channels** so private channel policies are enforced.
+2. Copy `.env.example` to `.env.local` and fill in the project URL and **publishable/anon key** from Supabase. Never put a secret or service-role key in frontend environment variables. Restart Vite after changing the file.
+3. Configure the Auth site URL and redirect allowlist for your local and deployed game URLs. Enable email/password sign-in and set up email confirmation and password reset delivery. Supabase's default email service has testing restrictions; use your own SMTP if needed.
+4. Create test accounts in the game, confirm their emails, then log in. Usernames are claimed on first login, with case-insensitive uniqueness enforced by the database; a conflict currently needs a different account/username.
+5. In the SQL Editor, approve each test account by replacing the example email and running `insert into public.campus_testers (id) select id from auth.users where email = 'tester@example.com';`. Never commit actual tester emails or credentials. Only approved accounts can enter the shared room.
+6. Test two accounts in separate browsers/computers: profiles, appearance, movement, chat, reconnect and departure. A static deployment also requires the two public Vite environment variables at build time. Repeat the tests on the deployed URL.
+
+Online accounts use the same avatar editor in both modes; guest profiles and Campus Life progress remain local to their browser. The previous same-browser Connect demo is no longer the Connect mode. Friends, reporting, blocking, direct messages, and activities are not implemented.

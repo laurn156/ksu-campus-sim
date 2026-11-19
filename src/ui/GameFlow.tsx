@@ -26,11 +26,11 @@ export function Entry({ users, onLogin, onCreate }: EntryProps) {
         <div className="flow-note"><b>DEMO MODE</b> Profiles are stored only in this browser. Use a made-up name; there’s no password or real account yet.</div></div></section>
   </main>
 }
-export function ModeSelect({ name, onSelect, onEdit, onLogout }: { name:string; onSelect:(mode:Mode)=>void; onEdit:()=>void; onLogout:()=>void }) {
+export function ModeSelect({ name, onSelect, onEdit, onLogout, online }: { name:string; onSelect:(mode:Mode)=>void; onEdit:()=>void; onLogout:()=>void; online:boolean }) {
   return <main className="flow"><header className="flow-brand"><b>✦ &nbsp; KSU CAMPUS LIFE</b><span>{name} &nbsp; · &nbsp; <button onClick={onLogout}>Switch profile</button></span></header>
     <section className="mode-page"><div className="flow-kicker">YOUR ADVENTURE, YOUR CHOICE</div><h1>Choose your experience.</h1><p>Two ways to explore campus life in Marietta.</p>
       <div className="mode-cards"><article className="mode-card"><div className="mode-art life-art"><span>✦</span><b>CAMPUS<br/>LIFE</b><small>A DAY AT KSU</small></div><div className="mode-content"><div className="mode-tag">SINGLE PLAYER</div><h2>Campus Life</h2><p>Meet students, explore campus, and choose how to spend your day.</p><button className="flow-primary" onClick={()=>onSelect('life')}>Play Campus Life <span>→</span></button></div></article>
-      <article className="mode-card"><div className="mode-art connect-art"><span>✳</span><b>KSU<br/>CONNECT</b><small>EXPLORE TOGETHER</small></div><div className="mode-content"><div className="mode-tag">LOCAL MULTIPLAYER DEMO</div><h2>KSU Connect</h2><p>Explore with another player in a second tab on this same browser. Online play across devices is coming later.</p><button className="flow-primary green" onClick={()=>onSelect('connect')}>Play KSU Connect <span>→</span></button></div></article></div>
+      <article className="mode-card"><div className="mode-art connect-art"><span>✳</span><b>KSU<br/>CONNECT</b><small>EXPLORE TOGETHER</small></div><div className="mode-content"><div className="mode-tag">LIMITED ONLINE TEST</div><h2>KSU Connect</h2><p>Meet other approved testers on the shared campus. A real account is required.</p><button className="flow-primary green" disabled={!online} onClick={()=>onSelect('connect')}>{online?'Play KSU Connect':'Log in to play KSU Connect'} <span>→</span></button></div></article></div>
       <button className="flow-link" onClick={onEdit}>✦ Edit your character</button></section>
   </main>
 }
