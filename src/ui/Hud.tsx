@@ -4,6 +4,8 @@ import { approach, player } from '../scene/Player'
 import { landmarkSpots } from '../scene/Landmarks'
 import { scrappy } from '../scene/Scrappy'
 import { busPositions } from '../scene/Buses'
+import { community } from '../scene/Community'
+import type { Mode } from './GameFlow'
 
 /** Closest campus building to the player (within ~30 m of its walls). */
 function useNearby(campus: Campus) {
@@ -121,8 +123,25 @@ function GoTo({ campus }: { campus: Campus }) {
   )
 }
 
-export function Hud({ campus, onEdit }: { campus: Campus; onEdit: () => void }) {
+export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit: () => void; mode: Mode; onModes: () => void }) {
   const near = useNearby(campus)
+  const [student,setStudent] = useState<(typeof community.students)[number] | null>(null)
+  const [message,setMessage] = useState('')
+  useEffect(() => {
+    if (mode !== 'life') return
+    const interval = setInterval(() => {
+      const next = community.students.find(s => Math.hypot(s.x-player.x,s.z-player.z)<5) ?? null
+      setStudent(old => old?.name===next?.name ? old : next)
+      if (!next) setMessage('')
+    },200)
+    const key = (e:KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'f' || e.repeat || e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return
+      const next = community.students.find(s => Math.hypot(s.x-player.x,s.z-player.z)<5)
+      if (next) setMessage(next.line)
+    }
+    window.addEventListener('keydown',key)
+    return () => {clearInterval(interval);window.removeEventListener('keydown',key)}
+  },[mode])
   return (
     <>
       <div className="brandbar">
@@ -130,6 +149,9 @@ export function Hud({ campus, onEdit }: { campus: Campus; onEdit: () => void }) 
       </div>
       <GoTo campus={campus} />
       <button className="edit-character" onClick={onEdit}>✦ Edit character</button>
+      <button className="mode-return" onClick={onModes}>← Choose mode</button>
+      {mode === 'connect' && <div className="mode-hint">KSU Connect · same-browser tabs demo</div>}
+      {mode === 'life' && student && <div className="conversation"><b>{student.name}</b><span>{message || 'Press F to say hello'}</span>{message && <button onClick={() => setMessage('')}>Close</button>}</div>}
       {near && (
         <div className="nearcard" key={near.name}>
           <div className="kicker">You're at</div>
