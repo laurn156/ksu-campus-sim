@@ -945,13 +945,25 @@ function atriumDetails(b:Building){
   const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
   const sign=new THREE.PlaneGeometry(6,1.5);sign.rotateY(-Math.PI/2);sign.translate(-138.03,4.6,64.5)
   out.push({geo:sign,mat:new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide})})
-  // Low brick edging and modest outdoor seating frame the entrance plaza.
-  box(.5,.9,19,-141.5,.45,49,solidBrick);box(.5,.9,19,-141.5,.45,80,solidBrick)
-  for(const z of [56.5,72.5]){
-    const top=new THREE.CylinderGeometry(.8,.8,.1,16);top.translate(-141.3,.75,z);out.push({geo:top,mat:stone})
-    const stem=new THREE.CylinderGeometry(.07,.07,.75,8);stem.translate(-141.3,.38,z);out.push({geo:stem,mat:railMat})
-    const pole=new THREE.CylinderGeometry(.04,.04,2.8,8);pole.translate(-141.3,1.4,z);out.push({geo:pole,mat:railMat})
-    const umbrella=new THREE.ConeGeometry(1.65,.45,12,1,true);umbrella.translate(-141.3,2.75,z);out.push({geo:umbrella,mat:gold})
+  // Low brick planters with small trees sit on either side of the entry.
+  const soil=new THREE.MeshStandardMaterial({color:'#72594b',roughness:1})
+  const bark=new THREE.MeshStandardMaterial({color:'#6c5140',roughness:.9})
+  const foliage=new THREE.MeshStandardMaterial({color:'#63894e',roughness:.9,flatShading:true})
+  for(const z of [48.5,80.5]){
+    box(3,.24,12,-140.8,.12,z,solidBrick)
+    box(2.7,.09,11.7,-140.8,.27,z,soil)
+    for(const dz of [-4,0,4]){
+      const trunk=new THREE.CylinderGeometry(.11,.16,1.8,7);trunk.translate(-140.8,1.2,z+dz);out.push({geo:trunk,mat:bark})
+      const crown=new THREE.IcosahedronGeometry(1.25,1);crown.scale(1,.75,1);crown.translate(-140.8,2.15,z+dz);out.push({geo:crown,mat:foliage})
+    }
+  }
+  // Tables are outside the planters and clear of the doorway and tree crowns.
+  for(const z of [57,72]){
+    const x=-143.4
+    const top=new THREE.CylinderGeometry(.8,.8,.1,16);top.translate(x,.75,z);out.push({geo:top,mat:stone})
+    const stem=new THREE.CylinderGeometry(.07,.07,.75,8);stem.translate(x,.38,z);out.push({geo:stem,mat:railMat})
+    const pole=new THREE.CylinderGeometry(.04,.04,2.8,8);pole.translate(x,1.4,z);out.push({geo:pole,mat:railMat})
+    const umbrella=new THREE.ConeGeometry(1.5,.45,12,1,true);umbrella.translate(x,2.75,z);out.push({geo:umbrella,mat:gold})
   }
   // Long stair between the Atrium and Academic Building, with level landings.
   for(let flight=0;flight<2;flight++){

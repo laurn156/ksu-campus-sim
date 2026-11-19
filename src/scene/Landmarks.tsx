@@ -776,7 +776,7 @@ export function Landmarks({ campus }: { campus: Campus }) {
         .map((p, i) => (
           <Stairs key={`st${i}`} a={p.pts[0]} b={p.pts[p.pts.length - 1]} width={Math.max(3, p.w)} rise={Math.min(1.6, 0.12 * Math.hypot(p.pts[0][0] - p.pts[p.pts.length - 1][0], p.pts[0][1] - p.pts[p.pts.length - 1][1]))} />
         ))}
-      {campus.canopies.map((b) => (
+      {campus.canopies.filter((b) => b.id !== '559995482').map((b) => (
         <FootprintCanopy key={b.id} poly={b.poly} />
       ))}
       {placed.lib && <LibraryDome at={centroid(placed.lib.poly)} y={placed.lib.h} />}
