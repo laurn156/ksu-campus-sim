@@ -8,7 +8,7 @@ import { occluders } from './Campus'
 import { busPositions } from './Buses'
 
 /** Shared, mutable player state (read by the HUD / minimap without re-rendering React every frame). */
-export const player = { x: 0, z: 0, heading: 0, yaw: 0.6, pitch: 1.0, moving: false, tp: null as null | { x: number; z: number; yaw: number }, travelOrigin: null as null | { x: number; z: number }, busRide: null as null | { index: number; until: number }, rides: 0 }
+export const player = { x: 0, z: 0, heading: 0, yaw: 0.6, pitch: 1.0, moving: false, tp: null as null | { x: number; z: number; yaw: number }, travelOrigin: null as null | { x: number; z: number }, view: null as null | { x:number; z:number; yaw:number }, viewChanged: false, busRide: null as null | { index: number; until: number }, rides: 0 }
 
 const WALK = 5 // m/s (a brisk, game-paced walk)
 const RUN = 9.5
@@ -91,6 +91,8 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
         if (yaw !== undefined) player.yaw = yaw
         if (d !== undefined) dist.current = d
       }
+    player.travelOrigin = null
+    player.view = null
     const [x, z, yaw] = spawnPoint(campus)
     player.x = x
     player.z = z
@@ -145,6 +147,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05)
     const k = keys.current
+    if (player.viewChanged) { pan.current.set(0,0); snap.current=true; player.viewChanged=false }
     if (player.tp) {
       // teleport (from the "Go to" menu): jump there and snap the camera
       pan.current.set(0, 0)
@@ -173,7 +176,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     if (k.has('s') || k.has('arrowdown')) dir.sub(fwd)
     if (k.has('d') || k.has('arrowright')) dir.add(right)
     if (k.has('a') || k.has('arrowleft')) dir.sub(right)
-    const moving = !player.busRide && dir.lengthSq() > 0.0001
+    const moving = !player.view && !player.busRide && dir.lengthSq() > 0.0001
     if (moving) {
       pan.current.set(0, 0)
       dir.normalize()
@@ -200,11 +203,11 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     // Sims-style camera: high three-quarter view that follows smoothly
     const pitch = player.pitch
     const want = new THREE.Vector3(
-      player.x + pan.current.x + Math.sin(player.yaw) * Math.cos(pitch) * dist.current,
+      (player.view?.x ?? player.x) + pan.current.x + Math.sin(player.yaw) * Math.cos(pitch) * dist.current,
       Math.sin(pitch) * dist.current,
-      player.z + pan.current.y + Math.cos(player.yaw) * Math.cos(pitch) * dist.current,
+      (player.view?.z ?? player.z) + pan.current.y + Math.cos(player.yaw) * Math.cos(pitch) * dist.current,
     )
-    const focus = new THREE.Vector3(player.x + pan.current.x, 1.2, player.z + pan.current.y)
+    const focus = new THREE.Vector3((player.view?.x ?? player.x) + pan.current.x, 1.2, (player.view?.z ?? player.z) + pan.current.y)
     if (snap.current) {
       camera.position.copy(want)
       cameraTarget.current.copy(focus)

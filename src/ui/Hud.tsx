@@ -37,7 +37,7 @@ function useNearby(campus: Campus) {
   return near
 }
 
-export function Minimap({ campus }: { campus: Campus }) {
+export function Minimap({ campus, onOpen }: { campus: Campus; onOpen: () => void }) {
   const SIZE = 230
   const [x0, z0, x1, z1] = campus.extent
   const s = SIZE / Math.max(x1 - x0, z1 - z0)
@@ -63,7 +63,7 @@ export function Minimap({ campus }: { campus: Campus }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campus])
   return (
-    <div className="minimap">
+    <button className="minimap" onClick={onOpen} aria-label="Open campus map" title="Open campus map">
       <svg width={SIZE} height={((z1 - z0) / (x1 - x0)) * SIZE} viewBox={`0 0 ${SIZE} ${((z1 - z0) * s).toFixed(0)}`}>
         <polygon points={shapes.boundary} className="mm-campus" />
         {shapes.paths.map((p, i) => (
@@ -76,13 +76,13 @@ export function Minimap({ campus }: { campus: Campus }) {
           <path d="M0,-6 L4.5,5 L0,2.5 L-4.5,5 Z" className="mm-me" />
         </g>
       </svg>
-      <div className="mm-n">N</div>
-    </div>
+      <span className="mm-n">N</span>
+    </button>
   )
 }
 
 /** "Go to" menu: jump straight to any campus building or landmark. */
-function GoTo({ campus }: { campus: Campus }) {
+function GoTo({ campus, onView }: { campus: Campus; onView: (target:{x:number;z:number;yaw:number})=>void }) {
   const places = useMemo(() => {
     const bs = campus.buildings
       .filter(isCampusBuilding)
@@ -109,11 +109,11 @@ function GoTo({ campus }: { campus: Campus }) {
       value=""
       onChange={(e) => {
         const p = places[Number(e.target.value)]
-        if (p) player.tp = p.go()
+        if (p) onView(p.go())
         e.target.blur() // keep WASD for walking
       }}
     >
-      <option value="">📍 Go to…</option>
+      <option value="">📍 View location…</option>
       {places.map((p, i) => (
         <option key={i} value={i}>
           {p.label}
@@ -125,6 +125,8 @@ function GoTo({ campus }: { campus: Campus }) {
 
 function CampusMap({campus,onClose}:{campus:Campus;onClose:()=>void}) {
   const [x0,z0,x1,z1]=campus.extent
+  const [,refresh]=useState(0)
+  useEffect(()=>{const id=setInterval(()=>refresh(n=>n+1),250);return ()=>clearInterval(id)},[])
   const locations=campus.buildings.filter(b=>['A','C','J','S1','X'].includes(b.code))
   return <div className="map-shade" role="dialog" aria-modal="true" aria-label="Campus map"><div className="map-sheet"><header><div><b>Campus map</b><small>North is up · your position is the blue dot</small></div><button onClick={onClose}>Close ✕</button></header>
     <svg viewBox={x0+' '+z0+' '+(x1-x0)+' '+(z1-z0)} role="img" aria-label="Marietta campus map">
@@ -135,7 +137,7 @@ function CampusMap({campus,onClose}:{campus:Campus;onClose:()=>void}) {
       {busPositions.filter(Boolean).map((b,i)=><circle key={i} cx={b.x} cy={b.z} r="8" fill="#e5ad19" stroke="#242424" strokeWidth="3"/>)}
       <circle cx={scrappy.x} cy={scrappy.z} r="9" fill="#151515" stroke="#e5ad19" strokeWidth="4"/>
       <circle cx={player.x} cy={player.z} r="13" fill="#397ac0" stroke="white" strokeWidth="5"/>
-    </svg><div className="map-legend">{locations.map(b=><span key={b.id}><b>{b.code}</b> {b.short||b.name}</span>)}</div><p>Blue: you · gold: buses · black and gold: Scrappy. Moving markers update when you reopen the map. The map does not move your character.</p></div></div>
+    </svg><div className="map-legend">{locations.map(b=><span key={b.id}><b>{b.code}</b> {b.short||b.name}</span>)}</div><p>Blue: you · gold: buses · black and gold: Scrappy. Moving markers update live. The map does not move your character.</p></div></div>
 }
 
 export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit: () => void; mode: Mode; onModes: () => void }) {
@@ -143,6 +145,14 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
   const [nearby,setNearby] = useState<{kind:'student'|'scrappy'|'bus';name:string;line:string;index?:number}|null>(null)
   const [message,setMessage] = useState('')
   const [mapOpen,setMapOpen] = useState(false)
+  const [viewing,setViewing] = useState(false)
+  const savedYaw=useRef(0)
+  const viewLocation=(target:{x:number;z:number;yaw:number})=>{
+    if(!player.view) savedYaw.current=player.yaw
+    player.view=target;player.yaw=target.yaw;player.viewChanged=true;setViewing(true)
+  }
+  const returnToPlayer=()=>{player.view=null;player.yaw=savedYaw.current;player.viewChanged=true;setViewing(false)}
+  useEffect(()=>()=>{player.view=null},[])
   useEffect(() => {
     if (mode !== 'life') return
     const closest = () => {
@@ -154,7 +164,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
     }
     const interval=setInterval(()=>{const next=closest();setNearby(old=>old?.name===next?.name?old:next);if(!next && !player.busRide)setMessage('')},200)
     const key=(e:KeyboardEvent)=>{
-      if(e.key.toLowerCase()!=='f'||e.repeat||e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement||player.busRide)return
+      if(e.key.toLowerCase()!=='f'||e.repeat||e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement||player.busRide||player.view)return
       const next=closest(); if(!next)return
       if(next.kind==='bus' && next.index!==undefined) {player.busRide={index:next.index,until:performance.now()+10000};player.rides++}
       setMessage(next.line)
@@ -168,13 +178,13 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
       <div className="brandbar">
         <span className="ksu">KSU</span> Campus Life <span className="sub">Marietta</span>
       </div>
-      <GoTo campus={campus} />
+      <GoTo campus={campus} onView={viewLocation} />
       <button className="edit-character" onClick={onEdit}>✦ Edit character</button>
       <button className="mode-return" onClick={onModes}>← Choose mode</button>
-      <button className="map-open" onClick={()=>setMapOpen(true)}>▧ Campus map</button>
+      {viewing && <div className="view-banner">Viewing location only · your character stayed where you left them <button onClick={returnToPlayer}>Return to character</button></div>}
       {mapOpen && <CampusMap campus={campus} onClose={()=>setMapOpen(false)}/>}
       {mode === 'connect' && <div className="mode-hint">KSU Connect · same-browser tabs demo</div>}
-      {mode === 'life' && nearby && <div className="conversation"><b>{nearby.name}</b><span>{message || (nearby.kind === 'bus' ? 'Press F to board for a short ride' : 'Press F to say hello')}</span>{message && <button onClick={() => setMessage('')}>Close</button>}</div>}
+      {mode === 'life' && !viewing && nearby && <div className="conversation"><b>{nearby.name}</b><span>{message || (nearby.kind === 'bus' ? 'Press F to board for a short ride' : 'Press F to say hello')}</span>{message && <button onClick={() => setMessage('')}>Close</button>}</div>}
       {near && (
         <div className="nearcard" key={near.name}>
           <div className="kicker">You're at</div>
@@ -183,7 +193,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
           </div>
         </div>
       )}
-      <Minimap campus={campus} />
+      <Minimap campus={campus} onOpen={()=>setMapOpen(true)} />
       <div className="controls">
         <b>WASD</b> walk · <b>Shift</b> run · <b>drag</b> look · <b>middle drag / Shift+drag</b> pan · <b>WASD</b> recenter · <b>Q/E</b> turn · <b>wheel</b> zoom · <b>M</b> mute
       </div>

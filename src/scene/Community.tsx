@@ -56,15 +56,32 @@ function AmbientStudents({campus}:{campus:Campus}) {
     for(const c of candidates) {
       const x=(c.a[0]+c.b[0])/2,z=(c.a[1]+c.b[1])/2
       if(chosen.every(p=>Math.hypot(x-(p.a[0]+p.b[0])/2,z-(p.a[1]+p.b[1])/2)>9)) chosen.push(c)
-      if(chosen.length>=140) break
+      if(chosen.length>=340) break
     }
     // If paths are unusually sparse, use a closer spacing to keep the campus populated.
-    if(chosen.length<120) for(const c of candidates) {
+    if(chosen.length<340) for(const c of candidates) {
       const x=(c.a[0]+c.b[0])/2,z=(c.a[1]+c.b[1])/2
       if(chosen.every(p=>Math.hypot(x-(p.a[0]+p.b[0])/2,z-(p.a[1]+p.b[1])/2)>4)) chosen.push(c)
-      if(chosen.length>=140) break
+      if(chosen.length>=340) break
     }
-    return chosen
+    // Keep every walkable sidewalk segment for onward junction choices.
+    const cells=new Map<string,{i:number;end:0|1}[]>()
+    for(let i=0;i<candidates.length;i++) for(const end of [0,1] as const) {
+      const p=end===0?candidates[i].a:candidates[i].b
+      const key=Math.floor(p[0]/4)+','+Math.floor(p[1]/4)
+      const list=cells.get(key)??[];list.push({i,end});cells.set(key,list)
+    }
+    const states=chosen.map(c=>({x:(c.a[0]+c.b[0])/2,z:(c.a[1]+c.b[1])/2,segment:candidates.indexOf(c),target:Math.random()<0.5?0:1,previous:-1}))
+    const neighbors=(point:[number,number],current:number,previous:number)=>{
+      const cx=Math.floor(point[0]/4),cz=Math.floor(point[1]/4),out:{i:number;end:0|1}[]=[]
+      for(let x=-1;x<=1;x++)for(let z=-1;z<=1;z++)for(const item of cells.get((cx+x)+','+(cz+z))??[]) {
+        if(item.i===current || item.i===previous)continue
+        const p=item.end===0?candidates[item.i].a:candidates[item.i].b
+        if(Math.hypot(p[0]-point[0],p[1]-point[1])<2.5 && !collider.blocked((p[0]+point[0])/2,(p[1]+point[1])/2,0.7))out.push(item)
+      }
+      return out
+    }
+    return {states,candidates,neighbors}
   },[campus])
   const head=useRef<THREE.InstancedMesh>(null), body=useRef<THREE.InstancedMesh>(null)
   const left=useRef<THREE.InstancedMesh>(null),right=useRef<THREE.InstancedMesh>(null)
@@ -74,17 +91,25 @@ function AmbientStudents({campus}:{campus:Campus}) {
   const palette=useMemo(()=>['#8ab1e8','#e9876b','#aecb91','#b9a5e0','#f2cc5f','#6f90c4'].map(c=>new THREE.Color(c)),[])
   const shirts=useMemo(()=>['#ece9df','#333638','#c6a231','#849276','#8790a9','#b394ac'].map(c=>new THREE.Color(c)),[])
   useEffect(()=>{
-    walkers.forEach((_,i)=>{head.current?.setColorAt(i,palette[i%palette.length]);arms.current?.setColorAt(i*2,palette[i%palette.length]);arms.current?.setColorAt(i*2+1,palette[i%palette.length]);body.current?.setColorAt(i,shirts[(i*5)%shirts.length]);left.current?.setColorAt(i,new THREE.Color('#55586a'));right.current?.setColorAt(i,new THREE.Color('#55586a'))})
+    walkers.states.forEach((_,i)=>{head.current?.setColorAt(i,palette[i%palette.length]);arms.current?.setColorAt(i*2,palette[i%palette.length]);arms.current?.setColorAt(i*2+1,palette[i%palette.length]);body.current?.setColorAt(i,shirts[(i*5)%shirts.length]);left.current?.setColorAt(i,new THREE.Color('#55586a'));right.current?.setColorAt(i,new THREE.Color('#55586a'))})
     for(const mesh of [head.current,body.current,left.current,right.current,arms.current]) if(mesh?.instanceColor)mesh.instanceColor.needsUpdate=true
   },[walkers,palette,shirts])
-  useFrame(({clock})=>{
+  useFrame(({clock},delta)=>{
     if(!head.current || !body.current || !left.current || !right.current || !arms.current)return
-    walkers.forEach((path,i)=>{
-      const length=Math.hypot(path.b[0]-path.a[0],path.b[1]-path.a[1]) || 1
-      const phase=(clock.elapsedTime*1.25/length+i*0.137)%2
-      const t=phase<1?phase:2-phase, sign=phase<1?1:-1
-      helper.position.set(path.a[0]+(path.b[0]-path.a[0])*t,0,path.a[1]+(path.b[1]-path.a[1])*t)
-      helper.rotation.set(0,Math.atan2((path.b[0]-path.a[0])*sign,(path.b[1]-path.a[1])*sign),0);helper.scale.setScalar(1);helper.updateMatrix();base.copy(helper.matrix)
+    walkers.states.forEach((person,i)=>{
+      const path=walkers.candidates[person.segment]
+      const goal=person.target===0?path.a:path.b
+      let dx=goal[0]-person.x,dz=goal[1]-person.z, distance=Math.hypot(dx,dz)
+      if(distance<0.13) {
+        const options=walkers.neighbors(goal,person.segment,person.previous)
+        if(options.length) {const next=options[Math.floor(Math.random()*options.length)];person.previous=person.segment;person.segment=next.i;person.target=next.end===0?1:0}
+        else {person.previous=-1;person.target=person.target===0?1:0}
+        const newPath=walkers.candidates[person.segment],newGoal=person.target===0?newPath.a:newPath.b
+        dx=newGoal[0]-person.x;dz=newGoal[1]-person.z;distance=Math.hypot(dx,dz)
+      }
+      if(distance>0){const step=Math.min(distance,Math.min(delta,0.05)*(1.05+(i%5)*0.09));person.x+=dx/distance*step;person.z+=dz/distance*step}
+      helper.position.set(person.x,0,person.z)
+      helper.rotation.set(0,Math.atan2(dx,dz),0);helper.scale.setScalar(1);helper.updateMatrix();base.copy(helper.matrix)
       part.makeTranslation(0,1.13,0);head.current!.setMatrixAt(i,part.premultiply(base))
       part.makeTranslation(0,0.62,0);body.current!.setMatrixAt(i,part.premultiply(base))
       const swing=Math.sin(clock.elapsedTime*6+i)*0.05
@@ -97,7 +122,7 @@ function AmbientStudents({campus}:{campus:Campus}) {
     })
     for(const mesh of [head.current,body.current,left.current,right.current,arms.current])mesh!.instanceMatrix.needsUpdate=true
   })
-  const n=walkers.length
+  const n=walkers.states.length
   return <group>
     <instancedMesh ref={head} args={[undefined,undefined,n]} frustumCulled={false}><sphereGeometry args={[0.34,12,10]}/><meshStandardMaterial roughness={0.9}/></instancedMesh>
     <instancedMesh ref={body} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[0.23,0.18,4,10]}/><meshStandardMaterial roughness={0.95}/></instancedMesh>

@@ -38,10 +38,10 @@ export function CampusDay({campus,username}:{campus:Campus;username:string}) {
   const tasks=useMemo(()=>days[(progress.day-1)%days.length].map(id=>allTasks.find(t=>t.id===id)!),[progress.day])
   useEffect(()=>{try {localStorage.setItem(storageKey(username),JSON.stringify(progress))} catch { /* play without saving */ }},[username,progress])
   useEffect(()=>{
-    const interval=setInterval(()=>{setNear(tasks.filter(t=>t.code && nearBuilding(campus,t.code)).map(t=>t.id));setBlocked(!!player.travelOrigin)},250)
+    const interval=setInterval(()=>{setNear(tasks.filter(t=>t.code && nearBuilding(campus,t.code)).map(t=>t.id));setBlocked(!!player.travelOrigin || !!player.view)},250)
     const action=(event:Event)=>{
       const detail=(event as CustomEvent<{kind:string;allowed:boolean}>).detail
-      if(!detail?.allowed){setNotice('Walk away from your fast-travel arrival point before completing activities.');return}
+      if(!detail?.allowed || player.view){setNotice('Walk away from your fast-travel arrival point before completing activities.');return}
       const task=tasks.find(t=>t.action===detail.kind)
       if(task){setProgress(p=>p.completed.includes(task.id)?p:{...p,completed:[...p.completed,task.id]});setNotice('Nice! You discovered an activity.')}
     }
@@ -49,13 +49,13 @@ export function CampusDay({campus,username}:{campus:Campus;username:string}) {
     return()=>{clearInterval(interval);removeEventListener('campus-action',action)}
   },[campus,tasks])
   const complete=(id:TaskId)=>{
-    if(!near.includes(id) || player.travelOrigin) return
+    if(!near.includes(id) || player.travelOrigin || player.view) return
     setProgress(p=>p.completed.includes(id)?p:{...p,completed:[...p.completed,id]})
     setNotice('Nice! You completed an activity.')
   }
   return <section className="day-panel" aria-label="Campus Life activities">
     <button className="day-toggle" onClick={()=>setOpen(v=>!v)} aria-expanded={open}>☀ Day {progress.day} <span>{progress.completed.length}/{tasks.length} ideas {open?'−':'+'}</span></button>
-    {open && <div className="day-content"><p>Optional ideas for your day. Explore at your own pace.</p>{blocked && <div className="day-warning">Exploring after fast travel: walk beyond the arrival area to unlock activity credit.</div>}{tasks.map(t=>{
+    {open && <div className="day-content"><p>Optional ideas for your day. Explore at your own pace.</p>{blocked && <div className="day-warning">Return to your character to take part in activities.</div>}{tasks.map(t=>{
       const finished=progress.completed.includes(t.id), available=near.includes(t.id) && !blocked
       return <div className={'day-task '+(finished?'done':'')} key={t.id}><div><b>{finished?'✓':'○'} {t.label}</b><small>{t.detail}</small></div>{t.code && !finished && <button disabled={!available} onClick={()=>complete(t.id)}>{available ? t.verb : 'Explore'}</button>}</div>
     })}{notice && <div className="day-notice" role="status">{notice}</div>}
