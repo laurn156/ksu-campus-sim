@@ -169,13 +169,14 @@ function KsuLetters({ at, yaw }: { at: Pt; yaw: number }) {
       const g = canvas.getContext('2d')!
       g.font = '900 530px Arial, sans-serif'
       g.textAlign = 'center'
-      g.textBaseline = 'middle'
+      g.textBaseline = 'alphabetic'
       g.lineJoin = 'round'
       g.lineWidth = 26
       g.strokeStyle = INK
       g.fillStyle = face ? GOLD : INK
-      g.strokeText('KSU', 768, 303, 1470)
-      g.fillText('KSU', 768, 303, 1470)
+      const baseline = 587 - g.measureText('KSU').actualBoundingBoxDescent
+      g.strokeText('KSU', 768, baseline, 1470)
+      g.fillText('KSU', 768, baseline, 1470)
       const texture = new THREE.CanvasTexture(canvas)
       texture.colorSpace = THREE.SRGBColorSpace
       texture.anisotropy = 8
@@ -190,7 +191,7 @@ function KsuLetters({ at, yaw }: { at: Pt; yaw: number }) {
       </mesh>
       {/* Closely spaced silhouettes give the letters solid dark depth from oblique views. */}
       {Array.from({ length: 25 }, (_, i) => (
-        <mesh key={i} position={[0, 1.08, -0.3 + i * 0.025]} castShadow>
+        <mesh key={i} position={[0, 1.06, -0.3 + i * 0.025]} castShadow>
           <planeGeometry args={[4.6, 1.8]} />
           <meshStandardMaterial map={i === 24 ? textures.face : textures.side} transparent alphaTest={0.5} side={THREE.DoubleSide} roughness={0.6} />
         </mesh>

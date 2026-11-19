@@ -943,7 +943,7 @@ function pumpHouseParts(b: Building) {
   box(.13,2.05,1.05,-191.75,1.18,100.2,dark)
   box(.16,1.85,.9,-191.82,1.19,100.2,metal)
   box(.15,.55,.65,-191.72,2.75,98.2,trim)
-  // The owl mural is painted directly on the east brick face.
+  // The owl mural follows the actual south wall, including its slight angle.
   const c=document.createElement('canvas');c.width=1024;c.height=512
   const g=c.getContext('2d')!;g.clearRect(0,0,1024,512)
   const poly=(points:number[][],color:string) => {g.fillStyle=color;g.beginPath();points.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill()}
@@ -962,13 +962,24 @@ function pumpHouseParts(b: Building) {
   poly([[667,184],[584,180],[530,213],[576,260],[620,250]],gold)
   poly([[389,195],[442,192],[468,214],[445,244],[410,236]],black)
   poly([[635,195],[582,192],[556,214],[579,244],[614,236]],black)
+  // Bright irises and downward brows give the face the owl's distinctive stare.
+  for (const x of [426,598]) {
+    g.fillStyle=gold;g.beginPath();g.ellipse(x,216,17,20,0,0,Math.PI*2);g.fill()
+    g.fillStyle=black;g.beginPath();g.ellipse(x,216,7,15,0,0,Math.PI*2);g.fill()
+    g.fillStyle=white;g.beginPath();g.arc(x-4,210,3,0,Math.PI*2);g.fill()
+  }
+  poly([[340,154],[425,153],[510,192],[492,209],[425,178],[355,181]],black)
+  poly([[684,154],[599,153],[514,192],[532,209],[599,178],[669,181]],black)
   poly([[336,224],[385,262],[448,274],[487,256],[465,334],[391,351],[342,309]],white)
   poly([[688,224],[639,262],[576,274],[537,256],[559,334],[633,351],[682,309]],white)
   poly([[474,259],[512,281],[550,259],[532,336],[512,358],[492,336]],gold)
   poly([[354,328],[410,354],[471,340],[512,377],[553,340],[614,354],[670,328],[632,391],[512,432],[392,391]],grey)
   poly([[410,355],[471,345],[512,379],[553,345],[614,355],[598,385],[512,412],[426,385]],black)
   const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace
-  const mural=new THREE.PlaneGeometry(7.7,3.15);mural.rotateY(Math.PI/2);mural.translate(-182.28,2.02,99.86)
+  const mural=new THREE.PlaneGeometry(7.7,3.15)
+  const left=b.poly[3], right=b.poly[2]
+  mural.rotateY(-Math.atan2(right[1]-left[1],right[0]-left[0]))
+  mural.translate((left[0]+right[0])/2,2.02,(left[1]+right[1])/2+.025)
   out.push({geo:mural,mat:new THREE.MeshStandardMaterial({map:tex,transparent:true,side:THREE.DoubleSide,roughness:.95})})
   // Patio and two dark umbrellas beside the north end, clear of the doorway.
   box(10.8,.08,5.2,-187,.04,92.9,pavement)
@@ -986,13 +997,13 @@ function pumpHouseParts(b: Building) {
     }
   }
   for (let i=detailsStart;i<out.length;i++) {
+    if(i===detailsStart+4) continue // mural is already aligned to the wall
     const geo=out[i].geo
     geo.translate(187.1,0,-99.7)
     geo.rotateY(-Math.PI/2)
     geo.translate(-187.1,0,99.7)
     // Account for the slightly rectangular footprint when moving between walls.
     if(i<detailsStart+4) geo.translate(0,0,.5)
-    else if(i===detailsStart+4) geo.translate(0,0,-.5)
   }
   return out
 }
