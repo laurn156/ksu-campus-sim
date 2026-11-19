@@ -933,18 +933,38 @@ function atriumDetails(b:Building){
       box(.55,.34,8.6,-137,y,z,stone);box(.55,.34,8.6,-129.5,y,z,stone)
     }
   }
-  // Projecting brick portal centered between the towers, facing the courtyard.
-  box(4.5,3.8,1.45,-135.7,1.9,60.8,solidBrick);box(4.5,3.8,1.45,-135.7,1.9,68.2,solidBrick)
-  box(4.6,1.6,8.9,-135.7,4.55,64.5,solidBrick)
-  box(4.8,.2,9.2,-135.7,5.35,64.5,stone)
+  // A separate square brick pavilion stands in front of the glazed entrance.
+  box(4.5,3.8,1.45,-139.5,1.9,60.8,solidBrick);box(4.5,3.8,1.45,-139.5,1.9,68.2,solidBrick)
+  box(4.6,1.6,8.9,-139.5,4.55,64.5,solidBrick)
+  box(4.8,.2,9.2,-139.5,5.35,64.5,stone)
   box(.18,3.1,5.9,-133.5,1.55,64.5,dark)
   for(const z of [61.6,63.05,64.5,65.95,67.4])box(.2,3.1,.09,-133.64,1.55,z,stone)
   box(.24,.12,5.9,-133.64,3.08,64.5,stone)
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256
   const ctx=canvas.getContext('2d')!;ctx.fillStyle='#a46d59';ctx.fillRect(0,0,1024,256);ctx.fillStyle='#f1e9da';ctx.font='bold 75px sans-serif';ctx.textAlign='center';ctx.fillText('ATRIUM BUILDING',512,100);ctx.fillStyle='#f4c629';ctx.fillRect(420,132,184,82);ctx.fillStyle='#222b27';ctx.font='bold 67px sans-serif';ctx.fillText('680',512,195)
   const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
-  const sign=new THREE.PlaneGeometry(6,1.5);sign.rotateY(-Math.PI/2);sign.translate(-138.03,4.6,64.5)
+  const sign=new THREE.PlaneGeometry(6,1.5);sign.rotateY(-Math.PI/2);sign.translate(-141.83,4.6,64.5)
   out.push({geo:sign,mat:new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide})})
+  // Matching rear towers and a smaller open square feature at the roof center.
+  for(const z of [50.5,77.4]){
+    box(8,3.1,9,-102.8,9.85,z,brick)
+    for(const x of [-106.6,-99])for(const dz of [-4.1,4.1])box(.65,3.4,.65,x,13.1,z+dz,solidBrick)
+    for(const y of [11.55,14.65]){
+      box(8,.34,.55,-102.8,y,z-4.1,stone);box(8,.34,.55,-102.8,y,z+4.1,stone)
+      box(.55,.34,8.6,-106.6,y,z,stone);box(.55,.34,8.6,-99,y,z,stone)
+    }
+  }
+  for(const x of [-119.8,-113.2])for(const z of [61.2,67.8])box(.48,2.7,.48,x,12.75,z,solidBrick)
+  for(const z of [61.2,67.8])box(7,.3,.45,-116.5,14.05,z,stone)
+  for(const x of [-119.8,-113.2])box(.45,.3,7,x,14.05,64.5,stone)
+  // Rear glass doors and a second detached, open-sided brick entrance pavilion.
+  box(.18,3.1,5.9,-102.3,1.55,64.5,dark)
+  for(const z of [61.6,63.05,64.5,65.95,67.4])box(.2,3.1,.09,-102.16,1.55,z,stone)
+  box(.24,.12,5.9,-102.16,3.08,64.5,stone)
+  box(4.5,3.8,1.45,-95,1.9,60.8,solidBrick);box(4.5,3.8,1.45,-95,1.9,68.2,solidBrick)
+  box(4.6,1.6,8.9,-95,4.55,64.5,solidBrick);box(4.8,.2,9.2,-95,5.35,64.5,stone)
+  const rearSign=new THREE.PlaneGeometry(6,1.5);rearSign.rotateY(Math.PI/2);rearSign.translate(-92.67,4.6,64.5)
+  out.push({geo:rearSign,mat:new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide})})
   // Low brick planters with small trees sit on either side of the entry.
   const soil=new THREE.MeshStandardMaterial({color:'#72594b',roughness:1})
   const bark=new THREE.MeshStandardMaterial({color:'#6c5140',roughness:.9})
@@ -955,6 +975,14 @@ function atriumDetails(b:Building){
     for(const dz of [-4,0,4]){
       const trunk=new THREE.CylinderGeometry(.11,.16,1.8,7);trunk.translate(-140.8,1.2,z+dz);out.push({geo:trunk,mat:bark})
       const crown=new THREE.IcosahedronGeometry(1.25,1);crown.scale(1,.75,1);crown.translate(-140.8,2.15,z+dz);out.push({geo:crown,mat:foliage})
+    }
+  }
+  // Concrete tree planters on the rear plaza, set away from the pavilion.
+  for(const z of [48.5,80.5]){
+    box(3,.28,12,-94.2,.14,z,concrete);box(2.7,.08,11.7,-94.2,.32,z,soil)
+    for(const dz of [-4,0,4]){
+      const trunk=new THREE.CylinderGeometry(.11,.16,1.8,7);trunk.translate(-94.2,1.25,z+dz);out.push({geo:trunk,mat:bark})
+      const crown=new THREE.IcosahedronGeometry(1.25,1);crown.scale(1,.75,1);crown.translate(-94.2,2.2,z+dz);out.push({geo:crown,mat:foliage})
     }
   }
   // Tables are outside the planters and clear of the doorway and tree crowns.
