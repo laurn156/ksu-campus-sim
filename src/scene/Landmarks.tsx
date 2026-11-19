@@ -368,12 +368,32 @@ function Flagpole({ x, z, i }: { x: number; z: number; i: number }) {
       for (const x of [40,60,80]) g.fillRect(x - 2, 47, 4, 30)
       g.fillStyle = '#e6be48'; g.fillRect(35, 79, 50, 4)
     } else {
-      // Hand-drawn approximation of the black-and-gold Owls flag in the reference.
+      // A stylized owl with feathered wings, ear tufts, eyes and a beak.
       g.fillStyle = '#111'; g.fillRect(0, 0, 300, 180)
       g.fillStyle = '#e5b72b'
-      g.beginPath(); g.moveTo(40, 24); g.lineTo(115, 62); g.lineTo(150, 42); g.lineTo(185, 62); g.lineTo(260, 24); g.lineTo(230, 93); g.lineTo(185, 109); g.lineTo(150, 91); g.lineTo(115, 109); g.lineTo(70, 93); g.closePath(); g.fill()
-      g.fillStyle = '#171717'; g.beginPath(); g.ellipse(150, 77, 38, 29, 0, 0, Math.PI*2); g.fill()
-      g.fillStyle = '#fff'; for (const x of [134,166]) { g.beginPath(); g.ellipse(x, 75, 12, 7, 0, 0, Math.PI*2); g.fill() }
+      for (const side of [-1, 1]) {
+        g.save(); g.translate(150, 0); g.scale(side, 1)
+        g.beginPath(); g.moveTo(27, 73); g.quadraticCurveTo(65, 48, 116, 21)
+        g.lineTo(105, 53); g.lineTo(119, 48); g.lineTo(95, 75)
+        g.lineTo(105, 74); g.quadraticCurveTo(75, 103, 35, 104); g.closePath(); g.fill()
+        g.strokeStyle = '#f4eee0'; g.lineWidth = 2
+        g.beginPath(); g.moveTo(42, 79); g.quadraticCurveTo(82, 58, 111, 28); g.stroke()
+        g.restore()
+      }
+      g.fillStyle = '#f3f1e9'
+      g.beginPath(); g.moveTo(108, 35); g.lineTo(117, 63); g.quadraticCurveTo(103, 107, 150, 121)
+      g.quadraticCurveTo(197, 107, 183, 63); g.lineTo(192, 35); g.lineTo(169, 48)
+      g.quadraticCurveTo(150, 40, 131, 48); g.closePath(); g.fill()
+      g.fillStyle = '#171717'
+      g.beginPath(); g.moveTo(119, 49); g.lineTo(133, 57); g.lineTo(150, 64); g.lineTo(167, 57); g.lineTo(181, 49)
+      g.lineTo(177, 86); g.quadraticCurveTo(172, 104, 150, 110); g.quadraticCurveTo(128, 104, 123, 86); g.closePath(); g.fill()
+      for (const side of [-1, 1]) {
+        g.save(); g.translate(150, 0); g.scale(side, 1)
+        g.fillStyle = '#e5b72b'; g.beginPath(); g.moveTo(5, 69); g.lineTo(32, 61); g.lineTo(28, 78); g.lineTo(10, 81); g.closePath(); g.fill()
+        g.fillStyle = '#fff'; g.beginPath(); g.ellipse(19, 74, 8, 6, 0, 0, Math.PI * 2); g.fill()
+        g.fillStyle = '#111'; g.beginPath(); g.arc(19, 74, 3, 0, Math.PI * 2); g.fill(); g.restore()
+      }
+      g.fillStyle = '#f1bf25'; g.beginPath(); g.moveTo(143, 84); g.lineTo(157, 84); g.lineTo(150, 100); g.closePath(); g.fill()
       g.fillStyle = '#e5b72b'; g.textAlign = 'center'; g.font = 'bold 28px sans-serif'; g.fillText('KENNESAW',150,143)
       g.fillStyle = '#fff'; g.font = 'bold 20px sans-serif'; g.fillText('STATE OWLS',150,168)
     }
