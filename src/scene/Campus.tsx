@@ -249,6 +249,10 @@ function studentCenterDetails() {
   return pieces
 }
 
+function addStingersLocal(geo:THREE.BufferGeometry,x:number,y:number,z:number,angle:number,origin:THREE.Vector3){
+  geo.translate(x,y,z);geo.rotateY(angle);geo.translate(origin.x,0,origin.z)
+}
+
 /** Approximate the distinctive 806 entrance and curved dining-room glazing from reference photos.
  * The mapped footprint remains the source of the building location and collision boundary. */
 function stingersDetails(b: Building) {
@@ -297,6 +301,36 @@ function stingersDetails(b: Building) {
     slab(len+.1,.8,.4,7.05,.2,white)
     const mullion=new THREE.BoxGeometry(.09,6.35,.2);mullion.translate(-len/2,3.55,.24);mullion.rotateY(edgeAngle);mullion.translate(mx,0,mz);pieces.push({geo:mullion,mat:trim})
   }
+  // Outdoor dining terrace: rail follows the same rounded outline as the glass bay.
+  // The footprint is clockwise, so a negative inset puts the rail outside the building.
+  const railing=offsetPoly(b.poly,-4.2)
+  const railMat=material('#aeb7b4',.48), furniture=material('#59625d'), paving=material('#c9b4a1')
+  const beam=(from:THREE.Vector3,to:THREE.Vector3,radius:number,mat:THREE.MeshStandardMaterial)=>{
+    const direction=new THREE.Vector3().subVectors(to,from),geo=new THREE.CylinderGeometry(radius,radius,direction.length(),8)
+    geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),direction.clone().normalize()))
+    geo.translate((from.x+to.x)/2,(from.y+to.y)/2,(from.z+to.z)/2);pieces.push({geo,mat})
+  }
+  // A narrow terrace surface remains just above the existing map paths.
+  const terrace=b.poly.slice(13,27).concat(railing.slice(13,27).reverse())
+  pieces.push({geo:flatGeometry(terrace,.095),mat:paving})
+  for(let i=13;i<26;i++){
+    const p=railing[i],q=railing[i+1]
+    for(const y of [.55,1.08])beam(new THREE.Vector3(p[0],y,p[1]),new THREE.Vector3(q[0],y,q[1]),.045,railMat)
+    beam(new THREE.Vector3(p[0],.1,p[1]),new THREE.Vector3(p[0],1.1,p[1]),.045,railMat)
+  }
+  // Small outdoor tables and seats sit between the glass and the railing.
+  for(const i of [14,17,20,23]){
+    const x=(b.poly[i][0]+railing[i][0])/2,z=(b.poly[i][1]+railing[i][1])/2
+    const tabletop=new THREE.CylinderGeometry(.62,.62,.07,20);tabletop.translate(x,.77,z);pieces.push({geo:tabletop,mat:furniture})
+    beam(new THREE.Vector3(x,.1,z),new THREE.Vector3(x,.74,z),.055,railMat)
+    for(const a of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const sx=x+Math.cos(a)*.95,sz=z+Math.sin(a)*.95;const seat=new THREE.CylinderGeometry(.26,.26,.07,12);seat.translate(sx,.43,sz);pieces.push({geo:seat,mat:furniture});beam(new THREE.Vector3(sx,.1,sz),new THREE.Vector3(sx,.4,sz),.035,railMat)}
+  }
+  // Bench and bin by the entrance approach, leaving the central doorway clear.
+  box(1.8,.12,.48,4.35,.48,3.4,furniture)
+  box(1.8,.58,.09,4.35,.83,3.65,furniture)
+  for(const x of [3.65,5.05])box(.08,.48,.08,x,.24,3.42,railMat)
+  const bin=new THREE.CylinderGeometry(.35,.31,.95,16);addStingersLocal(bin,5.8,.5,3.4,angle,origin);pieces.push({geo:bin,mat:dark})
+  const lid=new THREE.CylinderGeometry(.37,.37,.08,16);addStingersLocal(lid,5.8,1.01,3.4,angle,origin);pieces.push({geo:lid,mat:trim})
   return pieces
 }
 
