@@ -5,6 +5,7 @@ import { loadCampus, type Campus } from './campus'
 import { CampusScene } from './scene/Campus'
 import { Labels } from './scene/Labels'
 import { Player, Sun } from './scene/Player'
+import { BuildingInteriors } from './scene/Interiors'
 import { Hud } from './ui/Hud'
 import { Entry, ModeSelect, type Mode } from './ui/GameFlow'
 import { CampusStudents } from './scene/Community'
@@ -109,7 +110,7 @@ function LifeSession({campus,username,profile,onEdit,onModes}:{campus:Campus;use
       <color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/>
       <hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={profile.look}/><CampusStudents campus={campus} minute={life.state.minute}/>
     </Canvas>
-    <Hud campus={campus} onEdit={onEdit} mode="life" onModes={onModes}/><LifeUI campus={campus} life={life} playerName={profile.name||username} onEdit={onEdit}/>
+    <BuildingInteriors campus={campus} look={profile.look}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onModes}/><LifeUI campus={campus} life={life} playerName={profile.name||username} onEdit={onEdit}/>
   </>
 }
 
@@ -123,5 +124,5 @@ function ConnectSession({campus,user,profile,username,onEdit,onModes}:{campus:Ca
 function ConnectedCampus({campus,user,profile,username,onEdit,onModes}:{campus:Campus;user:User;profile:Profile;username:string;onEdit:()=>void;onModes:()=>void}){
  const world=useConnectWorld(user.id,username)
  const social=useSocial(user.id)
- return <><Canvas shadows="percentage" camera={{position:[0,40,40],fov:45,near:.5,far:3000}} dpr={[1,2]}><color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/><hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={profile.look}/><OnlinePlayers peers={world.peers.filter(p=>!social.blocked.includes(p.id))}/><OfflineFriends userId={user.id} peers={world.peers} social={social}/></Canvas><Hud campus={campus} onEdit={onEdit} mode="connect" onModes={onModes}/><ConnectChat world={world}/><SocialPanel userId={user.id} peers={world.peers} social={social} wave={world.wave}/></>
+ return <><Canvas shadows="percentage" camera={{position:[0,40,40],fov:45,near:.5,far:3000}} dpr={[1,2]}><color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/><hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={profile.look}/><OnlinePlayers peers={world.peers.filter(p=>!social.blocked.includes(p.id))}/><OfflineFriends userId={user.id} peers={world.peers} social={social}/></Canvas><BuildingInteriors campus={campus} look={profile.look}/><Hud campus={campus} onEdit={onEdit} mode="connect" onModes={onModes}/><ConnectChat world={world}/><SocialPanel userId={user.id} peers={world.peers} social={social} wave={world.wave}/></>
 }

@@ -5,6 +5,7 @@ import { landmarkSpots } from '../scene/Landmarks'
 import { scrappy } from '../scene/Scrappy'
 import { busPositions } from '../scene/Buses'
 import { community } from '../scene/Community'
+import { indoorState } from '../scene/indoorState'
 import type { Mode } from './GameFlow'
 
 /** Closest campus building to the player (within ~30 m of its walls). */
@@ -168,7 +169,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
     }
     const interval=setInterval(()=>{const next=closest();setNearby(old=>old?.name===next?.name?old:next);if(!next && !player.busRide)setMessage('')},200)
     const key=(e:KeyboardEvent)=>{
-      if(e.key.toLowerCase()!=='f'||e.repeat||e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement||player.busRide||player.view)return
+      if(indoorState.active||e.key.toLowerCase()!=='f'||e.repeat||e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement||player.busRide||player.view)return
       if(community.students.some(s=>Math.hypot(s.x-player.x,s.z-player.z)<5))return
       const next=closest(); if(!next)return
       if(next.kind==='bus' && next.index!==undefined) {player.busRide={index:next.index,until:performance.now()+10000};player.rides++}

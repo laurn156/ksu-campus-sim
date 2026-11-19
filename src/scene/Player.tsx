@@ -4,8 +4,8 @@ import * as THREE from 'three'
 import { Character, type Headwear, type Face, type Accessory } from '../characters/Character'
 import type { PaletteName } from '../characters/palette'
 import { centroid, Collider, westDeckGroundHeight, type Campus } from '../campus'
-import { occluders } from './Campus'
 import { busPositions } from './Buses'
+import { indoorState } from './indoorState'
 
 /** Shared, mutable player state (read by the HUD / minimap without re-rendering React every frame). */
 export const player = { x: 0, z: 0, heading: 0, yaw: 0.6, pitch: 1.0, moving: false, tp: null as null | { x: number; z: number; yaw: number }, travelOrigin: null as null | { x: number; z: number }, view: null as null | { x:number; z:number; yaw:number }, viewChanged: false, busRide: null as null | { index: number; until: number }, rides: 0, speedMultiplier: 1 }
@@ -73,9 +73,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   const walk = useRef(0)
   const keys = useRef(new Set<string>())
   const dist = useRef(30)
-  const cut = useRef(0)
   const snap = useRef(false)
-  const ray = useMemo(() => new THREE.Raycaster(), [])
   const drag = useRef<{ x: number; y: number; pan: boolean } | null>(null)
   const pan = useRef(new THREE.Vector2())
   const cameraTarget = useRef(new THREE.Vector3())
@@ -146,6 +144,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05)
+    if (indoorState.active) { keys.current.clear(); player.moving = false; return }
     const k = keys.current
     if (player.viewChanged) { pan.current.set(0,0); snap.current=true; player.viewChanged=false }
     if (player.tp) {
@@ -222,29 +221,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
       cameraTarget.current.lerp(focus, smoothing)
     }
     camera.lookAt(cameraTarget.current)
-    // cutaway: buildings between the camera and the player fade out
-    cut.current += dt
-    if (cut.current > 0.08) {
-      cut.current = 0
-      const from = camera.position.clone()
-      const to = new THREE.Vector3(player.x, groundY + 1.0, player.z)
-      ray.set(from, to.clone().sub(from).normalize())
-      ray.far = from.distanceTo(to)
-      const hit = new Set(ray.intersectObjects(occluders.meshes, false).map((h) => h.object.parent))
-      for (const m of occluders.meshes) {
-        const mat = m.material as THREE.MeshStandardMaterial
-        const target = hit.has(m.parent) ? 0.18 : 1
-        mat.opacity += (target - mat.opacity) * 0.5
-        if (target === 1 && mat.opacity > 0.97) mat.opacity = 1
-        // only fading buildings are transparent: opaque ones keep proper depth (no see-through roofs)
-        const tr = mat.opacity < 1
-        if (tr !== mat.transparent) {
-          mat.transparent = tr
-          mat.depthWrite = !tr
-          mat.needsUpdate = true
-        }
-      }
-    }
+
   })
 
   return (

@@ -1,3 +1,4 @@
+import { indoorState } from '../scene/indoorState'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { distToSeg, type Campus } from '../campus'
 import { player } from '../scene/Player'
@@ -42,7 +43,7 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
     const interval=setInterval(update,300);update();return()=>clearInterval(interval)
   },[campus])
   useEffect(()=>{
-    const key=(e:KeyboardEvent)=>{if(e.key.toLowerCase()!=='f'||e.repeat||player.view||e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||e.target instanceof HTMLSelectElement)return
+    const key=(e:KeyboardEvent)=>{if(indoorState.active||e.key.toLowerCase()!=='f'||e.repeat||player.view||e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||e.target instanceof HTMLSelectElement)return
       const nearest=community.students.map(s=>({...s,d:Math.hypot(s.x-player.x,s.z-player.z)})).sort((a,b)=>a.d-b.d)[0]
       if(nearest&&nearest.d<5){setTalking(nearest.id);setAiReply('');life.setReply('')}
     }
@@ -51,7 +52,7 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
   },[life.setReply])
   useEffect(()=>{
     const id=setInterval(()=>{
-      if(talking||menu||invitation||player.view||Date.now()-lastInvite.current<180000)return
+      if(indoorState.active||talking||menu||invitation||player.view||Date.now()-lastInvite.current<180000)return
       const candidate=community.students.find(s=>Math.hypot(s.x-player.x,s.z-player.z)<6 && relation(life.state,s.id).score>=10)
       if(candidate){lastInvite.current=Date.now();setInvitation(candidate.id)}
     },15000)
