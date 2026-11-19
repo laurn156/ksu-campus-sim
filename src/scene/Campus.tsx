@@ -1020,7 +1020,7 @@ function civilBuildingsParts(b: Building) {
     approach.panel(.09,2.3,.24,0,1.2,.36,frame)
     // Competition concrete canoe displayed on a freestanding steel truss.
     const canoe=material('#5c4535'),truss=material('#4c5752'),gold=material('#e2bb53')
-    const support=edge(9),u=-11,v=8
+    const support=edge(0),u=-17,v=4
     const hull=new THREE.Shape();hull.moveTo(-5.7,.58);hull.quadraticCurveTo(-4.5,-.35,-3.2,-.35);hull.lineTo(3.2,-.35);hull.quadraticCurveTo(4.5,-.35,5.7,.58);hull.closePath()
     const hullGeo=new THREE.ExtrudeGeometry(hull,{depth:.65,bevelEnabled:false});parts.push({geo:support.place(hullGeo,u,1.45,v),mat:canoe})
     for(const z of [v-.45,v+1.1]) {
