@@ -936,6 +936,8 @@ function pumpHouseParts(b: Building) {
   }
   const vent=new THREE.CylinderGeometry(.23,.32,.65,8);vent.translate(-187,4.12,99.3);out.push({geo:vent,mat:metal})
   for(const [x,z] of [[-189.9,97],[-184.4,102.3]]){const v=new THREE.CylinderGeometry(.09,.09,.22,8);v.translate(x,3.92,z);out.push({geo:v,mat:dark})}
+  // Rotate the wall details and patio together one face clockwise.
+  const detailsStart = out.length
   // Service door and utility panels on the opposite wall.
   box(.1,2.35,1.3,-191.67,1.18,100.2,metal)
   box(.13,2.05,1.05,-191.75,1.18,100.2,dark)
@@ -944,13 +946,27 @@ function pumpHouseParts(b: Building) {
   // The owl mural is painted directly on the east brick face.
   const c=document.createElement('canvas');c.width=1024;c.height=512
   const g=c.getContext('2d')!;g.clearRect(0,0,1024,512)
-  g.fillStyle='#eee9dc';g.strokeStyle='#1d2020';g.lineWidth=15;g.lineJoin='round'
-  g.beginPath();g.moveTo(205,75);g.lineTo(290,180);g.lineTo(510,130);g.lineTo(735,180);g.lineTo(820,75);g.lineTo(785,325);g.lineTo(650,410);g.lineTo(510,455);g.lineTo(370,410);g.lineTo(235,325);g.closePath();g.fill();g.stroke()
-  g.strokeStyle='#1d2020';g.lineWidth=23;g.beginPath();g.moveTo(276,205);g.lineTo(390,240);g.lineTo(510,190);g.lineTo(630,240);g.lineTo(745,205);g.moveTo(510,190);g.lineTo(510,350);g.stroke()
-  g.fillStyle='#1d2020';for(const x of [385,635]){g.beginPath();g.ellipse(x,275,38,28,0,0,Math.PI*2);g.fill()}
-  g.fillStyle='#c9a353';g.beginPath();g.moveTo(475,300);g.lineTo(545,300);g.lineTo(510,365);g.closePath();g.fill()
-  // Pale geometric accents on either side of the owl.
-  for(const x of [75,150,875,950]){g.fillStyle='#e7dac0';g.beginPath();g.moveTo(x,180);g.lineTo(x+35,220);g.lineTo(x,260);g.lineTo(x-35,220);g.closePath();g.fill()}
+  const poly=(points:number[][],color:string) => {g.fillStyle=color;g.beginPath();points.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill()}
+  // Angular, layered owl head and radiating geometric shards from the mural.
+  const black='#1b1d1c', white='#eae9e2', grey='#a7aaa6', gold='#f8c500'
+  for(const [x,y,flip] of [[45,110,1],[110,205,-1],[65,330,1],[210,135,-1],[185,345,1],[930,110,-1],[865,205,1],[940,330,-1],[815,135,1],[840,345,-1]]) {
+    poly([[x,y],[x+flip*75,y+20],[x+flip*20,y+65]],white)
+    poly([[x,y+83],[x+flip*62,y+94],[x+flip*15,y+122]],gold)
+    poly([[x,y+47],[x+flip*44,y+50],[x+flip*12,y+78]],grey)
+  }
+  poly([[300,42],[375,92],[512,66],[648,92],[724,42],[697,189],[708,329],[641,401],[512,455],[382,401],[315,329],[326,189]],black)
+  poly([[305,46],[404,131],[344,167]],white);poly([[719,46],[620,131],[680,167]],white)
+  poly([[383,111],[512,75],[641,111],[598,147],[512,123],[426,147]],grey)
+  poly([[348,171],[438,157],[512,197],[586,157],[676,171],[611,220],[553,224],[512,194],[471,224],[413,220]],white)
+  poly([[357,184],[440,180],[494,213],[448,260],[404,250]],gold)
+  poly([[667,184],[584,180],[530,213],[576,260],[620,250]],gold)
+  poly([[389,195],[442,192],[468,214],[445,244],[410,236]],black)
+  poly([[635,195],[582,192],[556,214],[579,244],[614,236]],black)
+  poly([[336,224],[385,262],[448,274],[487,256],[465,334],[391,351],[342,309]],white)
+  poly([[688,224],[639,262],[576,274],[537,256],[559,334],[633,351],[682,309]],white)
+  poly([[474,259],[512,281],[550,259],[532,336],[512,358],[492,336]],gold)
+  poly([[354,328],[410,354],[471,340],[512,377],[553,340],[614,354],[670,328],[632,391],[512,432],[392,391]],grey)
+  poly([[410,355],[471,345],[512,379],[553,345],[614,355],[598,385],[512,412],[426,385]],black)
   const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace
   const mural=new THREE.PlaneGeometry(7.7,3.15);mural.rotateY(Math.PI/2);mural.translate(-182.28,2.02,99.86)
   out.push({geo:mural,mat:new THREE.MeshStandardMaterial({map:tex,transparent:true,side:THREE.DoubleSide,roughness:.95})})
@@ -968,6 +984,15 @@ function pumpHouseParts(b: Building) {
     for(const [dx,dz] of [[-1,0],[1,0],[0,-1],[0,1]]) {
       box(.5,.08,.5,x+dx,.43,z+dz,dark);box(.07,.43,.07,x+dx,.21,z+dz,metal)
     }
+  }
+  for (let i=detailsStart;i<out.length;i++) {
+    const geo=out[i].geo
+    geo.translate(187.1,0,-99.7)
+    geo.rotateY(-Math.PI/2)
+    geo.translate(-187.1,0,99.7)
+    // Account for the slightly rectangular footprint when moving between walls.
+    if(i<detailsStart+4) geo.translate(0,0,.5)
+    else if(i===detailsStart+4) geo.translate(0,0,-.5)
   }
   return out
 }
