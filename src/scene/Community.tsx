@@ -31,34 +31,80 @@ export function CampusStudents({ campus }: {campus:Campus}) {
 }
 
 
-/** A modest population walking short stretches of mapped sidewalks. */
+/** Background walkers are instanced, keeping draw calls low even on a large campus. */
 function AmbientStudents({campus}:{campus:Campus}) {
   const walkers=useMemo(()=>{
     const collider=new Collider(campus.buildings)
-    const candidates=campus.paths.flatMap(path=>path.pts.slice(1).map((b,i)=>({a:path.pts[i],b})))
-      .filter(({a,b})=>{const length=Math.hypot(b[0]-a[0],b[1]-a[1]);return length>8 && length<70 && pointInPoly((a[0]+b[0])/2,(a[1]+b[1])/2,campus.boundary) && !collider.blocked(a[0],a[1],1) && !collider.blocked(b[0],b[1],1) && !collider.blocked((a[0]+b[0])/2,(a[1]+b[1])/2,1)})
-    const chosen: typeof candidates=[]
+    const candidates:{a:[number,number];b:[number,number]}[]=[]
+    for(const path of campus.paths) for(let i=1;i<path.pts.length;i++) {
+      const a=path.pts[i-1], b=path.pts[i], length=Math.hypot(b[0]-a[0],b[1]-a[1])
+      if(length<4) continue
+      const portions=Math.max(1,Math.ceil(length/18))
+      for(let j=0;j<portions;j++) {
+        const t0=j/portions,t1=(j+1)/portions
+        const p:[number,number]=[a[0]+(b[0]-a[0])*t0,a[1]+(b[1]-a[1])*t0]
+        const q:[number,number]=[a[0]+(b[0]-a[0])*t1,a[1]+(b[1]-a[1])*t1]
+        if(!pointInPoly((p[0]+q[0])/2,(p[1]+q[1])/2,campus.boundary)) continue
+        if([0,0.25,0.5,0.75,1].some(t=>collider.blocked(p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t,0.7)))continue
+        candidates.push({a:p,b:q})
+      }
+    }
+    // Fixed shuffle avoids filling just the first group of paths in map-file order.
+    let seed=9182
+    for(let i=candidates.length-1;i>0;i--){seed=(seed*16807)%2147483647;const j=seed%(i+1);[candidates[i],candidates[j]]=[candidates[j],candidates[i]]}
+    const chosen:typeof candidates=[]
     for(const c of candidates) {
       const x=(c.a[0]+c.b[0])/2,z=(c.a[1]+c.b[1])/2
-      if(chosen.every(p=>Math.hypot(x-(p.a[0]+p.b[0])/2,z-(p.a[1]+p.b[1])/2)>26)) chosen.push(c)
-      if(chosen.length>=20) break
+      if(chosen.every(p=>Math.hypot(x-(p.a[0]+p.b[0])/2,z-(p.a[1]+p.b[1])/2)>9)) chosen.push(c)
+      if(chosen.length>=140) break
+    }
+    // If paths are unusually sparse, use a closer spacing to keep the campus populated.
+    if(chosen.length<120) for(const c of candidates) {
+      const x=(c.a[0]+c.b[0])/2,z=(c.a[1]+c.b[1])/2
+      if(chosen.every(p=>Math.hypot(x-(p.a[0]+p.b[0])/2,z-(p.a[1]+p.b[1])/2)>4)) chosen.push(c)
+      if(chosen.length>=140) break
     }
     return chosen
   },[campus])
-  return <>{walkers.map((path,i)=><Walker key={i} path={path} index={i}/>)}</>
-}
-function Walker({path,index}:{path:{a:[number,number];b:[number,number]};index:number}) {
-  const ref=useRef<THREE.Group>(null), walk=useRef(0.7)
-  const colors=['blue','orange','green','purple','yellow','slate'] as const
+  const head=useRef<THREE.InstancedMesh>(null), body=useRef<THREE.InstancedMesh>(null)
+  const left=useRef<THREE.InstancedMesh>(null),right=useRef<THREE.InstancedMesh>(null)
+  const arms=useRef<THREE.InstancedMesh>(null)
+  const helper=useMemo(()=>new THREE.Object3D(),[])
+  const base=useMemo(()=>new THREE.Matrix4(),[]), part=useMemo(()=>new THREE.Matrix4(),[])
+  const palette=useMemo(()=>['#8ab1e8','#e9876b','#aecb91','#b9a5e0','#f2cc5f','#6f90c4'].map(c=>new THREE.Color(c)),[])
+  const shirts=useMemo(()=>['#ece9df','#333638','#c6a231','#849276','#8790a9','#b394ac'].map(c=>new THREE.Color(c)),[])
+  useEffect(()=>{
+    walkers.forEach((_,i)=>{head.current?.setColorAt(i,palette[i%palette.length]);arms.current?.setColorAt(i*2,palette[i%palette.length]);arms.current?.setColorAt(i*2+1,palette[i%palette.length]);body.current?.setColorAt(i,shirts[(i*5)%shirts.length]);left.current?.setColorAt(i,new THREE.Color('#55586a'));right.current?.setColorAt(i,new THREE.Color('#55586a'))})
+    for(const mesh of [head.current,body.current,left.current,right.current,arms.current]) if(mesh?.instanceColor)mesh.instanceColor.needsUpdate=true
+  },[walkers,palette,shirts])
   useFrame(({clock})=>{
-    if(!ref.current) return
-    const length=Math.hypot(path.b[0]-path.a[0],path.b[1]-path.a[1])
-    const phase=(clock.elapsedTime*1.25/length+index*0.137)%2
-    const t=phase<1?phase:2-phase, sign=phase<1?1:-1
-    ref.current.position.set(path.a[0]+(path.b[0]-path.a[0])*t,0,path.a[1]+(path.b[1]-path.a[1])*t)
-    ref.current.rotation.y=Math.atan2((path.b[0]-path.a[0])*sign,(path.b[1]-path.a[1])*sign)
+    if(!head.current || !body.current || !left.current || !right.current || !arms.current)return
+    walkers.forEach((path,i)=>{
+      const length=Math.hypot(path.b[0]-path.a[0],path.b[1]-path.a[1]) || 1
+      const phase=(clock.elapsedTime*1.25/length+i*0.137)%2
+      const t=phase<1?phase:2-phase, sign=phase<1?1:-1
+      helper.position.set(path.a[0]+(path.b[0]-path.a[0])*t,0,path.a[1]+(path.b[1]-path.a[1])*t)
+      helper.rotation.set(0,Math.atan2((path.b[0]-path.a[0])*sign,(path.b[1]-path.a[1])*sign),0);helper.scale.setScalar(1);helper.updateMatrix();base.copy(helper.matrix)
+      part.makeTranslation(0,1.13,0);head.current!.setMatrixAt(i,part.premultiply(base))
+      part.makeTranslation(0,0.62,0);body.current!.setMatrixAt(i,part.premultiply(base))
+      const swing=Math.sin(clock.elapsedTime*6+i)*0.05
+      part.makeTranslation(-0.12,0.20,swing);left.current!.setMatrixAt(i,part.premultiply(base))
+      part.makeTranslation(0.12,0.20,-swing);right.current!.setMatrixAt(i,part.premultiply(base))
+      for(const [j,side] of [-1,1].entries()) {
+        helper.position.set(side*0.27,0.61,0);helper.rotation.set(swing*side*3,0,-side*0.22);helper.scale.setScalar(1);helper.updateMatrix()
+        part.copy(helper.matrix).premultiply(base);arms.current!.setMatrixAt(i*2+j,part)
+      }
+    })
+    for(const mesh of [head.current,body.current,left.current,right.current,arms.current])mesh!.instanceMatrix.needsUpdate=true
   })
-  return <group ref={ref}><Character color={colors[index%colors.length]} face="happy" headwear={index%3===0?'cap':'none'} top={index%2===0?'tee':'hoodie'} topColor={index%2===0?'#eee9dd':'#333337'} bottom="pants" bottomColor="#55596a" shoes="sneakers" walk={walk} scale={1.05}/></group>
+  const n=walkers.length
+  return <group>
+    <instancedMesh ref={head} args={[undefined,undefined,n]} frustumCulled={false}><sphereGeometry args={[0.34,12,10]}/><meshStandardMaterial roughness={0.9}/></instancedMesh>
+    <instancedMesh ref={body} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[0.23,0.18,4,10]}/><meshStandardMaterial roughness={0.95}/></instancedMesh>
+    <instancedMesh ref={left} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[0.1,0.14,4,8]}/><meshStandardMaterial roughness={0.95}/></instancedMesh>
+    <instancedMesh ref={right} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[0.1,0.14,4,8]}/><meshStandardMaterial roughness={0.95}/></instancedMesh>
+    <instancedMesh ref={arms} args={[undefined,undefined,n*2]} frustumCulled={false}><capsuleGeometry args={[0.07,0.16,4,8]}/><meshStandardMaterial roughness={0.95}/></instancedMesh>
+  </group>
 }
 
 type Peer = { id:string; name:string; look:AvatarLook; x:number; z:number; heading:number; moving:boolean; time:number }
