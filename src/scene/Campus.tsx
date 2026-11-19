@@ -916,6 +916,40 @@ function scienceAnnexDetails(){
   return out
 }
 
+/** Wilder Communications: simple tan one-storey workshop with a ribbed roof. */
+function wilderParts(b:Building) {
+  const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const solid=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.9,side:THREE.DoubleSide})
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128
+  const g=canvas.getContext('2d')!;g.fillStyle='#c5b69a';g.fillRect(0,0,128,128)
+  g.fillStyle='rgba(82,74,59,.1)';for(let x=0;x<128;x+=16)g.fillRect(x,0,2,128)
+  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping
+  const wall=new THREE.MeshStandardMaterial({map:tex,roughness:.95,side:THREE.DoubleSide})
+  const roof=new THREE.MeshStandardMaterial({map:facade('metal'),color:'#f0f0e8',roughness:.9,side:THREE.DoubleSide})
+  const trim=solid('#e8e7de'),glass=solid('#526663'),door=solid('#d3d4ca'),lines=solid('#afb6b0')
+  parts.push({geo:wallsGeometry(b),mat:wall},{geo:flatGeometry(b.poly,b.h+.03,4),mat:roof})
+  const a=b.poly[0],c=b.poly[1],dx=c[0]-a[0],dz=c[1]-a[1],length=Math.hypot(dx,dz)
+  const angle=-Math.atan2(dz,dx),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+  // This polygon is counterclockwise, so the exterior is to the right of the wall.
+  const panel=(w:number,h:number,d:number,x:number,y:number,out:number,mat:THREE.MeshStandardMaterial)=>{
+    const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,-out);geo.rotateY(angle);geo.translate(mx,0,mz);parts.push({geo,mat})
+  }
+  panel(length,.17,.3,0,b.h-.04,.1,trim)
+  for(const x of [-length*.38,-length*.27,-length*.05]) {
+    panel(1.4,1.5,.15,x,1.9,.08,trim)
+    panel(1.16,1.26,.17,x,1.9,.19,glass)
+    panel(.07,1.26,.2,x,1.9,.3,lines)
+  }
+  // One pedestrian door and a white sectional garage door.
+  panel(1.55,2.5,.16,length*.1,1.25,.1,trim)
+  panel(1.25,2.25,.18,length*.1,1.2,.21,door)
+  panel(.08,.4,.21,length*.12,1.22,.32,glass)
+  panel(4,2.75,.16,length*.36,1.38,.1,trim)
+  panel(3.75,2.55,.18,length*.36,1.35,.21,door)
+  for(const y of [.55,1.05,1.55,2.05,2.55])panel(3.65,.035,.2,length*.36,y,.32,lines)
+  return parts
+}
+
 /** Civil engineering buildings and the student competition workshop. */
 function civilBuildingsParts(b: Building) {
   const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
@@ -1651,6 +1685,7 @@ function Buildings({ campus }: { campus: Campus }) {
           ...academicDetails(b),
         ], flat: true }
       }
+      if (b.code === 'T') return { b, parts: wilderParts(b), flat: true }
       if (b.code === 'L' || b.code === 'L1' || b.code === 'O') return { b, parts: civilBuildingsParts(b), flat: true }
       if (b.code === 'S2') return { b, parts: gymnasiumParts(b), flat: true }
       if (b.code === 'N') return { b, parts: architectureParts(b), flat: true }
