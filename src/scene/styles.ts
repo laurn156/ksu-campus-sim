@@ -16,7 +16,7 @@ export const LOOKS: Record<string, Look> = {
   B: L('redbrick', 'flat', { floors: 2 }), // Administration
   C: L('librarybrick', 'flat', { floors: 3 }), // Library
   D: L('mathscreen', 'flat', { base: 'mathglass', floors: 2 }), // Mathematics: glazed ground floor and concrete screen
-  E: L('stucco', 'flat', { floors: 2 }), // Crawford Lab
+  E: L('mathscreen', 'flat', { base: 'mathglass', floors: 2 }), // Crawford Lab
   G: L('whiteband', 'flat'), // Engineering Lab
   H: L('whiteband', 'flat'), // Academic Building
   I1: L('whiteband', 'flat'),

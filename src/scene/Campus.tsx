@@ -632,6 +632,15 @@ function libraryDetails(b:Building){
     const medallion=new THREE.CylinderGeometry(.54,.54,.12,24);medallion.rotateX(Math.PI/2)
     out.push({geo:place(medallion,signX,2.05,signZ+.26),mat:frame})
   })
+  // Two entrances along the adjoining brick wall beside the library lawn.
+  edge(b.poly[21],b.poly[22],(box,len)=>{
+    for(const x of [-len*.24,len*.24]){
+      box(2.5,2.8,.18,x,1.4,.2,dark)
+      for(const dx of [-1.25,0,1.25])box(.1,2.9,.24,x+dx,1.45,.34,frame)
+      box(2.6,.12,.24,x,2.85,.34,frame)
+      box(.08,.55,.12,x+.42,1.35,.42,concrete)
+    }
+  })
   // Green glass and pale horizontal bands trace the curved rear footprint.
   for(let i=8;i<=17;i++)edge(b.poly[i],b.poly[i+1],(box,len)=>{
     box(len,7.5,.2,0,4.55,.16,glass)
@@ -641,6 +650,62 @@ function libraryDetails(b:Building){
     box(len,.65,.25,0,b.h-1,.22,glass)
     box(len,.24,.9,0,b.h-.05,.36,concrete)
   })
+  return out
+}
+
+/** Crawford's screen, glazed frontage, brick ends and outdoor tables. */
+function crawfordDetails(b:Building){
+  const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const mat=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.8,side:THREE.DoubleSide})
+  const pale=mat('#e1e2da'),glass=mat('#4e6c68'),frame=mat('#bdc9c2'),gold=mat('#f1c52c'),ink=mat('#28332e'),soil=mat('#8f7863'),plant=mat('#839957')
+  const brick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.9,side:THREE.DoubleSide})
+  const edge=(a:Pt,c:Pt,fn:(box:(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>void,len:number,place:(g:THREE.BufferGeometry,x:number,y:number,z:number)=>THREE.BufferGeometry)=>void)=>{
+    const len=Math.hypot(c[0]-a[0],c[1]-a[1]),angle=Math.atan2(-(c[1]-a[1]),c[0]-a[0]),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    const place=(g:THREE.BufferGeometry,x:number,y:number,z:number)=>{g.translate(x,y,z);g.rotateY(angle);g.translate(mx,0,mz);return g}
+    const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>out.push({geo:place(new THREE.BoxGeometry(w,h,d),x,y,z),mat:m})
+    fn(box,len,place)
+  }
+  // Long glazed wall faces the lawn; two projecting vestibules mark the entrances.
+  edge(b.poly[2],b.poly[1],(box,len,place)=>{
+    box(len,.25,.8,0,b.h-.1,.32,pale)
+    for(const x of [-len*.27,len*.22]){
+      box(4,3,.15,x,1.55,.2,glass)
+      for(const dx of [-2,-1,0,1,2])box(.1,3.05,.2,x+dx,1.55,.32,frame)
+      box(4.7,.22,1.7,x,3.15,.85,pale)
+    }
+    // The paved rectangle and planted beds sit between Crawford and the walk.
+    box(28,.08,6,0,.045,7.6,pale)
+    for(const x of [-8,0,8]){
+      const top=new THREE.CylinderGeometry(.9,.9,.1,16);out.push({geo:place(top,x,.78,7.6),mat:pale})
+      const leg=new THREE.CylinderGeometry(.08,.08,.75,8);out.push({geo:place(leg,x,.38,7.6),mat:frame})
+      for(const [dx,dz] of [[-1.35,0],[1.35,0],[0,-1.35],[0,1.35]]){
+        box(.55,.1,.55,x+dx,.44,7.6+dz,ink)
+        box(.08,.4,.08,x+dx,.2,7.6+dz,frame)
+      }
+    }
+    for(const x of [-21,21]){
+      box(11,.08,2.1,x,.05,6.5,soil)
+      for(let dx=-4;dx<=4;dx+=1.2){const g=new THREE.IcosahedronGeometry(.32,1);g.scale(1,.55,1);out.push({geo:place(g,x+dx,.23,6.5),mat:plant})}
+    }
+  })
+  // The short brick end has the 846 marker and building name from the photo.
+  edge(b.poly[1],b.poly[0],(box,len,place)=>{
+    box(len-.5,3.4,.16,0,5.8,.14,brick)
+    for(const x of [-len/2+.2,len/2-.2])box(.35,7.5,.3,x,3.8,.25,pale)
+    box(len,.3,.7,0,7.45,.3,pale)
+    box(3,2.8,.2,-len*.28,1.4,.2,glass)
+    for(const dx of [-1.5,0,1.5])box(.1,2.8,.25,-len*.28+dx,1.4,.32,frame)
+    box(2.4,1.1,.15,-len*.3,5.3,.32,gold)
+    const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256
+    const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f6f6ed';ctx.textAlign='center';ctx.font='bold 62px sans-serif';ctx.fillText('G. L. CRAWFORD',512,95);ctx.fillText('LABORATORY BUILDING',512,176)
+    const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace
+    out.push({geo:place(new THREE.PlaneGeometry(10,2.4),1.8,5.2,.35),mat:new THREE.MeshStandardMaterial({map:texture,transparent:true,depthWrite:false,side:THREE.DoubleSide})})
+    const number=document.createElement('canvas');number.width=256;number.height=128
+    const nc=number.getContext('2d')!;nc.fillStyle='#f1c52c';nc.fillRect(0,0,256,128);nc.fillStyle='#18221c';nc.font='bold 80px sans-serif';nc.textAlign='center';nc.fillText('846',128,92)
+    const nt=new THREE.CanvasTexture(number);nt.colorSpace=THREE.SRGBColorSpace
+    out.push({geo:place(new THREE.PlaneGeometry(2.3,1),-len*.3,5.3,.42),mat:new THREE.MeshStandardMaterial({map:nt,side:THREE.DoubleSide})})
+  })
+  edge(b.poly[3],b.poly[2],(box,len)=>{box(len-.5,3.4,.16,0,5.8,.14,brick);box(len,.3,.7,0,7.45,.3,pale)})
   return out
 }
 
@@ -694,6 +759,7 @@ function Buildings({ campus }: { campus: Campus }) {
       if (b.code === 'X') parts.push(...stingersDetails(b))
       if (b.code === 'D') parts.push(...mathematicsScreen(b))
       if (b.code === 'C') parts.push(...libraryDetails(b))
+      if (b.code === 'E') parts.push(...crawfordDetails(b))
       if (b.code === 'Q') parts.push(...engineeringCenterDetails(b))
       return { b, parts, flat: look.roof === 'flat' }
     })
