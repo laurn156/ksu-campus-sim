@@ -916,6 +916,60 @@ function scienceAnnexDetails(){
   return out
 }
 
+/** Lawrence V. Johnson Atrium Building: brick towers, entry, and side stairs. */
+function atriumDetails(b:Building){
+  const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const mat=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.82,side:THREE.DoubleSide})
+  const stone=mat('#e2d6c3'),dark=mat('#304744'),concrete=mat('#c9c5b8'),gold=mat('#edc32c'),railMat=mat('#c8cec7')
+  const brick=new THREE.MeshStandardMaterial({map:facade('atriumbrick'),roughness:.9,side:THREE.DoubleSide})
+  const solidBrick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.9,side:THREE.DoubleSide})
+  const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);out.push({geo:g,mat:m})}
+  // The two square towers stand taller than the main body; their tops are open frames.
+  for(const z of [50.5,77.4]){
+    box(8,3.1,9,-133.2,9.85,z,brick)
+    for(const x of [-137,-129.5])for(const dz of [-4.1,4.1])box(.65,3.4,.65,x,13.1,z+dz,solidBrick)
+    for(const y of [11.55,14.65]){
+      box(8,.34,.55,-133.2,y,z-4.1,stone);box(8,.34,.55,-133.2,y,z+4.1,stone)
+      box(.55,.34,8.6,-137,y,z,stone);box(.55,.34,8.6,-129.5,y,z,stone)
+    }
+  }
+  // Projecting brick portal centered between the towers, facing the courtyard.
+  box(4.5,3.8,1.45,-135.7,1.9,60.8,solidBrick);box(4.5,3.8,1.45,-135.7,1.9,68.2,solidBrick)
+  box(4.6,1.6,8.9,-135.7,4.55,64.5,solidBrick)
+  box(4.8,.2,9.2,-135.7,5.35,64.5,stone)
+  box(.18,3.1,5.9,-133.5,1.55,64.5,dark)
+  for(const z of [61.6,63.05,64.5,65.95,67.4])box(.2,3.1,.09,-133.64,1.55,z,stone)
+  box(.24,.12,5.9,-133.64,3.08,64.5,stone)
+  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256
+  const ctx=canvas.getContext('2d')!;ctx.fillStyle='#a46d59';ctx.fillRect(0,0,1024,256);ctx.fillStyle='#f1e9da';ctx.font='bold 75px sans-serif';ctx.textAlign='center';ctx.fillText('ATRIUM BUILDING',512,100);ctx.fillStyle='#f4c629';ctx.fillRect(420,132,184,82);ctx.fillStyle='#222b27';ctx.font='bold 67px sans-serif';ctx.fillText('680',512,195)
+  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
+  const sign=new THREE.PlaneGeometry(6,1.5);sign.rotateY(-Math.PI/2);sign.translate(-138.03,4.6,64.5)
+  out.push({geo:sign,mat:new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide})})
+  // Low brick edging and modest outdoor seating frame the entrance plaza.
+  box(.5,.9,19,-141.5,.45,49,solidBrick);box(.5,.9,19,-141.5,.45,80,solidBrick)
+  for(const z of [56.5,72.5]){
+    const top=new THREE.CylinderGeometry(.8,.8,.1,16);top.translate(-141.3,.75,z);out.push({geo:top,mat:stone})
+    const stem=new THREE.CylinderGeometry(.07,.07,.75,8);stem.translate(-141.3,.38,z);out.push({geo:stem,mat:railMat})
+    const pole=new THREE.CylinderGeometry(.04,.04,2.8,8);pole.translate(-141.3,1.4,z);out.push({geo:pole,mat:railMat})
+    const umbrella=new THREE.ConeGeometry(1.65,.45,12,1,true);umbrella.translate(-141.3,2.75,z);out.push({geo:umbrella,mat:gold})
+  }
+  // Long stair between the Atrium and Academic Building, with level landings.
+  for(let flight=0;flight<2;flight++){
+    for(let step=0;step<8;step++){
+      const h=(flight*8+step+1)*.15,z=8+flight*9.5+step*.9
+      box(4.2,h,.92,-134.7,h/2,z,concrete)
+    }
+    const h=(flight+1)*1.2;box(4.2,h,2.4,-134.7,h/2,15.8+flight*9.5,concrete)
+  }
+  const bar=(a:THREE.Vector3,c:THREE.Vector3)=>{const v=c.clone().sub(a),g=new THREE.CylinderGeometry(.045,.045,v.length(),8);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize()));g.translate((a.x+c.x)/2,(a.y+c.y)/2,(a.z+c.z)/2);out.push({geo:g,mat:railMat})}
+  for(const x of [-136.9,-132.5]){
+    bar(new THREE.Vector3(x,.85,7.6),new THREE.Vector3(x,2.05,15.3));bar(new THREE.Vector3(x,2.05,15.3),new THREE.Vector3(x,2.05,17));bar(new THREE.Vector3(x,2.05,17),new THREE.Vector3(x,3.25,24.7))
+    for(const [z,y] of [[8,0],[15.5,1.2],[17,1.2],[25,2.4]])bar(new THREE.Vector3(x,y,z),new THREE.Vector3(x,y+.85,z))
+  }
+  void b
+  return out
+}
+
 function Buildings({ campus }: { campus: Campus }) {
   useEffect(() => () => { occluders.meshes.length = 0 }, [])
   const items = useMemo(() => {
@@ -978,6 +1032,7 @@ function Buildings({ campus }: { campus: Campus }) {
       if (b.code === 'C') parts.push(...libraryDetails(b))
       if (b.code === 'E') parts.push(...crawfordDetails(b))
       if (b.code === 'G') parts.push(...engineeringLabDetails(b))
+      if (b.code === 'J') parts.push(...atriumDetails(b))
       if (b.code === 'I1') parts.push(...matchingLabElevation(b))
       if (b.code === 'I2') parts.push(...designTwoDetails(b))
       if (b.code === 'Q') parts.push(...engineeringCenterDetails(b))

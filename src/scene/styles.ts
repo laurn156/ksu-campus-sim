@@ -21,7 +21,7 @@ export const LOOKS: Record<string, Look> = {
   H: L('whiteband', 'flat'), // Academic Building
   I1: L('whiteband', 'flat'),
   I2: L('designlargeglass', 'flat', { floors: 2 }),
-  J: L('brickglass', 'flat'), // Atrium
+  J: L('atriumbrick', 'flat', { floors: 3 }), // Atrium
   L: L('metal', 'flat'),
   L1: L('metal', 'flat'),
   M: L('redbrick', 'flat'), // Textile Center
