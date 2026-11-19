@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { bbox, Collider, distToSeg, pointInPoly, type Building, type Campus, type Line, type Pt } from '../campus'
@@ -249,6 +249,7 @@ function studentCenterDetails() {
 }
 
 function Buildings({ campus }: { campus: Campus }) {
+  useEffect(() => () => { occluders.meshes.length = 0 }, [])
   const items = useMemo(() => {
     const wallMat = new Map<string, THREE.MeshStandardMaterial>()
     const getWall = (style: string) => {

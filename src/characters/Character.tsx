@@ -18,6 +18,9 @@ export interface CharacterProps {
   headwear?: Headwear
   face?: Face
   accessory?: Accessory
+  top?: 'none' | 'tee' | 'hoodie'
+  bottom?: 'none' | 'shorts' | 'skirt'
+  backpack?: boolean
   /** world-space point the right hand reaches toward (in this character's parent space) */
   reach?: React.MutableRefObject<THREE.Vector3 | null>
   /** performance.now() of the latest swing; the right arm sweeps through a stroke for ~0.4 s */
@@ -282,6 +285,7 @@ export function Character({
   headwear = 'headband',
   face = 'dots',
   accessory = 'none',
+  top = 'none', bottom = 'none', backpack = false,
   variant = 'normal',
   reach,
   swingAt,
@@ -363,6 +367,7 @@ export function Character({
         {/* legs */}
         {[-1, 1].map((s, i) => (
           <group key={s} ref={(g) => void (legs.current[i] = g)} position={[s * 0.115, 0.36, 0]}>
+            {bottom === 'shorts' && <mesh position={[0, -0.04, 0]}><capsuleGeometry args={[0.112, 0.11, 6, 12]} /><meshStandardMaterial color="#4e526b" roughness={0.9} /></mesh>}
             <mesh position={[0, -0.16, 0]} castShadow material={body}>
               <capsuleGeometry args={[0.105, 0.2, 8, 16]} />
             </mesh>
@@ -372,6 +377,10 @@ export function Character({
         <mesh position={[0, 0.56, 0]} scale={[1.05, 1, 0.86]} castShadow material={body}>
           <capsuleGeometry args={[0.215, 0.2, 12, 24]} />
         </mesh>
+        {top !== 'none' && <mesh position={[0, 0.57, 0]} scale={[1.08, 1, 0.9]}><capsuleGeometry args={[0.225, 0.20, 8, 16]} /><meshStandardMaterial color={top === 'hoodie' ? '#302e33' : '#f5f1e7'} roughness={0.9} /></mesh>}
+        {top === 'hoodie' && <mesh position={[0, 0.58, 0.205]}><boxGeometry args={[0.22, 0.12, 0.04]} /><meshStandardMaterial color="#48444a" /></mesh>}
+        {bottom === 'skirt' && <mesh position={[0, 0.36, 0]}><cylinderGeometry args={[0.2, 0.3, 0.21, 12]} /><meshStandardMaterial color="#706383" /></mesh>}
+        {backpack && <mesh position={[0, 0.58, -0.25]}><boxGeometry args={[0.36, 0.42, 0.2]} /><meshStandardMaterial color="#554a42" roughness={0.9} /></mesh>}
         <Arm side={-1} body={body} accent={accent} armRef={rArm} />
         <Arm side={1} body={body} accent={accent} armRef={lArm} />
         {/* head */}

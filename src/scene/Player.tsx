@@ -1,7 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { Character, type Headwear } from '../characters/Character'
+import { Character, type Headwear, type Face, type Accessory } from '../characters/Character'
 import type { PaletteName } from '../characters/palette'
 import { centroid, Collider, type Campus } from '../campus'
 import { occluders } from './Campus'
@@ -15,6 +15,11 @@ const RUN = 9.5
 export interface AvatarLook {
   color: PaletteName
   headwear: Headwear
+  face: Face
+  accessory: Accessory
+  top: 'none' | 'tee' | 'hoodie'
+  bottom: 'none' | 'shorts' | 'skirt'
+  backpack: boolean
 }
 
 /** A clear spot just outside a building (toward the middle of campus), facing it. */
@@ -225,7 +230,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   return (
     <group>
       <group ref={body}>
-        <Character color={look.color} headwear={look.headwear} face="happy" walk={walk} scale={1.15} />
+        <Character {...look} walk={walk} scale={1.15} />
       </group>
     </group>
   )

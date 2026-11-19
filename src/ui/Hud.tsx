@@ -121,7 +121,7 @@ function GoTo({ campus }: { campus: Campus }) {
   )
 }
 
-export function Hud({ campus }: { campus: Campus }) {
+export function Hud({ campus, onEdit }: { campus: Campus; onEdit: () => void }) {
   const near = useNearby(campus)
   return (
     <>
@@ -129,6 +129,7 @@ export function Hud({ campus }: { campus: Campus }) {
         <span className="ksu">KSU</span> Campus Life <span className="sub">Marietta</span>
       </div>
       <GoTo campus={campus} />
+      <button className="edit-character" onClick={onEdit}>✦ Edit character</button>
       {near && (
         <div className="nearcard" key={near.name}>
           <div className="kicker">You're at</div>

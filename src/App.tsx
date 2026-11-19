@@ -4,31 +4,43 @@ import { installSfx } from './audio/sfx'
 import { loadCampus, type Campus } from './campus'
 import { CampusScene } from './scene/Campus'
 import { Labels } from './scene/Labels'
-import { Player, Sun, type AvatarLook } from './scene/Player'
+import { Player, Sun } from './scene/Player'
 import { Hud } from './ui/Hud'
+import { Welcome, DEFAULT_PROFILE, type Profile } from './ui/Welcome'
 import './ui/ui.css'
 
+const STORAGE_KEY = 'ksu-campus-profile-v1'
+function savedProfile(): Profile | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw) as Profile
+    const l = data?.look
+    if (typeof data.name !== 'string' || !l || !['orange','yellow','cream','green','blue','purple','slate','charcoal'].includes(l.color) ||
+      !['none','cap','beanie','bucket','bun','headphones','headband'].includes(l.headwear) ||
+      !['happy','dots','wink','surprised','angry'].includes(l.face) || !['none','glasses'].includes(l.accessory) ||
+      !['none','tee','hoodie'].includes(l.top) || !['none','shorts','skirt'].includes(l.bottom) || typeof l.backpack !== 'boolean') return null
+    return data
+  } catch { return null }
+}
 export default function App() {
   const [campus, setCampus] = useState<Campus | null>(null)
-  const [look] = useState<AvatarLook>({ color: 'blue', headwear: 'cap' })
-
-  useEffect(() => {
-    loadCampus().then(setCampus)
-    installSfx()
-  }, [])
+  const [profile, setProfile] = useState<Profile>(() => savedProfile() ?? DEFAULT_PROFILE)
+  const [hasSaved, setHasSaved] = useState(() => savedProfile() !== null)
+  const [screen, setScreen] = useState<'welcome' | 'create' | 'play'>('welcome')
+  useEffect(() => { loadCampus().then(setCampus); installSfx() }, [])
+  const play = () => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); setHasSaved(true) } catch { /* storage unavailable: play for this session */ }
+    setScreen('play')
+  }
+  if (screen !== 'play') return <Welcome screen={screen} profile={profile} hasSaved={hasSaved} onChange={setProfile} onCreate={() => setScreen('create')} onPlay={play} onBack={() => setScreen('welcome')} />
   if (!campus) return <div className="loading">Loading campus…</div>
-  return (
-    <>
-      <Canvas shadows="percentage" camera={{ position: [0, 40, 40], fov: 45, near: 0.5, far: 3000 }} dpr={[1, 2]}>
-        <color attach="background" args={['#cfe3f0']} />
-        <fog attach="fog" args={['#cfe3f0', 180, 900]} />
-        <hemisphereLight args={['#e8f3ff', '#8aa86a', 1.1]} />
-        <Sun />
-        <CampusScene campus={campus} />
-        <Labels campus={campus} />
-        <Player campus={campus} look={look} />
-      </Canvas>
-      <Hud campus={campus} />
-    </>
-  )
+  return <>
+    <Canvas shadows="percentage" camera={{ position: [0, 40, 40], fov: 45, near: 0.5, far: 3000 }} dpr={[1, 2]}>
+      <color attach="background" args={['#cfe3f0']} /><fog attach="fog" args={['#cfe3f0', 180, 900]} />
+      <hemisphereLight args={['#e8f3ff', '#8aa86a', 1.1]} /><Sun /><CampusScene campus={campus} /><Labels campus={campus} /><Player campus={campus} look={profile.look} />
+    </Canvas>
+    <Hud campus={campus} onEdit={() => setScreen('create')} />
+  </>
 }
+
