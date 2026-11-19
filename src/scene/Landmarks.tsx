@@ -720,7 +720,7 @@ export function Landmarks({ campus }: { campus: Campus }) {
     const lettersYaw = letters && lot ? Math.atan2(lot[0] - letters[0], lot[1] - letters[1]) : 0
     void C
     // facing ends of Math (D) and Administration (B), and of Crawford (E) and Math
-    const tents = { from: [-137, -195] as Pt, to: [-102, -162] as Pt }
+    const tents = { from: [-137, -195] as Pt, corner: [-113.4, -209.3] as Pt, to: [-91, -172.5] as Pt }
     const walk = { from: [-240, -135] as Pt, to: [-205, -158] as Pt }
     const stairs = mathStairs(campus)
     const lib = campus.buildings.find((b) => b.code === 'C')
@@ -732,7 +732,8 @@ export function Landmarks({ campus }: { campus: Campus }) {
       {placed.rock && <SlapTheRock at={placed.rock} />}
       {placed.letters && <KsuLetters at={placed.letters} yaw={placed.lettersYaw} />}
       {placed.globe && <GlobePlaza at={[placed.globe.x, placed.globe.z]} />}
-      <TentRow from={placed.tents.from} to={placed.tents.to} />
+      <TentRow from={placed.tents.from} to={placed.tents.corner} />
+      <TentRow from={placed.tents.corner} to={placed.tents.to} />
       <CoveredWalk from={placed.walk.from} to={placed.walk.to} />
       {placed.stairs && <Stairs a={placed.stairs.a} b={placed.stairs.b} />}
       {campus.paths

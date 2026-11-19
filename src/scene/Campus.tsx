@@ -362,14 +362,22 @@ function mathematicsScreen(b:Building){
   const frame=new THREE.MeshStandardMaterial({color:'#dedfd4',roughness:.72,side:THREE.DoubleSide})
   const doorGlass=new THREE.MeshStandardMaterial({color:'#304b47',roughness:.3,side:THREE.DoubleSide})
   const metal=new THREE.MeshStandardMaterial({color:'#b8c0b7',roughness:.5,side:THREE.DoubleSide})
-  // Two glazed doors with individual frames and handles on the ground floor.
-  add(3.3,3.15,.10,-6,1.58,-.21,frame)
-  for(const x of [-6.77,-5.23]){
-    add(1.35,2.85,.10,x,1.55,-.30,doorGlass)
-    add(.07,2.9,.12,x-.7,1.55,-.37,metal)
-    add(.06,.42,.14,x+.47,1.4,-.4,metal)
+  // Three entrances spaced along the courtyard frontage and one at each end.
+  // Details sit just outside the mapped walls; they are visual entrances only.
+  const entrance=(edge:number,offset:number)=>{
+    const p=b.poly[edge],q=b.poly[(edge+1)%b.poly.length]
+    const edgeAngle=Math.atan2(-(q[1]-p[1]),q[0]-p[0]),x=(p[0]+q[0])/2,z=(p[1]+q[1])/2
+    const part=(w:number,h:number,d:number,cx:number,cy:number,cz:number,mat:THREE.MeshStandardMaterial)=>{const geo=new THREE.BoxGeometry(w,h,d);geo.translate(cx,cy,cz);geo.rotateY(edgeAngle);geo.translate(x,0,z);details.push({geo,mat})}
+    part(3.3,3.15,.10,offset,1.58,-.21,frame)
+    for(const x of [offset-.77,offset+.77]){
+      part(1.35,2.85,.10,x,1.55,-.30,doorGlass)
+      part(.07,2.9,.12,x-.7,1.55,-.37,metal)
+      part(.06,.42,.14,x+.47,1.4,-.4,metal)
+    }
+    part(3.3,.1,.13,offset,3.12,-.36,metal)
   }
-  add(3.3,.1,.13,-6,3.12,-.36,metal)
+  for(const offset of [-12,-2,10])entrance(14,offset)
+  entrance(1,0);entrance(25,0)
   // The photo shows a short brick inset below a run of upper windows.
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128
   const ctx=canvas.getContext('2d')!;ctx.fillStyle='#d0c3aa';ctx.fillRect(0,0,512,128)
@@ -387,8 +395,7 @@ function mathematicsScreen(b:Building){
     for(const y of [4.02,5.1,6.35,7.35])part(width,.1,.17,offset,y,-.57,frame)
     for(const dx of [-width/2,0,width/2])part(.1,3.4,.17,offset+dx,5.65,-.57,frame)
   }
-  for(const offset of [-22,2,23])placeInset(0,offset,5.4)
-  for(const offset of [4.5,12])placeInset(14,offset,5.4)
+  for(const offset of [-11,0,11])placeInset(14,offset,5.0)
   // Freestanding campus wayfinding sign in the lawn outside the door.
   const signCanvas=document.createElement('canvas');signCanvas.width=512;signCanvas.height=256
   const signCtx=signCanvas.getContext('2d')!;signCtx.fillStyle='#26312d';signCtx.fillRect(0,0,512,256);signCtx.fillStyle='#f5f3e9';signCtx.textAlign='center';signCtx.font='bold 38px sans-serif';signCtx.fillText('Mathematics',256,92);signCtx.fillText('Building (D)',256,143);signCtx.fillStyle='#e5b129';signCtx.fillRect(0,184,512,9)
