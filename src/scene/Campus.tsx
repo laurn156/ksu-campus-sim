@@ -1035,7 +1035,7 @@ function architectureParts(b: Building) {
   const mx=(sa[0]+sb[0])/2,mz=(sa[1]+sb[1])/2,tx=wing.len/2-5,tz=4
   const place=(geo:THREE.BufferGeometry,x:number,y:number,z:number)=>{geo.translate(x,y,z);geo.rotateY(theta);geo.translate(mx,0,mz);return geo}
   const monument=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>{
-    const geo=new THREE.BoxGeometry(w,h,d);geo.rotateY(-.55);geo.translate(tx,0,tz);parts.push({geo:place(geo,x,y,z),mat})
+    const geo=new THREE.BoxGeometry(w,h,d);geo.rotateY(.55);geo.translate(tx,0,tz);parts.push({geo:place(geo,x,y,z),mat})
   }
   monument(8,.12,3,0,.07,-.7,brick)
   monument(7,1.45,.3,0,.78,0,stone)
@@ -1044,7 +1044,7 @@ function architectureParts(b: Building) {
   sc.fillStyle='#323a36';sc.font='bold 112px sans-serif';sc.textAlign='left';sc.fillText('ARCHITECTURE',18,108)
   sc.fillStyle='#e9bd2c';sc.fillRect(22,135,180,91);sc.fillStyle='#202724';sc.font='bold 70px sans-serif';sc.fillText('640',48,208)
   const signTex=new THREE.CanvasTexture(signCanvas);signTex.colorSpace=THREE.SRGBColorSpace
-  const sg=new THREE.PlaneGeometry(6.4,1.2);sg.translate(0,0,.17);sg.rotateY(-.55);sg.translate(tx,.82,tz)
+  const sg=new THREE.PlaneGeometry(6.4,1.2);sg.translate(0,0,.17);sg.rotateY(.55);sg.translate(tx,.82,tz)
   parts.push({geo:place(sg,0,0,0),mat:new THREE.MeshStandardMaterial({map:signTex,transparent:true,alphaTest:.1,depthWrite:false,side:THREE.DoubleSide})})
   const shrubs=solid('#637b47'),bark=solid('#73513c'),leaves=solid('#695049')
   wing.box(.34,3.2,.34,tx-1,1.6,tz-2,bark)
@@ -1131,8 +1131,8 @@ function textileCenterParts(b: Building) {
   const ctx=canvas.getContext('2d')!;ctx.fillStyle='#202927';ctx.textAlign='center';ctx.font='bold 64px sans-serif'
   ctx.fillText('W. CLAIR HARRIS',512,103);ctx.font='bold 46px sans-serif';ctx.fillText('APPAREL AND TEXTILE CENTER',512,182)
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace
-  const sign=new THREE.PlaneGeometry(Math.min(5.4,len*.82),1.35)
-  sign.rotateY(-Math.atan2(dz,dx)+Math.PI);sign.translate((a[0]+c[0])/2+dz/len*.06,4.3,(a[1]+c[1])/2-dx/len*.06)
+  const sign=new THREE.PlaneGeometry(Math.min(5.8,len*.95),1.65)
+  sign.rotateY(-Math.atan2(dz,dx)+Math.PI);sign.translate((a[0]+c[0])/2+dx/len*.25+dz/len*.06,4.3,(a[1]+c[1])/2+dz/len*.25-dx/len*.06)
   parts.push({geo:sign,mat:new THREE.MeshStandardMaterial({map:texture,transparent:true,alphaTest:.1,depthWrite:false,side:THREE.DoubleSide,roughness:.9})})
   // Building number on the end of the brick support.
   const number=document.createElement('canvas');number.width=256;number.height=128
@@ -1628,17 +1628,17 @@ function Ground({ campus, overlay = false }: { campus: Campus; overlay?: boolean
         if (a.name === 'Practice Green') add('practicegrass', flatGeometry(a.poly, 0.055))
         else if (a.name === 'S. Walter Kelly Sr. Memorial Field') {
           add('fieldgrass',flatGeometry(a.poly,0.055))
-          // The infield is an arc of clay around a grass diamond, with a separate mound.
-          const arc: Pt[]=[]
-          for(let i=0;i<=32;i++){const t=Math.PI*.10+i*Math.PI*.8/32;arc.push([2+37*Math.cos(t),342+37*Math.sin(t)])}
-          for(let i=32;i>=0;i--){const t=Math.PI*.10+i*Math.PI*.8/32;arc.push([2+24*Math.cos(t),342+24*Math.sin(t)])}
-          add('diamond',flatGeometry(arc,.065))
-          const mound:Pt[]=[];for(let i=0;i<24;i++){const t=i*Math.PI/12;mound.push([2+3*Math.cos(t),352+3*Math.sin(t)])}
-          add('diamond',flatGeometry(mound,.068))
-          const plate:Pt[]=[];for(let i=0;i<24;i++){const t=i*Math.PI/12;plate.push([2+3*Math.cos(t),330+3*Math.sin(t)])}
-          add('diamond',flatGeometry(plate,.068))
-          for(const [x,z] of [[-18,354],[2,372],[22,354],[2,330]]) {
-            add('base',flatGeometry([[x-.55,z],[x,z-.55],[x+.55,z],[x,z+.55]],.075))
+          // Align the diamond with the field's centerline, with a V-shaped grass interior.
+          const pt=(u:number,v:number):Pt=>[-9+u*.966+v*.259,328-u*.259+v*.966]
+          const clay:Pt[]=[]
+          for(let i=0;i<=40;i++){const t=Math.PI*.11+i*Math.PI*.78/40;clay.push(pt(33*Math.cos(t),20+33*Math.sin(t)))}
+          clay.push(pt(-21,20),pt(0,41),pt(21,20))
+          add('diamond',flatGeometry(clay,.065))
+          const disk=(u:number,v:number,r:number)=>{const p:Pt[]=[];for(let i=0;i<32;i++){const t=i*Math.PI/16;p.push(pt(u+r*Math.cos(t),v+r*Math.sin(t)))}return p}
+          add('diamond',flatGeometry(disk(0,22,2.7),.068))
+          add('diamond',flatGeometry(disk(0,1,3.2),.068))
+          for(const [u,v] of [[-19,20],[0,39],[19,20],[0,1]]) {
+            add('base',flatGeometry([pt(u-.55,v),pt(u,v-.55),pt(u+.55,v),pt(u,v+.55)],.075))
           }
         } else add(sport === 'baseball' || sport === 'softball' ? 'diamond' : 'pitch', flatGeometry(a.poly, 0.055))
       } else if (AREA_STYLE[a.kind]) add(a.kind, flatGeometry(a.poly, AREA_STYLE[a.kind].y))
@@ -1715,7 +1715,7 @@ function Trees({ campus }: { campus: Campus }) {
     if (campus.treesFromAerial) {
       // real tree positions detected in the aerial photo
       // keep roughly 1 in 4 detected canopy points: the woods still read as woods, the lawns stay open
-      for (const t of campus.trees) if (rnd() < 0.12 || ((t[2] ?? 1) > 1.32 && rnd() < 0.22)) spots.push([t[0], t[1], (t[2] ?? 1) * 1.25])
+      for (const t of campus.trees) if (!campus.areas.some((a) => a.name === 'S. Walter Kelly Sr. Memorial Field' && pointInPoly(t[0], t[1], a.poly)) && (rnd() < 0.12 || ((t[2] ?? 1) > 1.32 && rnd() < 0.22))) spots.push([t[0], t[1], (t[2] ?? 1) * 1.25])
     } else for (const [x, z] of campus.trees) tryAdd(x, z, 1.2)
     // lines of trees along walkways (like the aerial view)
     if (!campus.treesFromAerial) for (const p of campus.paths) {
@@ -1775,6 +1775,32 @@ function Trees({ campus }: { campus: Campus }) {
   )
 }
 
+/** Two dugouts and stepped spectator seating flanking the baseball diamond. */
+function BaseballSeating() {
+  const items=useMemo(()=>{
+    const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+    const steel=new THREE.MeshStandardMaterial({color:'#c7ceca',roughness:.75,side:THREE.DoubleSide})
+    const dark=new THREE.MeshStandardMaterial({color:'#56625f',roughness:.9,side:THREE.DoubleSide})
+    const wood=new THREE.MeshStandardMaterial({color:'#8c8c80',roughness:.9,side:THREE.DoubleSide})
+    const theta=Math.atan2(.259,.966)
+    const box=(w:number,h:number,d:number,u:number,y:number,v:number,angle:number,mat:THREE.MeshStandardMaterial)=>{
+      const g=new THREE.BoxGeometry(w,h,d);g.rotateY(angle);g.translate(u,y,v);g.rotateY(theta);g.translate(-9,0,328);parts.push({geo:g,mat})
+    }
+    for(const side of [-1,1]) {
+      const a=side*.7,u=side*24,v=13
+      box(11,.22,3.5,u,2.65,v,a,steel)
+      box(11,1.9,.18,u,1.04,v-1.5,a,dark)
+      for(const du of [-4.9,4.9])box(.18,2.5,.18,u+du*Math.cos(a),1.25,v-du*Math.sin(a),a,steel)
+      box(9,.15,.55,u,.6,v,a,wood)
+      // Five low stepped rows face the diamond from behind home plate.
+      for(let row=0;row<5;row++)box(13,.14,.7,side*9,.25+row*.28,-6-row*.7,side*.65,steel)
+      for(const dx of [-5,5])box(.18,1.5,.18,side*9+dx,.75,-8,0,dark)
+    }
+    return parts
+  },[])
+  return <group>{items.map((item,i)=><mesh key={i} geometry={item.geo} material={item.mat} castShadow receiveShadow />)}</group>
+}
+
 export type GroundStyle = 'illustrated' | 'photo' | 'drawn'
 
 export function CampusScene({ campus, ground = 'drawn' }: { campus: Campus; ground?: GroundStyle }) {
@@ -1789,6 +1815,7 @@ export function CampusScene({ campus, ground = 'drawn' }: { campus: Campus; grou
         </>
       )}
       <Buildings campus={campus} />
+      <BaseballSeating />
       <Landmarks campus={campus} />
       <Props campus={campus} cars={ground !== 'photo'} roofUnits />
       <Buses campus={campus} />
