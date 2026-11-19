@@ -18,9 +18,9 @@ function savedProfile(): Profile | null {
     const l = data?.look
     if (typeof data.name !== 'string' || !l || !['orange','yellow','cream','green','blue','purple','slate','charcoal'].includes(l.color) ||
       !['none','cap','beanie','bucket','bun','headphones','headband'].includes(l.headwear) ||
-      !['happy','dots','wink','surprised','angry'].includes(l.face) || !['none','glasses','square','sunglasses'].includes(l.accessory) ||
+      !['happy','dots','wink','surprised','angry'].includes(l.face) || !['none','glasses','square','rectangle','sunglasses'].includes(l.accessory) ||
       !['none','tee','hoodie','ksu-tee','ksu-hoodie','jersey'].includes(l.top) || !['none','shorts','skirt','pants'].includes(l.bottom) || typeof l.backpack !== 'boolean') return null
-    return { ...data, look: { ...data.look, shoes: ['none','sneakers','black'].includes(l.shoes) ? l.shoes : 'none', bag: ['none','black','cream','brown'].includes(l.bag) ? l.bag : l.backpack ? 'brown' : 'none', backpack: false, topColor: /^#[0-9a-f]{6}$/i.test(l.topColor ?? '') ? l.topColor : '#29292c' } }
+    return { ...data, look: { ...data.look, headwear: l.headwear === 'bun' ? 'none' : l.headwear, accessory: l.accessory === 'sunglasses' ? 'rectangle' : l.accessory, bottomColor: /^#[0-9a-f]{6}$/i.test(l.bottomColor ?? '') ? l.bottomColor : '#4e526b', jerseyNumber: /^\d{1,2}$/.test(l.jerseyNumber ?? '') ? l.jerseyNumber : '12', shoes: ['none','sneakers','black'].includes(l.shoes) ? l.shoes : 'none', bag: ['none','black','cream','brown'].includes(l.bag) ? l.bag : l.backpack ? 'brown' : 'none', backpack: false, topColor: /^#[0-9a-f]{6}$/i.test(l.topColor ?? '') ? l.topColor : '#29292c' } }
   } catch { return null }
 }
 export default function App() {

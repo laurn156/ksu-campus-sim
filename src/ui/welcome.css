@@ -29,3 +29,4 @@
 
 .garment-icon{width:48px;height:45px;display:block}.stage-floor{bottom:120px}
 @media(max-width:750px){.stage-floor{bottom:75px}}
+.jersey-number{display:flex;align-items:center;gap:12px;margin-top:16px;font-size:12px;font-weight:900}.jersey-number input{width:64px;border:1px solid #ded6ca;border-radius:8px;padding:8px;font:inherit;text-align:center;background:#fff}
