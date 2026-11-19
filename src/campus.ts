@@ -102,7 +102,26 @@ export class Collider {
   private items: { poly: Pt[]; bb: [number, number, number, number] }[]
   constructor(buildings: Building[]) {
     // The elevated Design-to-Academic bridge leaves its ground level open.
-    this.items = buildings.filter((b) => b.id !== '589139282').map((b) => ({ poly: b.poly, bb: bbox(b.poly) }))
+    this.items = buildings.filter((b) => b.id !== '589139282').map((b) => {
+      if (b.code !== 'M') return { poly: b.poly, bb: bbox(b.poly) }
+      // The end of the Textile Center's raised roof is an open walk-through.
+      const cut = 203.4, poly: Pt[] = []
+      for (let i = 0; i < b.poly.length; i++) {
+        const a = b.poly[i], c = b.poly[(i + 1) % b.poly.length]
+        const ai = a[1] <= cut, ci = c[1] <= cut
+        if (ai) poly.push(a)
+        if (ai !== ci) {
+          const t = (cut - a[1]) / (c[1] - a[1])
+          poly.push([a[0] + (c[0] - a[0]) * t, cut])
+        }
+      }
+      return { poly, bb: bbox(poly) }
+    })
+    // Keep the actual tower supports solid while allowing passage between them.
+    if (buildings.some((b) => b.code === 'M')) for (const x of [-91.4, -86.2]) {
+      const poly: Pt[] = [[x-.4,211.675],[x+.4,211.675],[x+.4,212.525],[x-.4,212.525]]
+      this.items.push({ poly, bb: bbox(poly) })
+    }
   }
   blocked(x: number, z: number, r = 0.45): boolean {
     for (const it of this.items) {

@@ -924,7 +924,23 @@ function textileCenterParts(b: Building) {
   const brick=new THREE.MeshStandardMaterial({map:facade('textilebrick'),roughness:.95,side:THREE.DoubleSide})
   const roof=mat('#e4e6df'),dark=mat('#354443'),metal=mat('#cad0ca'),awning=mat('#813d39')
   const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z);parts.push({geo,mat:m})}
-  parts.push({geo:wallsGeometry(b,0,1.3),mat:brick},{geo:wallsGeometry(b,1.3,b.h),mat:tile},{geo:flatGeometry(b.poly,b.h+.02,8),mat:roof})
+  // Retain tile on the curved end and the projecting rear wing; use brick elsewhere.
+  // Stop the lower walls at the tower opening while keeping the upper walls and roof.
+  const openingZ=203.4
+  for(let i=0;i<b.poly.length;i++) {
+    const a=b.poly[i],c=b.poly[(i+1)%b.poly.length]
+    const upperMat=(i>=17 && i<=24)||(i>=8 && i<=14) ? tile : brick
+    const segment=(p:Pt,q:Pt,y0:number,y1:number,m:THREE.MeshStandardMaterial)=>parts.push({geo:wallsGeometry({...b,poly:[p,q]},y0,y1),mat:m})
+    segment(a,c,3.35,b.h,upperMat)
+    if(a[1]>openingZ && c[1]>openingZ) continue
+    let p=a,q=c
+    if((a[1]>openingZ)!==(c[1]>openingZ)) {
+      const t=(openingZ-a[1])/(c[1]-a[1]),cut:Pt=[a[0]+(c[0]-a[0])*t,openingZ]
+      if(a[1]>openingZ)p=cut;else q=cut
+    }
+    segment(p,q,0,1.3,brick);segment(p,q,1.3,3.35,upperMat)
+  }
+  parts.push({geo:flatGeometry(b.poly,b.h+.02,8),mat:roof})
   // Raised, long metal gable over the central circulation spine.
   box(6.1,.28,86,-88.8,8.75,169.5,metal)
   const shape=new THREE.Shape();shape.moveTo(-92,8.85);shape.lineTo(-88.8,11.35);shape.lineTo(-85.6,8.85);shape.closePath()
