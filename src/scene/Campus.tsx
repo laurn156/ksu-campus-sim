@@ -557,7 +557,7 @@ function greenhouseParts(b:Building){
 function hornetHubParts(b:Building){
   const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
   const mat=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.85,side:THREE.DoubleSide})
-  const metal=mat('#4b5353'),brick=mat('#755452'),roof=mat('#9da7a5'),trim=mat('#c4c9c2'),glass=mat('#344b4a'),garage=mat('#aab2ae')
+  const metal=mat('#8b9390'),brick=mat('#a77f78'),roof=mat('#c3c8c1'),trim=mat('#e3e4dc'),glass=mat('#5b7776'),garage=mat('#c4cac4')
   out.push({geo:wallsGeometry(b,0,2.4),mat:brick},{geo:wallsGeometry(b,2.4,b.h),mat:metal},{geo:hipRoofGeometry(b,1.1),mat:roof})
   const wall=(a:Pt,c:Pt,fn:(box:(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>void,len:number,plane:(g:THREE.BufferGeometry,x:number,y:number,z:number)=>THREE.BufferGeometry)=>void)=>{
     const length=Math.hypot(c[0]-a[0],c[1]-a[1]),angle=Math.atan2(-(c[1]-a[1]),c[0]-a[0]),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
@@ -566,21 +566,18 @@ function hornetHubParts(b:Building){
     fn(box,length,plane)
   }
   // The north edge faces the ETC. Each bay is kept clear for future team logos.
-  wall(b.poly[3],b.poly[2],(box,len)=>{
-    const spacing=len/6
+  wall(b.poly[3],b.poly[2],(box,len,plane)=>{
+    const spacing=(len-3.4)/6
     for(let i=0;i<6;i++){
-      const x=-len/2+spacing*(i+.5),w=spacing-.65
+      const x=-len/2+3.4+spacing*(i+.5),w=spacing-.45
       box(w,3.3,.16,x,1.65,.11,garage)
       for(let y=.55;y<3.3;y+=.55)box(w,.045,.05,x,y,.22,trim)
       for(const dx of [-w/2,w/2])box(.1,3.45,.2,x+dx,1.72,.15,metal)
     }
-  })
-  // Opposite face has the signed pedestrian entrance and small workshop windows.
-  wall(b.poly[1],b.poly[0],(box,len,plane)=>{
-    box(2.2,2.8,.16,1,1.4,.1,glass)
-    for(const x of [-.1,1,2.1])box(.1,2.85,.2,x,1.43,.2,trim)
-    box(2.2,.12,.2,1,2.84,.2,trim)
-    for(const x of [-len*.32,-len*.19,len*.3]){box(2.4,1,.16,x,1.85,.1,glass);box(2.5,.09,.2,x,1.32,.2,trim)}
+    const entrance=-len/2+1.65
+    box(2,2.8,.16,entrance,1.4,.14,glass)
+    for(const dx of [-1,0,1])box(.1,2.85,.2,entrance+dx,1.43,.25,trim)
+    box(2,.12,.2,entrance,2.84,.25,trim)
     const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=160
     const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f2f2ed';ctx.font='bold 100px sans-serif';ctx.textAlign='center';ctx.fillText('HORNET HUB',512,112)
     const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace

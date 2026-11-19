@@ -542,6 +542,44 @@ function Court({ area }: { area: Area }) {
 }
 
 
+/** Math-to-library courtyard, laid out against the long Math facade. */
+function MathCourtyard() {
+  const labels = useMemo(() => {
+    const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512
+    const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f7c72e';ctx.fillRect(0,0,512,512)
+    ctx.fillStyle='#18211d';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 160px sans-serif';ctx.fillText('KSU',256,260)
+    const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture
+  },[])
+  const groundLabel = useMemo(() => {
+    const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512
+    const ctx=canvas.getContext('2d')!;ctx.fillStyle='#e6d9c4';ctx.fillRect(0,0,512,512)
+    ctx.strokeStyle='#f5f1e8';ctx.lineWidth=13;ctx.strokeRect(58,58,396,396)
+    ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 150px sans-serif';ctx.fillText('KSU',256,260)
+    const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture
+  },[])
+  const path='#d4c9b7',soil='#927761'
+  return <group position={[-178.45,0,-171.84]} rotation={[0,.497,0]}>
+    {/* The long terrace follows Math, with paths through a landscaped circular garden. */}
+    <mesh position={[0,.075,8]} receiveShadow><boxGeometry args={[54,.08,7]}/><meshStandardMaterial color={path}/></mesh>
+    <mesh position={[0,.072,15]} receiveShadow><boxGeometry args={[5,.075,18]}/><meshStandardMaterial color={path}/></mesh>
+    <mesh position={[0,.071,27]} rotation={[-Math.PI/2,0,0]} receiveShadow><circleGeometry args={[16,64]}/><meshStandardMaterial color={soil}/></mesh>
+    <mesh position={[0,.085,27]} receiveShadow><boxGeometry args={[4,.08,32]}/><meshStandardMaterial color={path}/></mesh>
+    <mesh position={[0,.14,27]} rotation={[-Math.PI/2,0,0]} receiveShadow><circleGeometry args={[3.8,48]}/><meshStandardMaterial color={path}/></mesh>
+    <mesh position={[0,.19,27]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[4,4]}/><meshBasicMaterial map={groundLabel}/></mesh>
+    {[-18,-6,6,18].map((x)=><group key={x} position={[x,0,8]}>
+      <mesh position={[0,.75,0]}><cylinderGeometry args={[1.1,1.1,.12,20]}/><meshStandardMaterial color="#eee8d8"/></mesh>
+      <mesh position={[0,.38,0]}><cylinderGeometry args={[.09,.09,.75,8]}/><meshStandardMaterial color="#60655f"/></mesh>
+      <mesh position={[0,1.6,0]}><cylinderGeometry args={[.045,.045,3.2,8]}/><meshStandardMaterial color="#60655f"/></mesh>
+      <mesh position={[0,3.05,0]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[2.2,32]}/><meshBasicMaterial map={labels} side={THREE.DoubleSide}/></mesh>
+      {[0,1,2,3].map((i)=><group key={i} position={[Math.cos(i*Math.PI/2)*1.65,0,Math.sin(i*Math.PI/2)*1.65]}>
+        <mesh position={[0,.45,0]}><boxGeometry args={[.65,.1,.65]}/><meshStandardMaterial color="#7b8077"/></mesh>
+        <mesh position={[0,.22,0]}><cylinderGeometry args={[.06,.06,.44,6]}/><meshStandardMaterial color="#60655f"/></mesh>
+      </group>)}
+    </group>)}
+    {[-1,1].flatMap((side)=>[-10,-5,5,10].map((x)=><mesh key={`${side}-${x}`} position={[x,.38,27+side*8]} scale={[1,.6,1]}><icosahedronGeometry args={[.6,1]}/><meshStandardMaterial color="#668451"/></mesh>))}
+  </group>
+}
+
 /** Straight row of white tensile shade canopies (Math building corner -> Administration). */
 function TentRow({ from, to }: { from: Pt; to: Pt }) {
   const dx = to[0] - from[0]
@@ -722,7 +760,7 @@ export function Landmarks({ campus }: { campus: Campus }) {
     // facing ends of Math (D) and Administration (B), and of Crawford (E) and Math
     // Follow the existing walkway from the Mathematics end toward Administration,
     // then turn into the middle of its facing facade.
-    const tents = { from: [-137.08, -200.03] as Pt, corner: [-112.14, -160.89] as Pt, to: [-98.9, -153.0] as Pt }
+    const tents = { from: [-137.08, -200.03] as Pt, corner: [-105.8, -148.2] as Pt, to: [-98.9, -153.0] as Pt }
     const walk = { from: [-240, -135] as Pt, to: [-205, -158] as Pt }
     const stairs = mathStairs(campus)
     const lib = campus.buildings.find((b) => b.code === 'C')
@@ -734,6 +772,7 @@ export function Landmarks({ campus }: { campus: Campus }) {
       {placed.rock && <SlapTheRock at={placed.rock} />}
       {placed.letters && <KsuLetters at={placed.letters} yaw={placed.lettersYaw} />}
       {placed.globe && <GlobePlaza at={[placed.globe.x, placed.globe.z]} />}
+      <MathCourtyard />
       <TentRow from={placed.tents.from} to={placed.tents.corner} />
       <TentRow from={placed.tents.corner} to={placed.tents.to} />
       <CoveredWalk from={placed.walk.from} to={placed.walk.to} />
