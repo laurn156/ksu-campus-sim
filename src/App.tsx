@@ -68,7 +68,7 @@ export default function App() {
         if(!/^[A-Za-z0-9_]{3,24}$/.test(name)){setAuthError('Your account needs a valid username. Contact the demo organizer.');setAuthLoading(false);return}
         const initial={...DEFAULT_PROFILE,name,look:{...DEFAULT_PROFILE.look}}
         const {error:insertError}=await client.from('campus_profiles').insert({id:next.id,username:name,appearance:initial.look})
-        if(insertError){setAuthError('Could not create your profile: '+insertError.message);setAuthLoading(false);return}
+        if(insertError){setAuthError(insertError.code==='23505'?'That name is already taken. Go back and choose another name.':'Could not create your profile: '+insertError.message);setAuthLoading(false);return}
         setUsername(name);setProfile(initial);setScreen('create')
       }
       setGuest(false);setAuthLoading(false)
@@ -113,7 +113,7 @@ function LifeSession({campus,username,profile,onEdit,onModes}:{campus:Campus;use
 
 function ConnectSession({campus,user,profile,username,onEdit,onModes}:{campus:Campus;user:User;profile:Profile;username:string;onEdit:()=>void;onModes:()=>void}){
  const [allowed,setAllowed]=useState<boolean|null>(null)
- useEffect(()=>{let live=true;void supabase!.from('campus_testers').select('id').eq('id',user.id).maybeSingle().then(({data})=>{if(live)setAllowed(!!data)});return()=>{live=false}},[user.id])
+ useEffect(()=>{if(user.is_anonymous){setAllowed(true);return}let live=true;void supabase!.from('campus_testers').select('id').eq('id',user.id).maybeSingle().then(({data})=>{if(live)setAllowed(!!data)});return()=>{live=false}},[user.id])
  if(allowed===null)return <div className="loading">Checking test access…</div>
  if(!allowed)return <main className="flow"><div className="entry-card"><h2>Limited testing</h2><p>This account has not been approved for the Connect test yet. Ask the organizer to enable access.</p><button onClick={onModes}>Back to modes</button></div></main>
  return <ConnectedCampus campus={campus} user={user} profile={profile} username={username} onEdit={onEdit} onModes={onModes}/>

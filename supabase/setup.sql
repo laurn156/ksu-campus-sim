@@ -16,11 +16,11 @@ create table if not exists public.campus_testers (id uuid primary key references
 alter table public.campus_testers enable row level security;
 create policy "read own tester status" on public.campus_testers for select to authenticated using (id = auth.uid());
 create policy "testers read campus realtime" on realtime.messages for select to authenticated using (
-  exists (select 1 from public.campus_testers where id = auth.uid()) and
+  (coalesce((auth.jwt()->>'is_anonymous')::boolean, false) or exists (select 1 from public.campus_testers where id = auth.uid())) and
   (realtime.topic() = 'campus-presence' or realtime.topic() like 'campus-player:%')
 );
 create policy "testers publish own realtime" on realtime.messages for insert to authenticated with check (
-  exists (select 1 from public.campus_testers where id = auth.uid()) and
+  (coalesce((auth.jwt()->>'is_anonymous')::boolean, false) or exists (select 1 from public.campus_testers where id = auth.uid())) and
   (realtime.topic() = 'campus-presence' or realtime.topic() = 'campus-player:' || auth.uid()::text)
 );
 -- Table privileges are separate from RLS policies; both must allow the action.
