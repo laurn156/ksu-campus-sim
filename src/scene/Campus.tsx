@@ -916,6 +916,77 @@ function scienceAnnexDetails(){
   return out
 }
 
+/** Gymnasium: brick upper walls, pale base, glazed entrance and service sides. */
+function gymnasiumParts(b:Building) {
+  const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const solid=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.85,side:THREE.DoubleSide})
+  const wallBrick=new THREE.MeshStandardMaterial({map:facade('textilebrick'),roughness:.95,side:THREE.DoubleSide})
+  const pale=solid('#d5d8d1'),trim=solid('#eaebe4'),metal=solid('#aeb8b2'),dark=solid('#344846'),soil=solid('#897968')
+  const glass=new THREE.MeshStandardMaterial({map:facade('etcglass'),roughness:.35,side:THREE.DoubleSide})
+  const roof=new THREE.MeshStandardMaterial({map:roofTexture(),color:'#f4f3ed',roughness:.95,side:THREE.DoubleSide})
+  // Windowless gym hall: light lower wall and warm brick above.
+  parts.push({geo:wallsGeometry(b,0,2.8),mat:pale},{geo:wallsGeometry(b,2.8,b.h),mat:wallBrick},{geo:flatGeometry(b.poly,b.h+.02,8),mat:roof})
+  const onEdge=(index:number)=>{
+    const a=b.poly[index],c=b.poly[(index+1)%b.poly.length],dx=c[0]-a[0],dz=c[1]-a[1]
+    const len=Math.hypot(dx,dz),angle=-Math.atan2(dz,dx),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    const place=(geo:THREE.BufferGeometry,x:number,y:number,z:number)=>{geo.translate(x,y,-z);geo.rotateY(angle);geo.translate(mx,0,mz);return geo}
+    const box=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>parts.push({geo:place(new THREE.BoxGeometry(w,h,d),x,y,z),mat})
+    return {len,box,place}
+  }
+  // Street-facing entrance: three glass doors beneath a wide canopy and upper windows.
+  const front=onEdge(2)
+  front.box(front.len,3.35,.12,0,1.68,.08,glass)
+  front.box(front.len,.32,2.3,0,3.55,1.05,trim)
+  front.box(front.len,.13,2.45,0,3.35,1.05,metal)
+  for(let x=-front.len/2;x<=front.len/2;x+=2.2)front.box(.11,3.4,.2,x,1.7,.2,trim)
+  for(const y of [1.25,2.55,3.18])front.box(front.len,.09,.2,0,y,.2,metal)
+  for(const x of [-7,0,7]){
+    front.box(2.3,2.9,.14,x,1.45,.26,dark)
+    front.box(2.05,2.65,.16,x,1.43,.36,glass)
+    front.box(.09,2.65,.2,x,1.43,.46,trim)
+    front.box(2.5,.12,1,x,3.14,.62,trim)
+  }
+  for(let x=-front.len/2+1.5;x<front.len/2;x+=4.4){
+    front.box(3.15,1.9,.12,x,5.7,.1,dark)
+    front.box(3,.12,.18,x,6.7,.15,trim)
+  }
+  // Both long sides have evenly spaced brick bays over a pale service level.
+  for(const edge of [6,12]) {
+    const side=onEdge(edge)
+    side.box(side.len,.25,.5,0,7.25,.2,trim)
+    side.box(side.len,.18,.35,0,2.82,.16,metal)
+    for(let x=-side.len/2+1;x<side.len/2;x+=4.8)side.box(.22,4.3,.28,x,5.04,.13,metal)
+    for(const x of [-side.len*.3,side.len*.3]) {
+      side.box(1.3,2.3,.18,x,1.15,.12,metal)
+      side.box(1.05,2.05,.2,x,1.15,.25,dark)
+      side.box(.1,.45,.22,x+.35,1.15,.38,trim)
+    }
+    // Short flights connect each side door to the surrounding pavement.
+    for(let i=0;i<5;i++) side.box(3.2,.1*(i+1),.52,-side.len*.3,.05*(i+1),3.0-i*.5,pale)
+  }
+  // Rear elevation has a long horizontal louver and sparse utility doors.
+  const rear=onEdge(9)
+  rear.box(rear.len*.58,1.15,.22,0,1.8,.16,metal)
+  for(let y=1.35;y<=2.3;y+=.17)rear.box(rear.len*.58,.045,.28,0,y,.26,trim)
+  for(const x of [-rear.len*.38,rear.len*.38])rear.box(1.25,2.15,.16,x,1.08,.1,metal)
+  // Small service shelter on the parking side and a few ground-level planters.
+  const side=onEdge(12)
+  side.box(7.2,2.4,3.3,0,1.2,3.2,pale)
+  side.box(7.5,.24,3.6,0,2.52,3.2,trim)
+  side.box(2,1.5,.12,-1.7,1.2,4.92,dark)
+  for(const x of [-11,9]) {
+    side.box(3,.15,1.25,x,.08,1.15,soil)
+    side.box(2.2,.55,.75,x,.38,1.15,solid('#72865b'))
+  }
+  // The two large mechanical housings are anchored to the roof near the entrance.
+  for(const x of [-6.7,6.7]){
+    const unit=onEdge(2)
+    unit.box(5.5,1.65,2.3,x,b.h+.83,-4,trim)
+    unit.box(5.65,.16,2.45,x,b.h+1.7,-4,metal)
+  }
+  return parts
+}
+
 /** Architecture: glazed studio wing, white finned entry and stepped forecourt. */
 function architectureParts(b: Building) {
   const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
@@ -1458,6 +1529,7 @@ function Buildings({ campus }: { campus: Campus }) {
           ...academicDetails(b),
         ], flat: true }
       }
+      if (b.code === 'S2') return { b, parts: gymnasiumParts(b), flat: true }
       if (b.code === 'N') return { b, parts: architectureParts(b), flat: true }
       if (b.code === 'M') return { b, parts: textileCenterParts(b), flat: true }
       if (b.id === '517434198') return { b, parts: pumpHouseParts(b), flat: true }
