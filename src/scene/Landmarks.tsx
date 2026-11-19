@@ -720,7 +720,9 @@ export function Landmarks({ campus }: { campus: Campus }) {
     const lettersYaw = letters && lot ? Math.atan2(lot[0] - letters[0], lot[1] - letters[1]) : 0
     void C
     // facing ends of Math (D) and Administration (B), and of Crawford (E) and Math
-    const tents = { from: [-137, -195] as Pt, corner: [-113.4, -209.3] as Pt, to: [-91, -172.5] as Pt }
+    // Follow the existing walkway from the Mathematics end toward Administration,
+    // then turn into the middle of its facing facade.
+    const tents = { from: [-137.08, -200.03] as Pt, corner: [-112.14, -160.89] as Pt, to: [-98.9, -153.0] as Pt }
     const walk = { from: [-240, -135] as Pt, to: [-205, -158] as Pt }
     const stairs = mathStairs(campus)
     const lib = campus.buildings.find((b) => b.code === 'C')

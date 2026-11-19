@@ -377,7 +377,8 @@ function mathematicsScreen(b:Building){
     part(3.3,.1,.13,offset,3.12,-.36,metal)
   }
   entrance(21,0);entrance(14,-3.2);entrance(14,3.2);entrance(9,0)
-  entrance(1,0);entrance(25,0)
+  // End entrances are centered on the inner end faces, rather than the offset outer wings.
+  entrance(8,0);entrance(22,0)
   // The photo shows a short brick inset below a run of upper windows.
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128
   const ctx=canvas.getContext('2d')!;ctx.fillStyle='#d0c3aa';ctx.fillRect(0,0,512,128)
