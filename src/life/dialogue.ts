@@ -2,8 +2,9 @@ import type { LifeState, SocialAction } from './simulation'
 import { moodFor, type StudentProfile } from './students'
 import { relation, level } from './simulation'
 
-/** Optional developer-supplied dialogue service. The model only returns text; game rules remain local. */
-export async function optionalDialogue(npc:StudentProfile, state:LifeState, action:SocialAction, text:string, playerName:string, outcome:string, signal:AbortSignal):Promise<string|null> {
+/** The model returns dialogue only; game rules remain local. */
+export type DialogueTurn = { role: 'user' | 'assistant'; content: string }
+export async function optionalDialogue(npc:StudentProfile, state:LifeState, action:SocialAction, text:string, playerName:string, outcome:string, history:DialogueTurn[], signal:AbortSignal):Promise<string|null> {
   const endpoint='/api/campus-dialogue'
   try {
     const url=new URL(endpoint,window.location.origin)
@@ -11,8 +12,7 @@ export async function optionalDialogue(npc:StudentProfile, state:LifeState, acti
     const r=relation(state,npc.id)
     const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify({
       student:{name:npc.name,personality:npc.personality,major:npc.major,likes:npc.likes,dislikes:npc.dislikes,background:npc.background},
-      playerName,day:state.day,time:state.minute,mood:moodFor(npc,state.minute,r.score),relationship:level(r.score),memories:r.memories.slice(-5),action,message:text.slice(0,240),decidedOutcome:outcome,
-      constraints:'Return one short in-character reply as JSON {"reply":"..."}. Preserve the decided outcome; do not invent items, locations, completed actions or change game state.'
+      playerName,day:state.day,time:state.minute,mood:moodFor(npc,state.minute,r.score),relationship:level(r.score),memories:r.memories.slice(-5),action,message:text.slice(0,240),gameOutcome:action==='custom'?null:outcome,history:history.slice(-6)
     })})
     if(!response.ok)return null
     const json=await response.json()
