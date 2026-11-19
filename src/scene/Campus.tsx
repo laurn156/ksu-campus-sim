@@ -928,25 +928,30 @@ function wilderParts(b:Building) {
   const roof=new THREE.MeshStandardMaterial({map:facade('metal'),color:'#f0f0e8',roughness:.9,side:THREE.DoubleSide})
   const trim=solid('#e8e7de'),glass=solid('#526663'),door=solid('#d3d4ca'),lines=solid('#afb6b0')
   parts.push({geo:wallsGeometry(b),mat:wall},{geo:flatGeometry(b.poly,b.h+.03,4),mat:roof})
-  const a=b.poly[0],c=b.poly[1],dx=c[0]-a[0],dz=c[1]-a[1],length=Math.hypot(dx,dz)
-  const angle=-Math.atan2(dz,dx),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
-  // This polygon is counterclockwise, so the exterior is to the right of the wall.
-  const panel=(w:number,h:number,d:number,x:number,y:number,out:number,mat:THREE.MeshStandardMaterial)=>{
-    const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,-out);geo.rotateY(angle);geo.translate(mx,0,mz);parts.push({geo,mat})
+  // The road-facing facade steps in and out along these three parallel wall sections.
+  const edge=(i:number)=>{
+    const a=b.poly[i],c=b.poly[(i+1)%b.poly.length],dx=c[0]-a[0],dz=c[1]-a[1],length=Math.hypot(dx,dz)
+    const angle=-Math.atan2(dz,dx),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    const panel=(w:number,h:number,d:number,x:number,y:number,out:number,mat:THREE.MeshStandardMaterial)=>{
+      const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,-out);geo.rotateY(angle);geo.translate(mx,0,mz);parts.push({geo,mat})
+    }
+    return {length,panel}
   }
-  panel(length,.17,.3,0,b.h-.04,.1,trim)
-  for(const x of [-length*.38,-length*.27,-length*.05]) {
-    panel(1.4,1.5,.15,x,1.9,.08,trim)
-    panel(1.16,1.26,.17,x,1.9,.19,glass)
-    panel(.07,1.26,.2,x,1.9,.3,lines)
+  const left=edge(5),middle=edge(3),right=edge(1)
+  for(const e of [left,middle,right])e.panel(e.length,.17,.3,0,b.h-.04,.1,trim)
+  // Windows span the middle section and the pedestrian entrance is at the left.
+  for(const x of [-middle.length*.3,0,middle.length*.3]) {
+    middle.panel(1.4,1.5,.15,x,1.9,.08,trim)
+    middle.panel(1.16,1.26,.17,x,1.9,.19,glass)
+    middle.panel(.07,1.26,.2,x,1.9,.3,lines)
   }
-  // One pedestrian door and a white sectional garage door.
-  panel(1.55,2.5,.16,length*.1,1.25,.1,trim)
-  panel(1.25,2.25,.18,length*.1,1.2,.21,door)
-  panel(.08,.4,.21,length*.12,1.22,.32,glass)
-  panel(4,2.75,.16,length*.36,1.38,.1,trim)
-  panel(3.75,2.55,.18,length*.36,1.35,.21,door)
-  for(const y of [.55,1.05,1.55,2.05,2.55])panel(3.65,.035,.2,length*.36,y,.32,lines)
+  left.panel(1.55,2.5,.16,0,1.25,.1,trim)
+  left.panel(1.25,2.25,.18,0,1.2,.21,door)
+  left.panel(.08,.4,.21,.42,1.22,.32,glass)
+  // The garage occupies the far-right section of the front, not the side wall.
+  right.panel(4,2.75,.16,0,1.38,.1,trim)
+  right.panel(3.75,2.55,.18,0,1.35,.21,door)
+  for(const y of [.55,1.05,1.55,2.05,2.55])right.panel(3.65,.035,.2,0,y,.32,lines)
   return parts
 }
 
