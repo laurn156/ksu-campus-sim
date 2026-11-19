@@ -959,6 +959,22 @@ function architectureParts(b: Building) {
   const shortWing=onEdge(16)
   shortWing.box(shortWing.len,1.15,.2,0,.58,.08,brick)
   shortWing.box(shortWing.len,.28,.55,0,b.h-.1,.25,white)
+  // Low concrete monument with the building name and number, in a planted bed.
+  wing.box(7.2,.14,2.7,wing.len/2-6,.08,5.2,brick)
+  wing.box(5.5,1.45,.32,wing.len/2-6,.78,6.1,stone)
+  const signCanvas=document.createElement('canvas');signCanvas.width=1024;signCanvas.height=256
+  const sc=signCanvas.getContext('2d')!;sc.fillStyle='#26302d';sc.fillRect(0,0,1024,256)
+  sc.fillStyle='#f1eee4';sc.font='bold 120px sans-serif';sc.textAlign='left';sc.fillText('ARCHITECTURE',24,115)
+  sc.fillStyle='#efc32b';sc.fillRect(26,139,190,90);sc.fillStyle='#202724';sc.font='bold 70px sans-serif';sc.fillText('640',55,211)
+  const signTex=new THREE.CanvasTexture(signCanvas);signTex.colorSpace=THREE.SRGBColorSpace
+  const signMat=new THREE.MeshStandardMaterial({map:signTex,roughness:.9,side:THREE.DoubleSide})
+  wing.box(5.05,1.25,.035,wing.len/2-6,.82,6.28,signMat)
+  const shrubs=solid('#5d7042'),bark=solid('#735941')
+  for(const [x,z,r] of [[wing.len/2-9,4.4,.8],[wing.len/2-3.2,4.5,.85],[wing.len/2-8,5.6,.6],[wing.len/2-2.8,5.9,.7]]){
+    // The wing helper applies the same local-to-world orientation to simple meshes.
+    wing.box(.14,.65,.14,x,.35,z,bark)
+    wing.box(r*1.4,r*.85,r*1.25,x,.95,z,shrubs)
+  }
   // Light upper service volume, set back from the principal glass roofline.
   const volume=new THREE.BoxGeometry(16,3.5,10);volume.translate(9,16.95,202);parts.push({geo:volume,mat:white})
   const cap=new THREE.BoxGeometry(16.4,.2,10.4);cap.translate(9,18.75,202);parts.push({geo:cap,mat:white})
@@ -971,14 +987,14 @@ function textileCenterParts(b: Building) {
   const mat=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.85,side:THREE.DoubleSide})
   const tile=new THREE.MeshStandardMaterial({map:facade('textiletile'),roughness:.95,side:THREE.DoubleSide})
   const brick=new THREE.MeshStandardMaterial({map:facade('textilebrick'),roughness:.95,side:THREE.DoubleSide})
-  const roof=mat('#e4e6df'),dark=mat('#354443'),metal=mat('#cad0ca'),awning=mat('#813d39')
+  const roof=mat('#e4e6df'),dark=mat('#354443'),metal=mat('#cad0ca')
   const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z);parts.push({geo,mat:m})}
   // Retain tile on the curved end and the projecting rear wing; use brick elsewhere.
   // Stop the lower walls at the tower opening while keeping the upper walls and roof.
   const openingZ=203.4
   for(let i=0;i<b.poly.length;i++) {
     const a=b.poly[i],c=b.poly[(i+1)%b.poly.length]
-    const upperMat=(i>=17 && i<=24)||(i>=8 && i<=14) ? tile : brick
+    const upperMat=(i>=14 && i<=21)||(i>=5 && i<=11) ? tile : brick
     const segment=(p:Pt,q:Pt,y0:number,y1:number,m:THREE.MeshStandardMaterial)=>parts.push({geo:wallsGeometry({...b,poly:[p,q]},y0,y1),mat:m})
     segment(a,c,3.35,b.h,upperMat)
     if(a[1]>openingZ && c[1]>openingZ) continue
@@ -991,28 +1007,38 @@ function textileCenterParts(b: Building) {
   }
   parts.push({geo:flatGeometry(b.poly,b.h+.02,8),mat:roof})
   // Raised, long metal gable over the central circulation spine.
-  box(6.1,.28,86,-88.8,8.75,169.5,metal)
+  box(6.1,.28,80.5,-88.8,8.75,172.25,metal)
   const shape=new THREE.Shape();shape.moveTo(-92,8.85);shape.lineTo(-88.8,11.35);shape.lineTo(-85.6,8.85);shape.closePath()
-  const gable=new THREE.ExtrudeGeometry(shape,{depth:86,bevelEnabled:false});gable.translate(0,0,126.5);parts.push({geo:gable,mat:roof})
+  const gable=new THREE.ExtrudeGeometry(shape,{depth:80.5,bevelEnabled:false});gable.translate(0,0,132);parts.push({geo:gable,mat:roof})
   for(const x of [-91.85,-85.75]){
-    box(.18,1.25,86,x,8.08,169.5,metal)
-    box(.21,.28,86,x,8.52,169.5,dark)
+    box(.18,1.25,80.5,x,8.08,172.25,metal)
+    box(.21,.28,80.5,x,8.52,172.25,dark)
     // Vertical seams give the white metal fascia a ribbed surface.
-    for(let z=127;z<212;z+=1.25)box(.04,1.16,.045,x+(x< -88.8?-.12:.12),8.06,z,roof)
+    for(let z=132;z<212;z+=1.25)box(.04,1.16,.045,x+(x< -88.8?-.12:.12),8.06,z,roof)
   }
   // Open end frame: brick piers support the high roof above the walk-through.
   for(const x of [-91.4,-86.2])box(.8,8.6,.85,x,4.3,212.1,brick)
   box(6,.7,.9,-88.8,7.05,212.1,brick)
-  // A recessed row of glazing and red fabric awnings along the street-facing wing.
-  for(const z of [134,139,144]){
-    box(.12,1.65,3.5,-64.95,2.35,z,dark)
-    const a=new THREE.BoxGeometry(1.05,.18,3.65);a.rotateZ(-.22);a.translate(-64.55,3.3,z);parts.push({geo:a,mat:awning})
+  // Rear loading and service bays follow the angled west wall.
+  const backA=b.poly[b.poly.length-1],backB=b.poly[0]
+  const bdx=backB[0]-backA[0],bdz=backB[1]-backA[1]
+  const backAngle=-Math.atan2(bdz,bdx),bx=(backA[0]+backB[0])/2,bz=(backA[1]+backB[1])/2
+  const backBox=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{
+    const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,-z);geo.rotateY(backAngle);geo.translate(bx,0,bz);parts.push({geo,mat:m})
   }
+  for(const x of [-14,-8,-2,4,10]){
+    backBox(4.1,2.65,.12,x,1.55,.08,dark)
+    backBox(4.25,.14,.18,x,2.95,.14,metal)
+    for(const y of [.6,1.2,1.8,2.4])backBox(3.95,.035,.14,x,y,.16,metal)
+  }
+  backBox(1.5,2.4,.15,15.5,1.2,.1,metal)
+  backBox(1.16,2.1,.17,15.5,1.15,.2,dark)
+  backBox(.1,.5,.2,15.9,1.2,.31,roof)
   // Wall lettering follows a straight section of the curved wing footprint.
-  const a=b.poly[18],c=b.poly[19], dx=c[0]-a[0], dz=c[1]-a[1],len=Math.hypot(dx,dz)
+  const a=b.poly[15],c=b.poly[16], dx=c[0]-a[0], dz=c[1]-a[1],len=Math.hypot(dx,dz)
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256
   const ctx=canvas.getContext('2d')!;ctx.fillStyle='#202927';ctx.textAlign='center';ctx.font='bold 64px sans-serif'
-  ctx.fillText('W. CLAIR HARRIS',512,103);ctx.fillText('TEXTILE CENTER',512,182)
+  ctx.fillText('W. CLAIR HARRIS',512,103);ctx.font='bold 46px sans-serif';ctx.fillText('APPAREL AND TEXTILE CENTER',512,182)
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace
   const sign=new THREE.PlaneGeometry(Math.min(5.4,len*.82),1.35)
   sign.rotateY(-Math.atan2(dz,dx));sign.translate((a[0]+c[0])/2+dz/len*.04,4.3,(a[1]+c[1])/2-dx/len*.04)

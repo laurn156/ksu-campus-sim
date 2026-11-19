@@ -44,6 +44,9 @@ export interface Campus {
 export async function loadCampus(): Promise<Campus> {
   const r = await fetch('/campus.json')
   const c: Campus = await r.json()
+  // Remove a narrow mapping spur that projected past the Textile Center's north wall.
+  const textile = c.buildings.find((b) => b.code === 'M')
+  if (textile && textile.poly.length === 30) textile.poly = textile.poly.filter((_, i) => i < 2 || i > 4)
   // The game terrain is flat: show the West Deck at the campus-side height,
   // with the other levels below grade rather than four exposed stories.
   const westDeck = c.buildings.find((b) => b.code === 'P60')
