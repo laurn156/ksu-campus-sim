@@ -28,6 +28,14 @@ camera, mouse **wheel** to zoom, **M** mute.
   shape is in the right place. `scripts/trees_from_aerial.py` places a 3D tree on every patch of real canopy
   (~12,000 trees). Roofs show their own patch of the photo. **G** cycles ground styles: illustrated / photo / drawn.
 
+- **Buildings look like the real ones** (`src/scene/styles.ts`), using KSU's interactive map and its building
+  photos as visual reference: red brick halls, Hornet Village's brick over a cast-stone base, Crawford's tan
+  stucco with the concrete screen band, white ribbon-window academic blocks, glass curtain walls (Architecture,
+  ETC), tan-brick University Commons with gray hipped roofs, the parking deck, light flat roofs with equipment.
+- **Landmarks** (`src/scene/Landmarks.tsx`): Slap the Rock, the gold KSU letters at Hornet Village, the Globe
+  plaza and white tent canopies, the University Commons basketball and volleyball courts, plus OpenStreetMap
+  benches, flagpoles, the fountain, bus shelters and stairs.
+
 Regenerate the campus data (in order):
 
 ```bash

@@ -1,13 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { distToSeg, isCampusBuilding, type Campus } from '../campus'
 import { player } from '../scene/Player'
+import { landmarkSpots } from '../scene/Landmarks'
 
 /** Closest campus building to the player (within ~30 m of its walls). */
 function useNearby(campus: Campus) {
   const [near, setNear] = useState<{ name: string; code: string } | null>(null)
   useEffect(() => {
     const bs = campus.buildings.filter(isCampusBuilding)
+    const spots = landmarkSpots(campus)
     const id = setInterval(() => {
+      const lm = spots.find((s) => Math.hypot(s.at[0] - player.x, s.at[1] - player.z) < s.r)
+      if (lm) {
+        setNear((cur) => (cur?.name === lm.name ? cur : { name: lm.name, code: '★' }))
+        return
+      }
       let best: (typeof bs)[number] | null = null
       let bd = 30
       for (const b of bs) {

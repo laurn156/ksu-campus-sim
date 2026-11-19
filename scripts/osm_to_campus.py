@@ -135,6 +135,18 @@ for wid, t, pts in ways:
         if kind:
             out["areas"].append({"kind": kind, "poly": p[:-1], "name": t.get("name", ""), "a": round(area(p))})
 
+FEATURE_KINDS = {("tourism", "artwork"): "sculpture", ("amenity", "bench"): "bench", ("man_made", "flagpole"): "flagpole",
+                 ("amenity", "fountain"): "fountain", ("amenity", "shelter"): "shelter"}
+ORIENT = {"north": 0, "east": 90, "south": 180, "west": 270}
+out["features"] = []
+for nid, t in node_tags.items():
+    kind = next((v for (k, val), v in FEATURE_KINDS.items() if t.get(k) == val), None)
+    if kind:
+        p = xy(nodes[nid])
+        if near_campus([p]):
+            out["features"].append({"kind": kind, "x": p[0], "z": p[1], "name": t.get("name", ""),
+                                    "dir": ORIENT.get(t.get("orientation", ""), None)})
+
 for nid, t in node_tags.items():
     if t.get("natural") == "tree":
         p = xy(nodes[nid])

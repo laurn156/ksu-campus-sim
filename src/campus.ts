@@ -35,6 +35,7 @@ export interface Campus {
   areas: Area[]
   trees: (Pt | [number, number, number])[] // [x, z] or [x, z, scale] when detected from the aerial photo
   treesFromAerial?: boolean
+  features: { kind: 'sculpture' | 'bench' | 'flagpole' | 'fountain' | 'shelter'; x: number; z: number; name: string; dir: number | null }[]
   extent: [number, number, number, number]
   attribution: string
 }

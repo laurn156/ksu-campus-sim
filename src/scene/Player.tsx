@@ -50,6 +50,15 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   const { camera, gl } = useThree()
 
   useEffect(() => {
+    // dev: window.__tp(x, z, yaw?, dist?) teleports the player (for screenshots / debugging)
+    if (import.meta.env.DEV)
+      (window as any).__tp = (x: number, z: number, yaw?: number, d?: number) => {
+        player.x = x
+        player.z = z
+        if (yaw !== undefined) player.yaw = yaw
+        if (d !== undefined) dist.current = d
+        target.current = null
+      }
     const [x, z, yaw] = spawnPoint(campus)
     player.x = x
     player.z = z
@@ -157,7 +166,14 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
         const mat = m.material as THREE.MeshStandardMaterial
         const target = hit.has(m.parent) ? 0.18 : 1
         mat.opacity += (target - mat.opacity) * 0.5
-        mat.depthWrite = mat.opacity > 0.95
+        if (target === 1 && mat.opacity > 0.97) mat.opacity = 1
+        // only fading buildings are transparent: opaque ones keep proper depth (no see-through roofs)
+        const tr = mat.opacity < 1
+        if (tr !== mat.transparent) {
+          mat.transparent = tr
+          mat.depthWrite = !tr
+          mat.needsUpdate = true
+        }
       }
     }
   })
