@@ -2009,8 +2009,8 @@ function LibraryAmphitheater() {
     // Three semicircular brick risers with broad concrete seating surfaces.
     const ring=(inner:number,outer:number,height:number,material:THREE.Material)=>{
       const shape=new THREE.Shape()
-      for(let i=0;i<=48;i++){const t=Math.PI/2+Math.PI*i/48,x=outer*Math.cos(t),y=outer*Math.sin(t);if(i===0)shape.moveTo(x,y);else shape.lineTo(x,y)}
-      for(let i=48;i>=0;i--){const t=Math.PI/2+Math.PI*i/48;shape.lineTo(inner*Math.cos(t),inner*Math.sin(t))}
+      for(let i=0;i<=48;i++){const t=Math.PI*i/48,x=outer*Math.cos(t),y=outer*Math.sin(t);if(i===0)shape.moveTo(x,y);else shape.lineTo(x,y)}
+      for(let i=48;i>=0;i--){const t=Math.PI*i/48;shape.lineTo(inner*Math.cos(t),inner*Math.sin(t))}
       shape.closePath()
       const geo=new THREE.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false,curveSegments:48})
       geo.rotateX(-Math.PI/2);geo.translate(cx,0,cz);add(geo,material)
@@ -2019,8 +2019,8 @@ function LibraryAmphitheater() {
       ring(inner,outer,height,brick)
       // A thin cap leaves the brick riser visible below each tier.
       const shape=new THREE.Shape()
-      for(let i=0;i<=48;i++){const t=Math.PI/2+Math.PI*i/48,x=outer*Math.cos(t),y=outer*Math.sin(t);if(i===0)shape.moveTo(x,y);else shape.lineTo(x,y)}
-      for(let i=48;i>=0;i--){const t=Math.PI/2+Math.PI*i/48;shape.lineTo(inner*Math.cos(t),inner*Math.sin(t))}
+      for(let i=0;i<=48;i++){const t=Math.PI*i/48,x=outer*Math.cos(t),y=outer*Math.sin(t);if(i===0)shape.moveTo(x,y);else shape.lineTo(x,y)}
+      for(let i=48;i>=0;i--){const t=Math.PI*i/48;shape.lineTo(inner*Math.cos(t),inner*Math.sin(t))}
       shape.closePath();const cap=new THREE.ShapeGeometry(shape);cap.rotateX(-Math.PI/2);cap.translate(cx,height+.012,cz);add(cap,concrete)
     }
     // Steel guardrail follows the outside curve of the upper row.
@@ -2031,7 +2031,7 @@ function LibraryAmphitheater() {
     }
     const point=(t:number,y:number)=>new THREE.Vector3(cx+7.85*Math.cos(t),y,cz-7.85*Math.sin(t))
     for(let i=0;i<=16;i++){
-      const t=Math.PI/2+Math.PI*i/16;bar(point(t,.97),point(t,2.05),.04)
+      const t=Math.PI*i/16;bar(point(t,.97),point(t,2.05),.04)
       if(i<16)for(const y of [1.28,1.62,1.98])bar(point(t,y),point(t+Math.PI/16,y),.035)
     }
     return root
