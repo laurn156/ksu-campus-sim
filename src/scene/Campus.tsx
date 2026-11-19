@@ -852,38 +852,48 @@ function designTwoDetails(b:Building){
   rail(new THREE.Vector3(-264,1,40.25),new THREE.Vector3(-258,2.85,40.25))
   rail(new THREE.Vector3(-256.2,2.85,39),new THREE.Vector3(-256.2,4.65,32.2))
   for(const [x,y,z] of [[-264,0,40.25],[-261,1,40.25],[-258,2,40.25],[-256.2,2,39],[-256.2,2.9,35.8],[-256.2,3.8,32.2]])rail(new THREE.Vector3(x,y,z),new THREE.Vector3(x,y+.85,z))
-  // Eastern approach: paved ramp, low retaining wall and a planted strip.
+  // The lawn rises with the approach instead of leaving the stairs as a freestanding block.
+  const lawn=new THREE.MeshStandardMaterial({color:'#a0b876',roughness:1,side:THREE.DoubleSide})
+  const slope=new THREE.BufferGeometry()
+  slope.setAttribute('position',new THREE.Float32BufferAttribute([
+    -170,3.8,35,-170,0,66,-154,0,66, -170,3.8,35,-154,0,66,-154,3.8,35,
+    -154,3.8,35,-154,0,66,-146,0,66, -154,3.8,35,-146,0,66,-146,0,35],3))
+  slope.computeVertexNormals();out.push({geo:slope,mat:lawn})
+  // Narrow ramp hugs the Design 2 wall; it is separate from the broad sidewalk.
   const ramp=new THREE.BufferGeometry()
   ramp.setAttribute('position',new THREE.Float32BufferAttribute([
-    -204,0,61,-173,1.1,61,-173,1.1,64,
-    -204,0,61,-173,1.1,64,-204,0,64,
-    -204,0,64,-173,1.1,64,-173,0,64,
-    -204,0,64,-173,0,64,-204,0,64],3))
+    -204,0,58.6,-179,1.1,58.6,-179,1.1,60.6,
+    -204,0,58.6,-179,1.1,60.6,-204,0,60.6,
+    -204,0,60.6,-179,1.1,60.6,-179,0,60.6],3))
   ramp.computeVertexNormals();out.push({geo:ramp,mat:concrete})
-  // Railings follow the incline on both sides of the ramp.
-  for(const z of [60.9,64.1]){
-    rail(new THREE.Vector3(-204,.9,z),new THREE.Vector3(-173,2,z))
-    for(let i=0;i<=5;i++){const x=-204+i*6.2,y=i*1.1/5;rail(new THREE.Vector3(x,y,z),new THREE.Vector3(x,y+.9,z))}
+  const whiteRail=(a:THREE.Vector3,c:THREE.Vector3)=>{const v=c.clone().sub(a),g=new THREE.CylinderGeometry(.055,.055,v.length(),8);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize()));g.translate((a.x+c.x)/2,(a.y+c.y)/2,(a.z+c.z)/2);out.push({geo:g,mat:white})}
+  for(const z of [58.55,60.65]){
+    whiteRail(new THREE.Vector3(-204,.85,z),new THREE.Vector3(-179,1.95,z))
+    for(let i=0;i<=5;i++){const x=-204+i*5,y=i*1.1/5;whiteRail(new THREE.Vector3(x,y,z),new THREE.Vector3(x,y+.85,z))}
   }
-  worldBox(23,.1,1.5,-191.5,.08,58.7,soil)
+  worldBox(23,.1,1.1,-191.5,.08,57.7,soil)
   const shrub=new THREE.MeshStandardMaterial({color:'#718f57',roughness:.9})
-  for(let x=-202;x<=-181;x+=1.7){const g=new THREE.IcosahedronGeometry(.43,1);g.scale(1,.7,1);g.translate(x,.35,58.7);out.push({geo:g,mat:shrub})}
-  worldBox(3.2,1.1,3,-171.8,.55,61.5,concrete)
-  // Three distinct flights, separated by flat landings long enough to walk across.
+  for(let x=-202;x<=-181;x+=1.7){const g=new THREE.IcosahedronGeometry(.4,1);g.scale(1,.7,1);g.translate(x,.35,57.7);out.push({geo:g,mat:shrub})}
+  // The upper end of the ramp joins the lower landing of the stair approach.
+  worldBox(8,1.1,3,-175.5,.55,59.55,concrete)
+  // Three flights each have a broad, level landing before the next flight.
   for(let flight=0;flight<3;flight++){
-    const start=59-flight*7.2
+    const start=59-flight*8.1
     for(let step=0;step<6;step++){
-      const h=1.1+(flight*6+step+1)*.15,z=start-step*.85
-      worldBox(3,h,.87,-171.8,h/2,z,concrete)
+      const h=1.1+(flight*6+step+1)*.15,z=start-step*.8
+      worldBox(3.5,h,.82,-171.8,h/2,z,concrete)
     }
-    const h=1.1+(flight+1)*.9,z=start-6.05
-    worldBox(3,h,2.15,-171.8,h/2,z,concrete)
+    const h=1.1+(flight+1)*.9,z=start-6.3
+    worldBox(3.5,h,3.35,-171.8,h/2,z,concrete)
     const y0=1.1+flight*.9,y1=y0+.9
-    rail(new THREE.Vector3(-170.25,y0+.85,start+.45),new THREE.Vector3(-170.25,y1+.85,start-4.7))
-    rail(new THREE.Vector3(-170.25,y1+.85,start-4.7),new THREE.Vector3(-170.25,y1+.85,start-7.1))
-    for(const [zPost,yPost] of [[start,y0],[start-4.7,y1],[start-7.1,y1]])rail(new THREE.Vector3(-170.25,yPost,zPost),new THREE.Vector3(-170.25,yPost+.85,zPost))
+    for(const x of [-173.6,-170]){
+      whiteRail(new THREE.Vector3(x,y0+.85,start+.4),new THREE.Vector3(x,y1+.85,start-4.4))
+      whiteRail(new THREE.Vector3(x,y1+.85,start-4.4),new THREE.Vector3(x,y1+.85,start-8))
+      for(const [zPost,yPost] of [[start,y0],[start-4.4,y1],[start-8,y1]])whiteRail(new THREE.Vector3(x,yPost,zPost),new THREE.Vector3(x,yPost+.85,zPost))
+    }
   }
-  worldBox(8,3.8,3,-175.5,1.9,36.6,concrete)
+  // Top landing meets the terrace at the same height, with no open seam.
+  worldBox(8,3.8,4.5,-175.5,1.9,36.7,concrete)
   // The adjacent Design 1 end is a solid brick wall with a recessed entrance.
   const endBrick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.9,side:THREE.DoubleSide})
   worldBox(.18,7.35,8.7,-262.35,3.68,24,endBrick)
