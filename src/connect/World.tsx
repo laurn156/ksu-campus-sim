@@ -49,12 +49,17 @@ export function useConnectWorld(userId:string,username:string):World {
     })
    }
   }
-  presence.on('presence',{event:'sync'},synchronize).subscribe(async state=>{
+  void client.auth.getSession().then(async ({data})=>{
+   if(!data.session)throw new Error('Please log in again.')
+   await client.realtime.setAuth(data.session.access_token)
    if(!alive)return
-   if(state==='SUBSCRIBED'){await presence.track({online:true});setStatus('Connected · limited test')}
-   else if(state==='CHANNEL_ERROR'||state==='TIMED_OUT'||state==='CLOSED'){setStatus('Disconnected · reconnecting');setPeers([])}
-  })
-  own.subscribe(state=>{joined=state==='SUBSCRIBED'})
+   presence.on('presence',{event:'sync'},synchronize).subscribe(async state=>{
+    if(!alive)return
+    if(state==='SUBSCRIBED'){await presence.track({online:true});setStatus('Connected · limited test')}
+    else if(state==='CHANNEL_ERROR'||state==='TIMED_OUT'||state==='CLOSED'){setStatus('Disconnected · reconnecting');setPeers([])}
+   })
+   own.subscribe(state=>{joined=state==='SUBSCRIBED';if(state==='CHANNEL_ERROR')setStatus('Connection error')})
+  }).catch(()=>{if(alive)setStatus('Could not authenticate connection')})
   const interval=setInterval(()=>{if(joined)void own.send({type:'broadcast',event:'move',payload:{x:player.x,z:player.z,heading:player.heading,moving:player.moving}})},200)
   sendRef.current=(raw)=>{const text=raw.trim().slice(0,200);if(!text)return;if(!joined){setError('Chat is disconnected.');return}if(Date.now()-lastChat.current<1500){setError('Please wait a moment before sending another message.');return}lastChat.current=Date.now();setError('');void own.send({type:'broadcast',event:'chat',payload:{text}});setMessages(old=>[...old,{id:crypto.randomUUID(),name:username,text}].slice(-50))}
   return()=>{alive=false;clearInterval(interval);sendRef.current=()=>{};void presence.untrack();void client.removeChannel(presence);void client.removeChannel(own);for(const ch of channels.values())void client.removeChannel(ch)}

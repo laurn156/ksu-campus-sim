@@ -23,3 +23,6 @@ create policy "testers publish own realtime" on realtime.messages for insert to 
   exists (select 1 from public.campus_testers where id = auth.uid()) and
   (realtime.topic() = 'campus-presence' or realtime.topic() = 'campus-player:' || auth.uid()::text)
 );
+-- Table privileges are separate from RLS policies; both must allow the action.
+grant select, insert, update on public.campus_profiles to authenticated;
+grant select on public.campus_testers to authenticated;
