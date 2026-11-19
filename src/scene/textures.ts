@@ -180,6 +180,17 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
     g.fillStyle = 'rgba(0,0,0,.09)'
     for (let x = 0; x < W; x += 8) g.fillRect(x, 0, 3, H)
   },
+  // Howell and Norton: pale concrete bays, narrow horizontal windows, and brick piers.
+  residencehall: (g) => {
+    g.fillStyle='#e3e3dc';g.fillRect(0,0,W,H)
+    g.fillStyle='#c1907b';g.fillRect(0,0,11,H)
+    g.fillStyle='#f1f0e9';g.fillRect(11,0,8,H);g.fillRect(W-8,0,8,H)
+    g.fillStyle='#b9c8c4';g.fillRect(22,32,98,27)
+    g.fillStyle='#506968';g.fillRect(24,34,94,18)
+    g.fillStyle='rgba(239,246,236,.38)';g.fillRect(24,34,94,7)
+    g.fillStyle='#d9dfd9';for(let x=43;x<118;x+=20)g.fillRect(x,33,3,22)
+    g.fillStyle='#cecec5';g.fillRect(19,63,W-27,5);g.fillRect(19,H-5,W-27,5)
+  },
   // Small pale square ceramic tiles on the Textile Center's curved and flat walls.
   textiletile: (g) => {
     g.fillStyle='#d9d9d3';g.fillRect(0,0,W,H)

@@ -916,6 +916,64 @@ function scienceAnnexDetails(){
   return out
 }
 
+/** Howell and Norton Halls: light window bays with brick piers and distinct entries. */
+function residenceHallParts(b:Building) {
+  const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const solid=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.85,side:THREE.DoubleSide})
+  const facadeMat=new THREE.MeshStandardMaterial({map:facade('residencehall'),roughness:.9,side:THREE.DoubleSide})
+  const glass=new THREE.MeshStandardMaterial({map:facade('etcglass'),roughness:.4,side:THREE.DoubleSide})
+  const screen=new THREE.MeshStandardMaterial({map:facade('mathscreen'),roughness:.9,side:THREE.DoubleSide})
+  const white=solid('#e8e8df'),brick=solid('#c48f79'),paving=solid('#d5d1c4'),metal=solid('#a8b3ac')
+  const roof=new THREE.MeshStandardMaterial({map:roofTexture(),color:'#f1f0ea',roughness:.95,side:THREE.DoubleSide})
+  parts.push({geo:wallsGeometry(b),mat:facadeMat},{geo:flatGeometry(b.poly,b.h+.02,8),mat:roof})
+  let area=0;for(let i=0;i<b.poly.length;i++){const a=b.poly[i],c=b.poly[(i+1)%b.poly.length];area+=a[0]*c[1]-c[0]*a[1]}
+  const edge=(i:number)=>{
+    const a=b.poly[i],c=b.poly[(i+1)%b.poly.length],dx=c[0]-a[0],dz=c[1]-a[1],length=Math.hypot(dx,dz),sign=area>0?-1:1
+    const angle=-Math.atan2(dz,dx),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{
+      const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z*sign);geo.rotateY(angle);geo.translate(mx,0,mz);parts.push({geo,mat:m})
+    }
+    return {length,box}
+  }
+  const entry=(e:ReturnType<typeof edge>,x:number)=>{
+    e.box(3.7,3.1,.2,x,1.55,.1,white);e.box(3.35,2.85,.22,x,1.43,.24,glass)
+    for(const dx of [-1.65,-.83,0,.83,1.65])e.box(.09,2.85,.27,x+dx,1.43,.36,white)
+    for(const y of [.15,1.45,2.8])e.box(3.4,.09,.27,x,y,.36,white)
+    e.box(4.25,.2,1.5,x,3.15,.75,white)
+  }
+  if(b.code==='R2') {
+    // Norton faces the central lawn: low entrance pavilions and a central brick marker.
+    const front=edge(2)
+    for(const x of [-front.length*.36,0,front.length*.36]) {
+      front.box(5.1,3.3,2.3,x,1.65,1.12,white)
+      front.box(4.35,2.7,.2,x,1.35,2.32,glass)
+      for(const dx of [-2.1,-1.05,0,1.05,2.1])front.box(.09,2.7,.23,x+dx,1.35,2.44,white)
+      front.box(5.35,.18,2.5,x,3.35,1.15,white)
+    }
+    front.box(2.7,11.7,.12,front.length*.35,9.2,.1,brick)
+    const rear=edge(11)
+    rear.box(7.2,b.h-.6,.14,rear.length*.33,b.h/2,.1,screen)
+    entry(rear,rear.length*.3)
+  } else {
+    // Howell's courtyard elevations have the same pale piers and narrow window bands.
+    for(const i of [0,2,4]){const e=edge(i);e.box(e.length,.16,.25,0,b.h-.1,.12,white)}
+    // A full-height glazed stair tower faces the parking-side entry.
+    const tower=edge(12)
+    tower.box(tower.length,b.h,.18,0,b.h/2,.1,white)
+    tower.box(tower.length-1,b.h-1,.2,0,b.h/2,.23,glass)
+    for(let x=-tower.length/2+.55;x<tower.length/2;x+=1.05)tower.box(.1,b.h-1,.26,x,b.h/2,.35,white)
+    for(let y=.5;y<b.h;y+=1.5)tower.box(tower.length-1,.08,.26,0,y,.35,white)
+    entry(tower,0)
+    const side=edge(6)
+    // Enclosed equipment yard and steps beside the projecting stair tower.
+    side.box(9,1.25,4.5,-side.length*.3,.63,2.35,brick)
+    side.box(8.7,.12,4.2,-side.length*.3,1.3,2.35,paving)
+    side.box(3.5,1.35,2,-side.length*.3,1.98,2.35,metal)
+    for(let i=0;i<7;i++)side.box(3,.14*(i+1),.5,side.length*.34,.07*(i+1),3.9-i*.5,paving)
+  }
+  return parts
+}
+
 /** Wilder Communications: simple tan one-storey workshop with a ribbed roof. */
 function wilderParts(b:Building) {
   const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
@@ -1690,6 +1748,7 @@ function Buildings({ campus }: { campus: Campus }) {
           ...academicDetails(b),
         ], flat: true }
       }
+      if (b.code === 'R1' || b.code === 'R2') return { b, parts: residenceHallParts(b), flat: true }
       if (b.code === 'T') return { b, parts: wilderParts(b), flat: true }
       if (b.code === 'L' || b.code === 'L1' || b.code === 'O') return { b, parts: civilBuildingsParts(b), flat: true }
       if (b.code === 'S2') return { b, parts: gymnasiumParts(b), flat: true }
