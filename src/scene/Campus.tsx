@@ -1066,7 +1066,26 @@ function academicDetails(){
     const uv=textPlane.getAttribute('uv')
     for(let i=0;i<uv.count;i++)uv.setX(i,1-uv.getX(i))
   }
-  for(const part of out){part.geo.scale(-1,1,1);part.geo.translate(-304.8,0,0)}
+  for(const part of out){
+    part.geo.scale(-1,1,1);part.geo.translate(-304.8,0,0)
+    // The front facade angles gently; follow it so the entrance and signs
+    // sit against the wall instead of floating out in front of it.
+    const pos=part.geo.getAttribute('position')
+    for(let i=0;i<pos.count;i++)pos.setX(i,pos.getX(i)+1.25-.04623*(pos.getZ(i)+26.5))
+    pos.needsUpdate=true;part.geo.computeVertexNormals()
+  }
+  // Back wall: mostly brick, with small separated vertical groups of windows.
+  const backWall=new THREE.BoxGeometry(.16,11.4,47.6);backWall.translate(-140.1,5.7,2.2);out.push({geo:backWall,mat:brick})
+  for(const z of [-14,0,14,21])for(const y of [1.7,5.5,9.3]){
+    box(.18,1.4,1.25,-139.98,y,z,glass)
+    box(.22,1.45,.07,-139.86,y,z,stone)
+  }
+  // A short paved approach connects to the small door around the rear corner.
+  box(7,.1,3,-131.9,.07,-49.5,stone)
+  box(3,.1,9,-128.9,.07,-53.5,stone)
+  box(.18,2.75,2.2,-134.88,1.38,-49.5,glass)
+  for(const dz of [-1.1,0,1.1])box(.22,2.8,.08,-134.74,1.4,-49.5+dz,stone)
+  box(.22,.1,2.3,-134.74,2.8,-49.5,stone)
   return out
 }
 
