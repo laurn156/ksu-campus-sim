@@ -422,7 +422,15 @@ function engineeringCenterDetails(b:Building){
   box(length+.4,.36,1.0,0,b.h-.1,.32,white)
   box(length+.7,.20,1.45,0,b.h-.42,.47,white)
   // Elevated entry landing, glazed vestibule, metal mullions and double doors.
-  box(23,.24,4.4,0,3.68,2.15,concrete)
+  // Continuous upper pavement, with a wider landing where the side stairs meet it.
+  box(length,.24,4.4,0,3.68,2.15,concrete)
+  box(4,.24,3.3,-11.6,3.68,5.85,concrete)
+  // At the far end the pavement descends gradually toward the surrounding paths.
+  const ramp=new THREE.BufferGeometry()
+  ramp.setAttribute('position',new THREE.Float32BufferAttribute([
+    length/2,3.8,0,length/2+17,0,0,length/2+17,0,4.35,
+    length/2,3.8,0,length/2+17,0,4.35,length/2,3.8,4.35],3))
+  ramp.computeVertexNormals();ramp.rotateY(angle);ramp.translate(mx,0,mz);out.push({geo:ramp,mat:concrete})
   box(9.2,3.25,.14,0,5.5,.16,glass)
   for(const x of [-4.55,-3.03,-1.52,0,1.52,3.03,4.55])box(.08,3.25,.18,x,5.5,.27,silver)
   for(const y of [3.88,5.1,7.1])box(9.2,.09,.18,0,y,.27,silver)
@@ -447,6 +455,15 @@ function engineeringCenterDetails(b:Building){
     const height=(step+1)*.2,x=-24.05+step*.66
     box(.69,height,3.3,x,height/2,5.85,concrete)
   }
+  // Narrow planted strips sit against the facade, leaving a clear route to the doors.
+  const planterSoil=material('#725c48'),planterGreen=material('#718f56')
+  for(const [start,end] of [[-length/2+1,-14],[12,length/2-1]]){
+    box(end-start,.10,.85,(start+end)/2,3.84,.48,planterSoil)
+    for(let x=start+.5;x<end;x+=1.45){
+      const g=new THREE.IcosahedronGeometry(.35,1);g.scale(1,.6,.8)
+      out.push({geo:transform(g,x,4.01,.48),mat:planterGreen})
+    }
+  }
   // A planted bank separates the raised entry walk from the lower sidewalk.
   // Its surface slopes down toward the continuous low retaining wall.
   const soil=material('#755b48'),shrub=material('#6c8b4f'),shrubLight=material('#8ba760'),treeBark=material('#705543')
@@ -470,7 +487,7 @@ function engineeringCenterDetails(b:Building){
   }
   // Rails follow the sideways staircase and the edge of the upper walk.
   const segment=(p:THREE.Vector3,q:THREE.Vector3)=>{const v=q.clone().sub(p),g=new THREE.CylinderGeometry(.045,.045,v.length(),8);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize()));g.translate((p.x+q.x)/2,(p.y+q.y)/2,(p.z+q.z)/2);g.rotateY(angle);g.translate(mx,0,mz);out.push({geo:g,mat:silver})}
-  for(const z of [4.25,7.45]){
+  for(const z of [7.45]){
     segment(new THREE.Vector3(-24.3,.9,z),new THREE.Vector3(-11.4,4.7,z))
     for(let j=0;j<5;j++){const x=-24.3+j*3.2,y=.2+j*.95;segment(new THREE.Vector3(x,y,z),new THREE.Vector3(x,y+.8,z))}
   }
@@ -479,6 +496,36 @@ function engineeringCenterDetails(b:Building){
   for(let x=-5;x<=10.5;x+=2.5)segment(new THREE.Vector3(x,3.8,4.25),new THREE.Vector3(x,4.6,4.25))
   box(1.4,1.0,1.4,32,.5,13.8,dark)
   return out
+}
+
+
+/** A small glazed greenhouse with a brick plinth and a framed pitched roof. */
+function greenhouseParts(b:Building){
+  const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const brick=new THREE.MeshStandardMaterial({map:facade('redbrick'),roughness:.9,side:THREE.DoubleSide})
+  const glass=new THREE.MeshStandardMaterial({color:'#789492',roughness:.35,metalness:.12,side:THREE.DoubleSide})
+  const frame=new THREE.MeshStandardMaterial({color:'#d4d9d2',roughness:.65})
+  parts.push({geo:wallsGeometry(b,0,.7),mat:brick},{geo:wallsGeometry(b,.7,3.15),mat:glass})
+  const [p0,p1,p2,p3]=b.poly
+  const vec=(p:Pt,y:number)=>new THREE.Vector3(p[0],y,p[1])
+  const e0=vec(p0,3.15),e1=vec(p1,3.15),e2=vec(p2,3.15),e3=vec(p3,3.15)
+  const r0=e0.clone().add(e3).multiplyScalar(.5).setY(4.55),r1=e1.clone().add(e2).multiplyScalar(.5).setY(4.55)
+  const vertices:number[]=[]
+  const tri=(a:THREE.Vector3,c:THREE.Vector3,d:THREE.Vector3)=>vertices.push(...a.toArray(),...c.toArray(),...d.toArray())
+  tri(e0,e1,r1);tri(e0,r1,r0);tri(e3,r1,e2);tri(e3,r0,r1);tri(e0,r0,e3);tri(e1,e2,r1)
+  const roof=new THREE.BufferGeometry();roof.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));roof.computeVertexNormals();parts.push({geo:roof,mat:glass})
+  const bars:THREE.BufferGeometry[]=[]
+  const bar=(a:THREE.Vector3,c:THREE.Vector3)=>{const v=c.clone().sub(a),g=new THREE.CylinderGeometry(.045,.045,v.length(),6);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize()));g.translate((a.x+c.x)/2,(a.y+c.y)/2,(a.z+c.z)/2);bars.push(g)}
+  for(const [a,c] of [[e0,e1],[e1,e2],[e2,e3],[e3,e0],[r0,r1]] as [THREE.Vector3,THREE.Vector3][])bar(a,c)
+  for(let i=0;i<=8;i++){
+    const t=i/8,left=e0.clone().lerp(e1,t),right=e3.clone().lerp(e2,t),ridge=r0.clone().lerp(r1,t)
+    bar(left,ridge);bar(right,ridge);bar(left.clone().setY(.7),left);bar(right.clone().setY(.7),right)
+  }
+  for(const [a,c] of [[e0,e3],[e1,e2]] as [THREE.Vector3,THREE.Vector3][]){
+    for(let i=0;i<=4;i++){const point=a.clone().lerp(c,i/4);bar(point.clone().setY(.7),point)}
+  }
+  parts.push({geo:mergeGeometries(bars),mat:frame})
+  return parts
 }
 
 function Buildings({ campus }: { campus: Campus }) {
@@ -491,6 +538,10 @@ function Buildings({ campus }: { campus: Campus }) {
     }
     const roofTex = roofTexture()
     return campus.buildings.map((b) => {
+      if (b.kind === 'greenhouse' && b.poly.length === 4) {
+        b.h = 4.55
+        return { b, parts: greenhouseParts(b), flat: false }
+      }
       const look = lookFor(b.code, b.name, b.kind)
       if (look.floors) {
         b.levels = look.floors
