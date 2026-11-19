@@ -376,8 +376,19 @@ function mathematicsScreen(b:Building){
   for(let y=0;y<128;y+=16)for(let x=(y/16)%2?-24:0;x<512;x+=48){ctx.fillStyle=(x+y)%3?'#a66b4e':'#b77a57';ctx.fillRect(x+1,y+1,46,14)}
   const brickTexture=new THREE.CanvasTexture(canvas);brickTexture.colorSpace=THREE.SRGBColorSpace
   const brickMat=new THREE.MeshStandardMaterial({map:brickTexture,roughness:.95,side:THREE.DoubleSide})
-  add(6.5,1.05,.10,4.5,4.55,-.42,brickMat)
-  add(6.5,.10,.12,4.5,5.12,-.49,frame)
+  // Repeated glazed insets interrupt the concrete screen; brick sits below each
+  // window instead of appearing as isolated patches pasted over the grid.
+  const insetGlass=new THREE.MeshStandardMaterial({color:'#697c70',roughness:.42,side:THREE.DoubleSide})
+  const placeInset=(edge:number,offset:number,width:number)=>{
+    const p=b.poly[edge],q=b.poly[(edge+1)%b.poly.length],edgeAngle=Math.atan2(-(q[1]-p[1]),q[0]-p[0]),x=(p[0]+q[0])/2,z=(p[1]+q[1])/2
+    const part=(w:number,h:number,d:number,cx:number,cy:number,cz:number,mat:THREE.MeshStandardMaterial)=>{const geo=new THREE.BoxGeometry(w,h,d);geo.translate(cx,cy,cz);geo.rotateY(edgeAngle);geo.translate(x,0,z);details.push({geo,mat})}
+    part(width,3.4,.12,offset,5.65,-.38,insetGlass)
+    part(width,1.05,.14,offset,4.55,-.48,brickMat)
+    for(const y of [4.02,5.1,6.35,7.35])part(width,.1,.17,offset,y,-.57,frame)
+    for(const dx of [-width/2,0,width/2])part(.1,3.4,.17,offset+dx,5.65,-.57,frame)
+  }
+  for(const offset of [-22,2,23])placeInset(0,offset,5.4)
+  for(const offset of [4.5,12])placeInset(14,offset,5.4)
   // Freestanding campus wayfinding sign in the lawn outside the door.
   const signCanvas=document.createElement('canvas');signCanvas.width=512;signCanvas.height=256
   const signCtx=signCanvas.getContext('2d')!;signCtx.fillStyle='#26312d';signCtx.fillRect(0,0,512,256);signCtx.fillStyle='#f5f3e9';signCtx.textAlign='center';signCtx.font='bold 38px sans-serif';signCtx.fillText('Mathematics',256,92);signCtx.fillText('Building (D)',256,143);signCtx.fillStyle='#e5b129';signCtx.fillRect(0,184,512,9)
@@ -420,26 +431,43 @@ function engineeringCenterDetails(b:Building){
   out.push({geo:letters,mat:new THREE.MeshStandardMaterial({map:texture,transparent:true,depthWrite:false,side:THREE.DoubleSide})})
   // Slender poles adjacent to the entry frame.
   for(const x of [-8.9,-8.5,-8.1])box(.11,8.4,.11,x,7.85,3.5,silver)
-  // A broad flight rises from the lower approach to the entry terrace.
-  // These are visual steps, since the current terrain is flat.
+  // Sideways stairs rise parallel to the facade, approaching the entrance from the left.
+  // The flat game terrain does not yet support walking on this elevated geometry.
   for(let step=0;step<19;step++){
-    const height=(step+1)*.2,z=16.3-step*.66
-    box(5.2,height,.69,-7.8,height/2,z,concrete)
+    const height=(step+1)*.2,x=-24.05+step*.66
+    box(.69,height,3.3,x,height/2,5.85,concrete)
   }
-  // Concrete retaining walls rise with the stair flight.
-  const wallShape=new THREE.Shape();wallShape.moveTo(0,0);wallShape.lineTo(13,0);wallShape.lineTo(13,4.0);wallShape.lineTo(0,.5);wallShape.closePath()
-  for(const x of [-10.6,-5]){
-    const g=new THREE.ExtrudeGeometry(wallShape,{depth:.25,bevelEnabled:false});g.rotateY(Math.PI/2);g.translate(x-.125,0,16.65);g.rotateY(angle);g.translate(mx,0,mz);out.push({geo:g,mat:concrete})
+  // A planted bank separates the raised entry walk from the lower sidewalk.
+  // Its surface slopes down toward the continuous low retaining wall.
+  const soil=material('#755b48'),shrub=material('#6c8b4f'),shrubLight=material('#8ba760'),treeBark=material('#705543')
+  const bank=new THREE.BufferGeometry()
+  const verts=new Float32Array([-10,3.65,4.4, 29,3.65,4.4, 29,1.05,12.8, -10,3.65,4.4, 29,1.05,12.8, -10,1.05,12.8])
+  bank.setAttribute('position',new THREE.BufferAttribute(verts,3));bank.computeVertexNormals();bank.rotateY(angle);bank.translate(mx,0,mz);out.push({geo:bank,mat:soil})
+  box(39,1.05,.38,9.5,.525,12.9,concrete)
+  box(39,.13,.55,9.5,1.1,12.9,white)
+  // Low shrubs and a few young trees evoke the planted strip without hiding the entry.
+  const foliage:THREE.BufferGeometry[]=[],foliageLight:THREE.BufferGeometry[]=[]
+  for(let row=0;row<3;row++)for(let j=0;j<14;j++){
+    const x=-8+j*2.65+(row%2)*.8,z=5.7+row*2.3,y=3.65-(z-4.4)*2.6/8.4
+    const radius=.45+((j+row)%3)*.09,g=new THREE.IcosahedronGeometry(radius,1)
+    g.scale(1,.68,1);transform(g,x,y+.18,z);(j%3===0?foliageLight:foliage).push(g)
   }
-  // Handrails run along the flight and the landing edge.
+  out.push({geo:mergeGeometries(foliage),mat:shrub},{geo:mergeGeometries(foliageLight),mat:shrubLight})
+  for(const x of [-3,8,20]){
+    const z=9.5,y=3.65-(z-4.4)*2.6/8.4
+    const trunk=new THREE.CylinderGeometry(.13,.18,2.9,7);out.push({geo:transform(trunk,x,y+1.45,z),mat:treeBark})
+    const crown=new THREE.IcosahedronGeometry(1.45,1);crown.scale(1,1.2,1);out.push({geo:transform(crown,x,y+3.2,z),mat:shrub})
+  }
+  // Rails follow the sideways staircase and the edge of the upper walk.
   const segment=(p:THREE.Vector3,q:THREE.Vector3)=>{const v=q.clone().sub(p),g=new THREE.CylinderGeometry(.045,.045,v.length(),8);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize()));g.translate((p.x+q.x)/2,(p.y+q.y)/2,(p.z+q.z)/2);g.rotateY(angle);g.translate(mx,0,mz);out.push({geo:g,mat:silver})}
-  for(const x of [-10.35,-5.25]){
-    segment(new THREE.Vector3(x,.9,16.2),new THREE.Vector3(x,4.7,4.4))
-    for(let j=0;j<5;j++){const z=16.2-j*2.95,y=.2+j*.95;segment(new THREE.Vector3(x,y,z),new THREE.Vector3(x,y+.8,z))}
+  for(const z of [4.25,7.45]){
+    segment(new THREE.Vector3(-24.3,.9,z),new THREE.Vector3(-11.4,4.7,z))
+    for(let j=0;j<5;j++){const x=-24.3+j*3.2,y=.2+j*.95;segment(new THREE.Vector3(x,y,z),new THREE.Vector3(x,y+.8,z))}
   }
-  segment(new THREE.Vector3(-4.8,4.6,4.25),new THREE.Vector3(10.5,4.6,4.25))
-  for(let x=-4.8;x<=10.5;x+=2.5)segment(new THREE.Vector3(x,3.8,4.25),new THREE.Vector3(x,4.6,4.25))
-  box(1.4,1.0,1.4,12,.5,7.6,dark)
+  // Keep a clear entrance from the landing onto the stairs.
+  segment(new THREE.Vector3(-5,4.6,4.25),new THREE.Vector3(10.5,4.6,4.25))
+  for(let x=-5;x<=10.5;x+=2.5)segment(new THREE.Vector3(x,3.8,4.25),new THREE.Vector3(x,4.6,4.25))
+  box(1.4,1.0,1.4,32,.5,13.8,dark)
   return out
 }
 
