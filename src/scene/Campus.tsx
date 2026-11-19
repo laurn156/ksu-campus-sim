@@ -792,6 +792,39 @@ function designTwoDetails(b:Building){
     panel.translate(Math.sin(angle)*.12,0,Math.cos(angle)*.12);out.push({geo:panel,mat:brick})
     const cap=new THREE.BoxGeometry(len+.15,.22,.38);cap.rotateY(angle);cap.translate(mx+Math.sin(angle)*.18,b.h-.05,mz+Math.cos(angle)*.18);out.push({geo:cap,mat:trim})
   }
+  // West end faces the ETC: glazed entrance with a slim Design II name band.
+  const glass=new THREE.MeshStandardMaterial({color:'#557671',roughness:.35,side:THREE.DoubleSide})
+  const dark=new THREE.MeshStandardMaterial({color:'#394a44',roughness:.8})
+  const white=new THREE.MeshStandardMaterial({color:'#e5e5dd',roughness:.8,side:THREE.DoubleSide})
+  const concrete=new THREE.MeshStandardMaterial({color:'#c7c1b2',roughness:.9})
+  const soil=new THREE.MeshStandardMaterial({color:'#786457',roughness:.95})
+  const worldBox=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>{const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z);out.push({geo,mat})}
+  worldBox(.17,3.1,3,-252.03,1.55,43,glass)
+  for(const z of [41.5,43,44.5])worldBox(.25,3.15,.1,-252.16,1.58,z,white)
+  worldBox(.28,.16,3.1,-252.16,3.14,43,white)
+  worldBox(.3,.5,12,-252.14,5.25,43,white)
+  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192
+  const ctx=canvas.getContext('2d')!;ctx.fillStyle='#4b5550';ctx.font='bold 120px sans-serif';ctx.textAlign='center';ctx.fillText('DESIGN II',512,142)
+  const text=new THREE.CanvasTexture(canvas);text.colorSpace=THREE.SRGBColorSpace
+  const label=new THREE.PlaneGeometry(7,1.4);label.rotateY(-Math.PI/2);label.translate(-252.32,5.75,43)
+  out.push({geo:label,mat:new THREE.MeshStandardMaterial({map:text,transparent:true,depthWrite:false,side:THREE.DoubleSide})})
+  // Roof terrace sits above the lower linking wing between the two buildings.
+  worldBox(67,.18,3.3,-214,3.91,33.4,concrete)
+  for(const x of [-243,-235,-227,-219,-211,-203,-195,-187]){
+    worldBox(3.4,.48,1.5,x,4.2,31.55,white)
+    worldBox(3.08,.08,1.2,x,4.48,31.55,soil)
+  }
+  for(const x of [-238,-220,-202,-185]){
+    const top=new THREE.CylinderGeometry(.75,.75,.1,16);top.translate(x,4.78,33.4);out.push({geo:top,mat:white})
+    const stem=new THREE.CylinderGeometry(.06,.06,.75,8);stem.translate(x,4.34,33.4);out.push({geo:stem,mat:dark})
+    for(const dx of [-1.1,1.1])worldBox(.55,.1,.55,x+dx,4.4,33.4,dark)
+  }
+  // Side stairs rise gradually from the lower walkway to the terrace edge.
+  for(let i=0;i<19;i++){
+    const h=(i+1)*.2
+    worldBox(.65,h,3.1,-264+i*.65,h/2,33.35,concrete)
+  }
+  worldBox(1.1,3.8,3.1,-251.65,1.9,33.35,concrete)
   return out
 }
 
