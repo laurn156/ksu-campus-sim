@@ -59,6 +59,7 @@ function rockTexture(): THREE.CanvasTexture {
     g.ellipse(r() * c.width, r() * c.height, 20 + r() * 80, 12 + r() * 40, r() * 3, 0, Math.PI * 2)
     g.fill()
   }
+  // a clear handprint: rounded palm, four separate fingers, thumb out to the side
   const hand = (x: number, y: number, s: number, rot: number, col: string) => {
     g.save()
     g.translate(x, y)
@@ -66,33 +67,52 @@ function rockTexture(): THREE.CanvasTexture {
     g.scale(s / 1.75, s) // pre-squeeze: the rock is stretched 1.75x wide
     g.fillStyle = col
     g.beginPath()
-    g.ellipse(0, 10, 15, 17, 0, 0, Math.PI * 2)
+    g.moveTo(-16, 4)
+    g.quadraticCurveTo(-18, 30, 0, 32)
+    g.quadraticCurveTo(18, 30, 16, 4)
+    g.quadraticCurveTo(0, -4, -16, 4)
     g.fill()
-    const fingers: [number, number, number, number, number][] = [[-12, -13, 4.3, 11, -0.25], [-4, -18, 4.3, 13, -0.08], [4, -18, 4.3, 13, 0.08], [11.5, -13, 4, 11, 0.25], [-19, 7, 4.3, 10, -0.9]]
-    for (const [fx, fy, rx, ry, a] of fingers) {
+    const finger = (fx: number, fy: number, len: number, ang: number) => {
+      g.save()
+      g.translate(fx, fy)
+      g.rotate(ang)
       g.beginPath()
-      g.ellipse(fx, fy, rx, ry, a, 0, Math.PI * 2)
+      g.roundRect(-3.6, -len, 7.2, len + 4, 3.6)
       g.fill()
+      g.restore()
     }
+    finger(-11.5, 4, 17, -0.22)
+    finger(-4, 1, 21, -0.07)
+    finger(4, 1, 22, 0.06)
+    finger(11.5, 4, 18, 0.2)
+    finger(-16, 18, 15, -1.05) // thumb
     g.restore()
   }
-  const yellows = ['#FFC629', '#F5D33B', '#E8B516', '#FFE066']
-  const others = ['#ffffff', '#ffffff', '#7fd0ff', '#ff7ab6', '#7be07b', '#ff9a3c', '#b9a5ff']
-  for (let i = 0; i < 800; i++) {
-    const col = r() < 0.72 ? yellows[Math.floor(r() * yellows.length)] : others[Math.floor(r() * others.length)]
-    hand(r() * c.width, 240 + r() * 600, 0.75 + r() * 0.3, (r() - 0.5) * 1.2, col)
+  // keep prints off the lettering, and spaced out so each one reads as a hand
+  const TX = c.width * 0.25
+  const inText = (x: number, y: number) => Math.abs(x - TX) < 300 && y > 250 && y < 660
+  const placed: [number, number][] = []
+  const yellows = ['#FFC629', '#F5D33B', '#FFE066']
+  const others = ['#ffffff', '#7fd0ff', '#ff7ab6', '#7be07b', '#ff9a3c']
+  for (let tries = 0; tries < 6000 && placed.length < 230; tries++) {
+    const x = r() * c.width
+    const y = 250 + r() * 560
+    if (inText(x, y) || placed.some(([px, py]) => Math.abs(px - x) < 46 && Math.abs(py - y) < 64)) continue
+    placed.push([x, y])
+    const col = r() < 0.75 ? yellows[Math.floor(r() * yellows.length)] : others[Math.floor(r() * others.length)]
+    hand(x, y, 1.55 + r() * 0.35, (r() - 0.5) * 1.1, col)
   }
-  // "SLAP / ROCK" in chunky white paint on the front (u ~ 0.25 faces +z)
+  // "SLAP / THE / ROCK" in chunky white paint on the front (u ~ 0.25 faces +z)
   g.save()
-  g.translate(c.width * 0.25, 0)
-  g.scale(1 / 1.75 * 1.6, 1)
-  g.fillStyle = 'rgba(255,255,255,.93)'
-  g.strokeStyle = 'rgba(255,255,255,.6)'
-  g.lineWidth = 10
-  g.font = '900 150px Impact, "Arial Black", sans-serif'
+  g.translate(TX, 0)
+  g.scale((1 / 1.75) * 1.55, 1)
+  g.fillStyle = 'rgba(255,255,255,.94)'
+  g.strokeStyle = 'rgba(255,255,255,.55)'
+  g.lineWidth = 9
   g.textAlign = 'center'
   g.textBaseline = 'middle'
-  for (const [txt, y] of [['SLAP', 410], ['ROCK', 570]] as const) {
+  for (const [txt, y, size] of [['SLAP', 330, 130], ['THE', 450, 95], ['ROCK', 570, 130]] as const) {
+    g.font = `900 ${size}px Impact, "Arial Black", sans-serif`
     g.strokeText(txt, 0, y)
     g.fillText(txt, 0, y)
   }
@@ -106,23 +126,29 @@ function rockTexture(): THREE.CanvasTexture {
 /** "Slap the Rock": a big, low, lumpy boulder in glossy black paint with handprints, on a mulch bed. */
 function SlapTheRock({ at }: { at: Pt }) {
   const geo = useMemo(() => {
-    const g = new THREE.SphereGeometry(1, 96, 56)
+    const g = new THREE.SphereGeometry(1, 44, 26)
     const p = g.getAttribute('position')
     const v = new THREE.Vector3()
+    // a few big "fracture planes" cut flat faces into it, then small chips: craggy, like real stone
+    const planes = [[0.8, 0.5, 0.3, 0.86], [-0.6, 0.7, -0.4, 0.84], [0.1, 0.9, 0.6, 0.8], [-0.9, -0.1, 0.5, 0.88], [0.4, 0.2, -0.9, 0.87], [0.0, 1, 0, 0.82]]
+      .map(([x, y, z, d]) => ({ n: new THREE.Vector3(x, y, z).normalize(), d }))
     for (let i = 0; i < p.count; i++) {
       v.fromBufferAttribute(p, i)
-      // irregular lumps at a few scales (a real boulder, not an egg), flattened bottom
-      const n = 1 + 0.14 * Math.sin(v.x * 1.8 + 0.7) * Math.cos(v.z * 1.5 + 0.3) + 0.09 * Math.sin(v.y * 2.4 + v.x * 1.6)
-        + 0.05 * Math.cos(v.z * 4.1 - v.y * 2.2) + 0.03 * Math.sin(v.x * 7 + v.z * 5)
+      const n = 1 + 0.16 * Math.sin(v.x * 1.7 + 0.7) * Math.cos(v.z * 1.4 + 0.3) + 0.1 * Math.sin(v.y * 2.3 + v.x * 1.6)
+        + 0.06 * Math.cos(v.z * 4.3 - v.y * 2.1) + 0.045 * Math.sin(v.x * 9.1 + v.z * 7.3) * Math.cos(v.y * 8.2)
       v.multiplyScalar(n)
+      for (const pl of planes) {
+        const k = v.dot(pl.n)
+        if (k > pl.d) v.addScaledVector(pl.n, pl.d - k) // slice it flat
+      }
       const y = v.y < 0 ? Math.max(v.y, -0.45) : v.y * (v.x > 0 ? 0.85 : 1) // sloping top, higher on one end
-      v.set(v.x * 1.75, y * 1.05, v.z * 1.35)
+      v.set(v.x * 1.75, y * 1.3, v.z * 1.35)
       p.setXYZ(i, v.x, v.y, v.z)
     }
     g.computeVertexNormals()
     return g
   }, [])
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({ map: rockTexture(), roughness: 0.22, metalness: 0.05 }), [])
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ map: rockTexture(), roughness: 0.35, metalness: 0.05, flatShading: true }), [])
   return (
     <group position={[at[0], 0, at[1]]} rotation={[0, 0.6, 0]}>
       {/* mulch / dirt bed */}
