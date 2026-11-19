@@ -47,6 +47,9 @@ export async function loadCampus(): Promise<Campus> {
   // Remove a narrow mapping spur that projected past the Textile Center's north wall.
   const textile = c.buildings.find((b) => b.code === 'M')
   if (textile && textile.poly.length === 30) textile.poly = textile.poly.filter((_, i) => i < 2 || i > 4)
+  // Administration is a two-storey building.
+  const administration = c.buildings.find((b) => b.code === 'B')
+  if (administration) { administration.h = 7.6; administration.levels = 2 }
   // The civil engineering building has a tall ribbed upper facade above its brick level.
   const civil = c.buildings.find((b) => b.code === 'L')
   if (civil) { civil.h = 6.2; civil.levels = 1 }

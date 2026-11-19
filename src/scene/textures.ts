@@ -180,6 +180,12 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
     g.fillStyle = 'rgba(0,0,0,.09)'
     for (let x = 0; x < W; x += 8) g.fillRect(x, 0, 3, H)
   },
+  // Administration: closely spaced, light concrete fins in a dark recessed screen.
+  administrationscreen: (g) => {
+    g.fillStyle='#586864';g.fillRect(0,0,W,H)
+    for(let x=0;x<W;x+=8){g.fillStyle='#d9dcd3';g.fillRect(x,0,3,H);g.fillStyle='#9aa8a1';g.fillRect(x+3,0,1,H)}
+    g.fillStyle='#e8e9e1';g.fillRect(0,0,W,6);g.fillRect(0,H-6,W,6)
+  },
   // Howell and Norton: pale concrete bays, narrow horizontal windows, and brick piers.
   residencehall: (g) => {
     g.fillStyle='#e5ddc9';g.fillRect(0,0,W,H)

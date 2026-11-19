@@ -916,6 +916,58 @@ function scienceAnnexDetails(){
   return out
 }
 
+/** Administration Building: low brick wings with pale framing and screened upper bays. */
+function administrationParts(b:Building) {
+  const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const solid=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.88,side:THREE.DoubleSide})
+  const brick=new THREE.MeshStandardMaterial({map:facade('textilebrick'),roughness:.95,side:THREE.DoubleSide})
+  const screen=new THREE.MeshStandardMaterial({map:facade('administrationscreen'),roughness:.9,side:THREE.DoubleSide})
+  const glass=new THREE.MeshStandardMaterial({map:facade('etcglass'),roughness:.35,side:THREE.DoubleSide})
+  const pale=solid('#e6e6de'),dark=solid('#425450'),stone=solid('#cdcac0'),metal=solid('#aeb9b1')
+  const roof=new THREE.MeshStandardMaterial({map:roofTexture(),color:'#f1f0e9',roughness:.95,side:THREE.DoubleSide})
+  parts.push({geo:wallsGeometry(b,0,3.4),mat:pale},{geo:wallsGeometry(b,3.4,b.h),mat:brick},{geo:flatGeometry(b.poly,b.h+.03,8),mat:roof})
+  let area=0;for(let i=0;i<b.poly.length;i++){const a=b.poly[i],c=b.poly[(i+1)%b.poly.length];area+=a[0]*c[1]-c[0]*a[1]}
+  const edge=(i:number)=>{
+    const a=b.poly[i],c=b.poly[(i+1)%b.poly.length],dx=c[0]-a[0],dz=c[1]-a[1],length=Math.hypot(dx,dz),sign=area>0?-1:1
+    const angle=-Math.atan2(dz,dx),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    const box=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>{
+      const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z*sign);geo.rotateY(angle);geo.translate(mx,0,mz);parts.push({geo,mat})
+    }
+    return {length,box}
+  }
+  // Pale perimeter columns and caps outline each wing.
+  for(let i=0;i<b.poly.length;i++){
+    const e=edge(i);e.box(e.length,.28,.35,0,b.h-.12,.12,pale)
+    if(e.length>6)for(const x of [-e.length/2+.25,e.length/2-.25])e.box(.42,b.h,.38,x,b.h/2,.12,pale)
+  }
+  // Tall screens sit above the lower ribbon windows, following the long outside wings.
+  for(const i of [2,13,17]){
+    const e=edge(i),w=Math.max(3,e.length-1)
+    e.box(w,3,.18,0,5.35,.12,screen)
+    for(const x of [-w/2,w/2])e.box(.22,3.2,.28,x,5.35,.22,pale)
+    for(let x=-w/2+2.4;x<w/2-1;x+=5.2){
+      e.box(3.65,1.35,.13,x,1.95,.09,dark)
+      for(const d of [-1.8,-.6,.6,1.8])e.box(.09,1.4,.2,x+d,1.95,.19,metal)
+      e.box(3.7,.1,.2,x,2.68,.19,pale)
+    }
+  }
+  // A full-height perforated concrete panel wraps the short end facing the walk.
+  const end=edge(3);end.box(3.5,b.h-.35,.2,-end.length/2+1.9,b.h/2,.14,screen)
+  // Recessed glazed entrance on the courtyard-facing wing.
+  const entry=edge(4)
+  entry.box(7,3.1,.15,0,1.55,.1,glass)
+  for(const x of [-3.45,-2.3,-1.15,0,1.15,2.3,3.45])entry.box(.1,3.1,.22,x,1.55,.22,pale)
+  for(const y of [.12,1.5,3])entry.box(7,.09,.22,0,y,.22,pale)
+  entry.box(7.5,.2,1.45,0,3.2,.7,pale)
+  for(let i=0;i<4;i++)entry.box(6,.12*(i+1),.5,0,.06*(i+1),2.9-i*.5,stone)
+  // A second service entrance, adjacent windows and a small mechanical unit.
+  const back=edge(10)
+  back.box(2,2.6,.16,0,1.3,.12,dark);back.box(1.75,2.35,.2,0,1.24,.23,glass)
+  for(const x of [-back.length*.33,back.length*.33])back.box(1.8,1.2,.14,x,1.9,.1,glass)
+  const equipment=edge(7);equipment.box(2.2,1.1,1.6,0,.55,1.05,metal)
+  return parts
+}
+
 /** Howell and Norton Halls: light window bays with brick piers and distinct entries. */
 function residenceHallParts(b:Building) {
   const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
@@ -1783,6 +1835,7 @@ function Buildings({ campus }: { campus: Campus }) {
           ...academicDetails(b),
         ], flat: true }
       }
+      if (b.code === 'B') return { b, parts: administrationParts(b), flat: true }
       if (b.code === 'R1' || b.code === 'R2') return { b, parts: residenceHallParts(b), flat: true }
       if (b.code === 'T') return { b, parts: wilderParts(b), flat: true }
       if (b.code === 'L' || b.code === 'L1' || b.code === 'O') return { b, parts: civilBuildingsParts(b), flat: true }
