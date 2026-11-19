@@ -704,6 +704,41 @@ function LibraryDome({ at, y }: { at: Pt; y: number }) {
   )
 }
 
+/** Open white bell tower on the brick base at the library's curved end. */
+function LibraryBellTower() {
+  const beamGeometry=useMemo(()=>{
+    const beams:THREE.BufferGeometry[]=[]
+    const bar=(a:THREE.Vector3,b:THREE.Vector3)=>{
+      const d=b.clone().sub(a),g=new THREE.CylinderGeometry(.065,.065,d.length(),8)
+      g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize()))
+      g.translate((a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2);beams.push(g)
+    }
+    for(const x of [-1.5,1.5])for(const z of [-.85,.85])bar(new THREE.Vector3(x,7.6,z),new THREE.Vector3(x,21,z))
+    for(const y of [7.7,14.3,20.9]){
+      for(const z of [-.85,.85])bar(new THREE.Vector3(-1.5,y,z),new THREE.Vector3(1.5,y,z))
+      for(const x of [-1.5,1.5])bar(new THREE.Vector3(x,y,-.85),new THREE.Vector3(x,y,.85))
+    }
+    for(const z of [-.85,.85])for(const y of [7.7,14.3]){
+      bar(new THREE.Vector3(-1.5,y,z),new THREE.Vector3(1.5,y+6.6,z))
+      bar(new THREE.Vector3(1.5,y,z),new THREE.Vector3(-1.5,y+6.6,z))
+    }
+    return beams
+  },[])
+  const bell=useMemo(()=>new THREE.LatheGeometry([
+    new THREE.Vector2(.30,0),new THREE.Vector2(.25,.08),new THREE.Vector2(.20,.36),
+    new THREE.Vector2(.12,.46),new THREE.Vector2(.04,.48),new THREE.Vector2(0,.48),
+  ],16),[])
+  return <group position={[-168.4,0,-65.9]}>
+    <mesh position={[0,3.8,0]} castShadow receiveShadow><boxGeometry args={[3.5,7.6,2.2]}/><meshStandardMaterial color="#a96d57" roughness={.9}/></mesh>
+    <mesh position={[0,7.65,0]}><boxGeometry args={[3.7,.2,2.4]}/><meshStandardMaterial color="#e5e5dc"/></mesh>
+    {beamGeometry.map((geometry,i)=><mesh key={i} geometry={geometry} material={white} castShadow />)}
+    {[-1.05,-.35,.35,1.05].map((x,i)=><group key={x} position={[x,20.15,0]}>
+      <mesh geometry={bell} rotation={[0,0,i%2?.05:-.05]}><meshStandardMaterial color="#474740" metalness={.55} roughness={.4}/></mesh>
+      <mesh position={[0,-.05,0]}><sphereGeometry args={[.07,8,6]}/><meshStandardMaterial color="#33332e"/></mesh>
+    </group>)}
+  </group>
+}
+
 /** Where the Math building's south stairs start, and which way they run. */
 function mathStairs(campus: Campus): { a: Pt; b: Pt } | null {
   const D = campus.buildings.find((x) => x.code === 'D')
@@ -779,7 +814,7 @@ export function Landmarks({ campus }: { campus: Campus }) {
       {campus.canopies.filter((b) => b.id !== '559995482' && b.id !== '559995483').map((b) => (
         <FootprintCanopy key={b.id} poly={b.poly} />
       ))}
-      {placed.lib && <LibraryDome at={centroid(placed.lib.poly)} y={placed.lib.h} />}
+      {placed.lib && <><LibraryDome at={centroid(placed.lib.poly)} y={placed.lib.h} /><LibraryBellTower /></>}
       {campus.features.filter((f) => !(f.kind === 'bench' && f.x >= -205 && f.x <= -177 && f.z >= 57 && f.z <= 63)).map((f, i) =>
         f.kind === 'bench' ? <Bench key={i} x={f.x} z={f.z} dir={f.dir} /> : f.kind === 'fountain' ? <Fountain key={i} x={f.x} z={f.z} /> : f.kind === 'shelter' ? <Shelter key={i} x={f.x} z={f.z} /> : null,
       )}
