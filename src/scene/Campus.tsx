@@ -1101,6 +1101,13 @@ function academicDetails(b:Building){
     const middle=(z0+z1)/2,dx=frontWallX(z1)-frontWallX(z0),angle=Math.atan2(dx,z1-z0),length=Math.hypot(dx,z1-z0)
     const upper=new THREE.BoxGeometry(2.5,top-3.6,length);upper.rotateY(angle);upper.translate(frontWallX(middle)-1.25,(top+3.6)/2,middle);out.push({geo:upper,mat:brick})
     const fascia=new THREE.BoxGeometry(2.6,.16,length);fascia.rotateY(angle);fascia.translate(frontWallX(middle)-1.25,3.62,middle);out.push({geo:fascia,mat:stone})
+    if(top>8){
+      // Two long glazed bands continue across the high part of the projection.
+      for(const y of [5.5,9.3]){
+        const band=new THREE.BoxGeometry(.12,.72,length-.2);band.rotateY(angle);band.translate(frontWallX(middle)-2.53,y,middle);out.push({geo:band,mat:glass})
+        for(let z=z0+1;z<z1;z+=2.4)box(.16,.78,.08,frontWallX(z)-2.61,y,z,stone)
+      }
+    }
   }
   // Posts are under the outer edge, leaving the doorway and name panel clear.
   for(const z of [-44,-41,-20,-11,-2,7,16,21])box(.4,3.6,.4,frontWallX(z)-2.3,1.8,z,stone)
