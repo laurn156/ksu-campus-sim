@@ -327,7 +327,7 @@ function Trees({ campus }: { campus: Campus }) {
     if (campus.treesFromAerial) {
       // real tree positions detected in the aerial photo
       // keep roughly 1 in 4 detected canopy points: the woods still read as woods, the lawns stay open
-      for (const t of campus.trees) if (rnd() < 0.24 || (t[2] ?? 1) > 1.32 && rnd() < 0.4) spots.push([t[0], t[1], (t[2] ?? 1) * 1.25])
+      for (const t of campus.trees) if (rnd() < 0.12 || ((t[2] ?? 1) > 1.32 && rnd() < 0.22)) spots.push([t[0], t[1], (t[2] ?? 1) * 1.25])
     } else for (const [x, z] of campus.trees) tryAdd(x, z, 1.2)
     // lines of trees along walkways (like the aerial view)
     if (!campus.treesFromAerial) for (const p of campus.paths) {

@@ -35,6 +35,7 @@ export interface Campus {
   areas: Area[]
   trees: (Pt | [number, number, number])[] // [x, z] or [x, z, scale] when detected from the aerial photo
   treesFromAerial?: boolean
+  canopies: Building[]
   features: { kind: 'sculpture' | 'bench' | 'flagpole' | 'fountain' | 'shelter'; x: number; z: number; name: string; dir: number | null }[]
   extent: [number, number, number, number]
   attribution: string
@@ -42,7 +43,19 @@ export interface Campus {
 
 export async function loadCampus(): Promise<Campus> {
   const r = await fetch('/campus.json')
-  return r.json()
+  const c: Campus = await r.json()
+  // Small unnamed structures in front of the Atrium are walk-under canopies, not buildings
+  // (they look like buildings from the air). Pull them out so they get no walls and no collision.
+  const J = c.buildings.find((b) => b.code === 'J')
+  const jc = J ? centroid(J.poly) : null
+  c.canopies = c.buildings.filter((b) => {
+    if (!jc || b.name || b === J) return false
+    const [x, z] = centroid(b.poly)
+    const [a, bb, cc, d] = bbox(b.poly)
+    return Math.hypot(x - jc[0], z - jc[1]) < 45 && (cc - a) * (d - bb) < 900
+  })
+  c.buildings = c.buildings.filter((b) => !c.canopies.includes(b))
+  return c
 }
 
 export function pointInPoly(x: number, z: number, poly: Pt[]): boolean {

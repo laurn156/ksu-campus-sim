@@ -9,8 +9,8 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-Controls: **WASD** walk, **Shift** run, **click** the ground to walk there, **Q/E** or right-drag to turn the
-camera, mouse **wheel** to zoom, **M** mute.
+Controls: **WASD** walk, **Shift** run, **drag** (left or right mouse) to look around, **Q/E** turn, mouse **wheel**
+zoom, **📍 Go to…** menu to jump to any building or landmark, **M** mute.
 
 ## How the campus is built
 
@@ -26,14 +26,15 @@ camera, mouse **wheel** to zoom, **M** mute.
   of the exact campus area. `scripts/stylize_aerial.py` repaints it into our illustrated ground
   (`public/ground.jpg`: lawn, tree canopy, pavement, asphalt, infield), so every real walkway, plaza and lawn
   shape is in the right place. `scripts/trees_from_aerial.py` places a 3D tree on every patch of real canopy
-  (~12,000 trees). Roofs show their own patch of the photo. **G** cycles ground styles: illustrated / photo / drawn.
+  (~12,000 trees). Roofs show their own patch of the photo.
 
 - **Buildings look like the real ones** (`src/scene/styles.ts`), using KSU's interactive map and its building
   photos as visual reference: red brick halls, Hornet Village's brick over a cast-stone base, Crawford's tan
   stucco with the concrete screen band, white ribbon-window academic blocks, glass curtain walls (Architecture,
   ETC), tan-brick University Commons with gray hipped roofs, the parking deck, light flat roofs with equipment.
 - **Landmarks** (`src/scene/Landmarks.tsx`): Slap the Rock, the gold KSU letters at Hornet Village, the Globe
-  plaza and white tent canopies, the University Commons basketball and volleyball courts, plus OpenStreetMap
+  plaza, the row of white tents from Math to Administration, the covered walkway with stairs from Crawford to
+  Math, the outdoor stage, the Atrium's walk-under canopies, the Library's dome skylight, the University Commons basketball and volleyball courts, plus OpenStreetMap
   benches, flagpoles, the fountain, bus shelters and stairs.
 
 Regenerate the campus data (in order):

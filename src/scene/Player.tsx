@@ -1,4 +1,4 @@
-import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { Character, type Headwear } from '../characters/Character'
@@ -7,7 +7,7 @@ import { centroid, Collider, type Campus } from '../campus'
 import { occluders } from './Campus'
 
 /** Shared, mutable player state (read by the HUD / minimap without re-rendering React every frame). */
-export const player = { x: 0, z: 0, heading: 0, yaw: 0.6, moving: false }
+export const player = { x: 0, z: 0, heading: 0, yaw: 0.6, pitch: 1.0, moving: false, tp: null as null | { x: number; z: number; yaw: number } }
 
 const WALK = 5 // m/s (a brisk, game-paced walk)
 const RUN = 9.5
@@ -15,6 +15,26 @@ const RUN = 9.5
 export interface AvatarLook {
   color: PaletteName
   headwear: Headwear
+}
+
+/** A clear spot just outside a building (toward the middle of campus), facing it. */
+export function approach(campus: Campus, poly: [number, number][]): { x: number; z: number; yaw: number } {
+  const collider = new Collider(campus.buildings)
+  const [cx, cz] = centroid(poly)
+  const len = Math.hypot(cx, cz) || 1
+  for (const turn of [0, 0.6, -0.6, 1.2, -1.2, 2, -2, Math.PI]) {
+    const ux = (-cx / len) * Math.cos(turn) - (-cz / len) * Math.sin(turn)
+    const uz = (-cx / len) * Math.sin(turn) + (-cz / len) * Math.cos(turn)
+    for (let r = 3; r < 200; r += 2) {
+      const x = cx + ux * r
+      const z = cz + uz * r
+      if (!collider.blocked(x, z, 0.5)) {
+        if (collider.blocked(x + ux * 4, z + uz * 4, 1.5)) break // squeezed into a gap; try another side
+        return { x: x + ux * 5, z: z + uz * 5, yaw: Math.atan2(ux, uz) }
+      }
+    }
+  }
+  return { x: cx, z: cz + 30, yaw: 0 }
 }
 
 /** Start just outside the Student Center, on the side that faces the middle of campus. */
@@ -39,14 +59,13 @@ export function spawnPoint(campus: Campus): [number, number, number] {
 export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   const collider = useMemo(() => new Collider(campus.buildings), [campus])
   const body = useRef<THREE.Group>(null)
-  const marker = useRef<THREE.Mesh>(null)
   const walk = useRef(0)
   const keys = useRef(new Set<string>())
-  const target = useRef<THREE.Vector2 | null>(null)
   const dist = useRef(30)
   const cut = useRef(0)
+  const snap = useRef(false)
   const ray = useMemo(() => new THREE.Raycaster(), [])
-  const drag = useRef<{ x: number } | null>(null)
+  const drag = useRef<{ x: number; y: number } | null>(null)
   const { camera, gl } = useThree()
 
   useEffect(() => {
@@ -57,7 +76,6 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
         player.z = z
         if (yaw !== undefined) player.yaw = yaw
         if (d !== undefined) dist.current = d
-        target.current = null
       }
     const [x, z, yaw] = spawnPoint(campus)
     player.x = x
@@ -67,17 +85,19 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     const down = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return
       keys.current.add(e.key.toLowerCase())
-      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(e.key.toLowerCase())) target.current = null
     }
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase())
     const wheel = (e: WheelEvent) => (dist.current = THREE.MathUtils.clamp(dist.current * (1 + Math.sign(e.deltaY) * 0.1), 8, 140))
     const pdown = (e: PointerEvent) => {
-      if (e.button === 2) drag.current = { x: e.clientX }
+      // left or right drag looks around (no click-to-walk)
+      if (e.button === 0 || e.button === 2) drag.current = { x: e.clientX, y: e.clientY }
     }
     const pmove = (e: PointerEvent) => {
       if (!drag.current) return
       player.yaw -= (e.clientX - drag.current.x) * 0.008
+      player.pitch = THREE.MathUtils.clamp(player.pitch + (e.clientY - drag.current.y) * 0.005, 0.3, 1.45)
       drag.current.x = e.clientX
+      drag.current.y = e.clientY
     }
     const pup = () => (drag.current = null)
     const ctx = (e: Event) => e.preventDefault()
@@ -102,6 +122,15 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05)
     const k = keys.current
+    if (player.tp) {
+      // teleport (from the "Go to" menu): jump there and snap the camera
+      player.x = player.tp.x
+      player.z = player.tp.z
+      player.yaw = player.tp.yaw
+      player.heading = player.tp.yaw + Math.PI
+      player.tp = null
+      snap.current = true
+    }
     if (k.has('q')) player.yaw += dt * 1.6
     if (k.has('e')) player.yaw -= dt * 1.6
     // camera-relative movement: "forward" points away from the camera
@@ -112,10 +141,6 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     if (k.has('s') || k.has('arrowdown')) dir.sub(fwd)
     if (k.has('d') || k.has('arrowright')) dir.add(right)
     if (k.has('a') || k.has('arrowleft')) dir.sub(right)
-    if (dir.lengthSq() === 0 && target.current) {
-      dir.set(target.current.x - player.x, target.current.y - player.z)
-      if (dir.length() < 0.6) target.current = null
-    }
     const moving = dir.lengthSq() > 0.0001
     if (moving) {
       dir.normalize()
@@ -128,7 +153,6 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
         player.z = nz
       } else if (!collider.blocked(nx, player.z)) player.x = nx
       else if (!collider.blocked(player.x, nz)) player.z = nz
-      else target.current = null
       const want = Math.atan2(dir.x, dir.y)
       let d = want - player.heading
       d = Math.atan2(Math.sin(d), Math.cos(d))
@@ -140,18 +164,17 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
       body.current.position.set(player.x, 0, player.z)
       body.current.rotation.y = player.heading
     }
-    if (marker.current) {
-      marker.current.visible = !!target.current
-      if (target.current) marker.current.position.set(target.current.x, 0.12, target.current.y)
-    }
     // Sims-style camera: high three-quarter view that follows smoothly
-    const pitch = 1.02
+    const pitch = player.pitch
     const want = new THREE.Vector3(
       player.x + Math.sin(player.yaw) * Math.cos(pitch) * dist.current,
       Math.sin(pitch) * dist.current,
       player.z + Math.cos(player.yaw) * Math.cos(pitch) * dist.current,
     )
-    camera.position.lerp(want, Math.min(1, dt * 6))
+    if (snap.current) {
+      camera.position.copy(want)
+      snap.current = false
+    } else camera.position.lerp(want, Math.min(1, dt * 6))
     camera.lookAt(player.x, 1.2, player.z)
     // cutaway: buildings between the camera and the player fade out
     cut.current += dt
@@ -178,25 +201,11 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     }
   })
 
-  const onGround = (e: ThreeEvent<PointerEvent>) => {
-    if (e.button !== 0) return
-    target.current = new THREE.Vector2(e.point.x, e.point.z)
-  }
-
   return (
     <group>
       <group ref={body}>
         <Character color={look.color} headwear={look.headwear} face="happy" walk={walk} scale={1.15} />
       </group>
-      <mesh ref={marker} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
-        <ringGeometry args={[0.6, 0.85, 32]} />
-        <meshBasicMaterial color="#FFC629" transparent opacity={0.9} />
-      </mesh>
-      {/* click-to-walk catcher: an invisible ground plane over the whole map */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.2, 0]} onPointerDown={onGround}>
-        <planeGeometry args={[6000, 6000]} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-      </mesh>
     </group>
   )
 }

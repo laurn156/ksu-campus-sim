@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { distToSeg, isCampusBuilding, type Campus } from '../campus'
-import { player } from '../scene/Player'
+import { approach, player } from '../scene/Player'
 import { landmarkSpots } from '../scene/Landmarks'
 
 /** Closest campus building to the player (within ~30 m of its walls). */
@@ -77,6 +77,36 @@ export function Minimap({ campus }: { campus: Campus }) {
   )
 }
 
+/** "Go to" menu: jump straight to any campus building or landmark. */
+function GoTo({ campus }: { campus: Campus }) {
+  const places = useMemo(() => {
+    const bs = campus.buildings
+      .filter(isCampusBuilding)
+      .map((b) => ({ label: `${b.code ? b.code + ' · ' : ''}${b.short || b.name}`, go: () => approach(campus, b.poly) }))
+      .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))
+    const lm = landmarkSpots(campus).map((l) => ({ label: `★ ${l.name}`, go: () => ({ x: l.at[0] + 6, z: l.at[1] + 6, yaw: Math.PI / 4 }) }))
+    return [...lm, ...bs]
+  }, [campus])
+  return (
+    <select
+      className="goto"
+      value=""
+      onChange={(e) => {
+        const p = places[Number(e.target.value)]
+        if (p) player.tp = p.go()
+        e.target.blur() // keep WASD for walking
+      }}
+    >
+      <option value="">📍 Go to…</option>
+      {places.map((p, i) => (
+        <option key={i} value={i}>
+          {p.label}
+        </option>
+      ))}
+    </select>
+  )
+}
+
 export function Hud({ campus }: { campus: Campus }) {
   const near = useNearby(campus)
   return (
@@ -84,6 +114,7 @@ export function Hud({ campus }: { campus: Campus }) {
       <div className="brandbar">
         <span className="ksu">KSU</span> Campus Life <span className="sub">Marietta</span>
       </div>
+      <GoTo campus={campus} />
       {near && (
         <div className="nearcard" key={near.name}>
           <div className="kicker">You're at</div>
@@ -94,7 +125,7 @@ export function Hud({ campus }: { campus: Campus }) {
       )}
       <Minimap campus={campus} />
       <div className="controls">
-        <b>WASD</b> walk · <b>Shift</b> run · <b>click</b> to walk there · <b>Q/E</b> or right-drag to turn · <b>wheel</b> zoom · <b>G</b> ground style · <b>M</b> mute
+        <b>WASD</b> walk · <b>Shift</b> run · <b>drag</b> look around · <b>Q/E</b> turn · <b>wheel</b> zoom · <b>M</b> mute
       </div>
       <div className="osm">{campus.attribution} · Aerial imagery: USDA NAIP (public domain)</div>
     </>

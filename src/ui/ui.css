@@ -22,3 +22,6 @@
 .osm { position: absolute; right: 14px; top: 14px; font-size: 11px; color: var(--black); background: rgba(255,255,255,.7); padding: 2px 8px; border-radius: 6px; }
 .tag { background: rgba(11,19,21,.88); color: #fff; padding: 3px 9px; border-radius: 8px; white-space: nowrap; font-weight: 800; font-size: 13px; display: flex; gap: 6px; align-items: center; }
 .tag b { background: var(--gold); color: var(--black); border-radius: 4px; padding: 0 5px; }
+.goto { position: absolute; top: 62px; left: 14px; font: inherit; font-weight: 800; font-size: 14px; padding: 7px 12px; border-radius: 10px;
+  border: 2px solid var(--gold); background: var(--black); color: #fff; max-width: 280px; cursor: pointer; }
+.goto option { background: #fff; color: var(--black); }
