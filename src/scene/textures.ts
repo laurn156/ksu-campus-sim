@@ -180,6 +180,14 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
     g.fillStyle = 'rgba(0,0,0,.09)'
     for (let x = 0; x < W; x += 8) g.fillRect(x, 0, 3, H)
   },
+  // Small pale square ceramic tiles on the Textile Center's curved and flat walls.
+  textiletile: (g) => {
+    g.fillStyle='#d9d9d3';g.fillRect(0,0,W,H)
+    g.strokeStyle='#b7b9b3';g.lineWidth=1
+    for(let x=0;x<=W;x+=8){g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()}
+    for(let y=0;y<=H;y+=8){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke()}
+  },
+  textilebrick: (g) => { brick(g,[163,119,105],46) },
   // West Deck: red brick surrounds the partially visible lower parking level.
   westdeck: (g) => {
     brick(g, [145, 75, 63], 810)

@@ -916,6 +916,50 @@ function scienceAnnexDetails(){
   return out
 }
 
+/** W. Clair Harris Textile Center: tiled wings, brick base and raised roof spine. */
+function textileCenterParts(b: Building) {
+  const parts: {geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const mat=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.85,side:THREE.DoubleSide})
+  const tile=new THREE.MeshStandardMaterial({map:facade('textiletile'),roughness:.95,side:THREE.DoubleSide})
+  const brick=new THREE.MeshStandardMaterial({map:facade('textilebrick'),roughness:.95,side:THREE.DoubleSide})
+  const roof=mat('#e4e6df'),dark=mat('#354443'),metal=mat('#cad0ca'),awning=mat('#813d39')
+  const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z);parts.push({geo,mat:m})}
+  parts.push({geo:wallsGeometry(b,0,1.3),mat:brick},{geo:wallsGeometry(b,1.3,b.h),mat:tile},{geo:flatGeometry(b.poly,b.h+.02,8),mat:roof})
+  // Raised, long metal gable over the central circulation spine.
+  box(6.1,.28,86,-88.8,8.75,169.5,metal)
+  const shape=new THREE.Shape();shape.moveTo(-92,8.85);shape.lineTo(-88.8,11.35);shape.lineTo(-85.6,8.85);shape.closePath()
+  const gable=new THREE.ExtrudeGeometry(shape,{depth:86,bevelEnabled:false});gable.translate(0,0,126.5);parts.push({geo:gable,mat:roof})
+  for(const x of [-91.85,-85.75]){
+    box(.18,1.25,86,x,8.08,169.5,metal)
+    box(.21,.28,86,x,8.52,169.5,dark)
+    // Vertical seams give the white metal fascia a ribbed surface.
+    for(let z=127;z<212;z+=1.25)box(.04,1.16,.045,x+(x< -88.8?-.12:.12),8.06,z,roof)
+  }
+  // Open end frame: brick piers support the high roof above the walk-through.
+  for(const x of [-91.4,-86.2])box(.8,8.6,.85,x,4.3,212.1,brick)
+  box(6,.7,.9,-88.8,7.05,212.1,brick)
+  // A recessed row of glazing and red fabric awnings along the street-facing wing.
+  for(const z of [134,139,144]){
+    box(.12,1.65,3.5,-64.95,2.35,z,dark)
+    const a=new THREE.BoxGeometry(1.05,.18,3.65);a.rotateZ(-.22);a.translate(-64.55,3.3,z);parts.push({geo:a,mat:awning})
+  }
+  // Wall lettering follows a straight section of the curved wing footprint.
+  const a=b.poly[18],c=b.poly[19], dx=c[0]-a[0], dz=c[1]-a[1],len=Math.hypot(dx,dz)
+  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256
+  const ctx=canvas.getContext('2d')!;ctx.fillStyle='#202927';ctx.textAlign='center';ctx.font='bold 64px sans-serif'
+  ctx.fillText('W. CLAIR HARRIS',512,103);ctx.fillText('TEXTILE CENTER',512,182)
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace
+  const sign=new THREE.PlaneGeometry(Math.min(5.4,len*.82),1.35)
+  sign.rotateY(-Math.atan2(dz,dx));sign.translate((a[0]+c[0])/2+dz/len*.04,4.3,(a[1]+c[1])/2-dx/len*.04)
+  parts.push({geo:sign,mat:new THREE.MeshStandardMaterial({map:texture,transparent:true,side:THREE.DoubleSide,roughness:.9})})
+  // Building number on the end of the brick support.
+  const number=document.createElement('canvas');number.width=256;number.height=128
+  const n=number.getContext('2d')!;n.fillStyle='#edc22c';n.fillRect(0,0,256,128);n.fillStyle='#171c19';n.font='bold 84px sans-serif';n.textAlign='center';n.fillText('650',128,94)
+  const nt=new THREE.CanvasTexture(number);nt.colorSpace=THREE.SRGBColorSpace
+  const plaque=new THREE.PlaneGeometry(1.5,.75);plaque.translate(-88.8,7.06,212.58);parts.push({geo:plaque,mat:new THREE.MeshStandardMaterial({map:nt,side:THREE.DoubleSide})})
+  return parts
+}
+
 /** K3 pump house: low brick walls, rooftop trim, owl mural and patio seating. */
 function pumpHouseParts(b: Building) {
   const out: {geo: THREE.BufferGeometry; mat: THREE.MeshStandardMaterial}[] = []
@@ -1303,6 +1347,7 @@ function Buildings({ campus }: { campus: Campus }) {
           ...academicDetails(b),
         ], flat: true }
       }
+      if (b.code === 'M') return { b, parts: textileCenterParts(b), flat: true }
       if (b.id === '517434198') return { b, parts: pumpHouseParts(b), flat: true }
       if (b.id === '1504299650') {
         b.name = 'Hornet Hub'; b.short = 'Hornet Hub'; b.h = 5
