@@ -959,21 +959,27 @@ function architectureParts(b: Building) {
   const shortWing=onEdge(16)
   shortWing.box(shortWing.len,1.15,.2,0,.58,.08,brick)
   shortWing.box(shortWing.len,.28,.55,0,b.h-.1,.25,white)
-  // Low concrete monument with the building name and number, in a planted bed.
-  wing.box(7.2,.14,2.7,wing.len/2-6,.08,5.2,brick)
-  wing.box(5.5,1.45,.32,wing.len/2-6,.78,6.1,stone)
+  // The concrete monument angles away from the glass corner, with a tree behind it.
+  const sa=b.poly[8],sb=b.poly[9],theta=-Math.atan2(sb[1]-sa[1],sb[0]-sa[0])
+  const mx=(sa[0]+sb[0])/2,mz=(sa[1]+sb[1])/2,tx=wing.len/2-5,tz=4
+  const place=(geo:THREE.BufferGeometry,x:number,y:number,z:number)=>{geo.translate(x,y,z);geo.rotateY(theta);geo.translate(mx,0,mz);return geo}
+  const monument=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>{
+    const geo=new THREE.BoxGeometry(w,h,d);geo.rotateY(-.55);geo.translate(tx,0,tz);parts.push({geo:place(geo,x,y,z),mat})
+  }
+  monument(8,.12,3,0,.07,-.7,brick)
+  monument(7,1.45,.3,0,.78,0,stone)
   const signCanvas=document.createElement('canvas');signCanvas.width=1024;signCanvas.height=256
-  const sc=signCanvas.getContext('2d')!;sc.fillStyle='#26302d';sc.fillRect(0,0,1024,256)
-  sc.fillStyle='#f1eee4';sc.font='bold 120px sans-serif';sc.textAlign='left';sc.fillText('ARCHITECTURE',24,115)
-  sc.fillStyle='#efc32b';sc.fillRect(26,139,190,90);sc.fillStyle='#202724';sc.font='bold 70px sans-serif';sc.fillText('640',55,211)
+  const sc=signCanvas.getContext('2d')!;sc.clearRect(0,0,1024,256)
+  sc.fillStyle='#323a36';sc.font='bold 112px sans-serif';sc.textAlign='left';sc.fillText('ARCHITECTURE',18,108)
+  sc.fillStyle='#e9bd2c';sc.fillRect(22,135,180,91);sc.fillStyle='#202724';sc.font='bold 70px sans-serif';sc.fillText('640',48,208)
   const signTex=new THREE.CanvasTexture(signCanvas);signTex.colorSpace=THREE.SRGBColorSpace
-  const signMat=new THREE.MeshStandardMaterial({map:signTex,roughness:.9,side:THREE.DoubleSide})
-  wing.box(5.05,1.25,.035,wing.len/2-6,.82,6.28,signMat)
-  const shrubs=solid('#5d7042'),bark=solid('#735941')
-  for(const [x,z,r] of [[wing.len/2-9,4.4,.8],[wing.len/2-3.2,4.5,.85],[wing.len/2-8,5.6,.6],[wing.len/2-2.8,5.9,.7]]){
-    // The wing helper applies the same local-to-world orientation to simple meshes.
-    wing.box(.14,.65,.14,x,.35,z,bark)
-    wing.box(r*1.4,r*.85,r*1.25,x,.95,z,shrubs)
+  const sg=new THREE.PlaneGeometry(6.4,1.2);sg.translate(0,0,.17);sg.rotateY(-.55);sg.translate(tx,.82,tz)
+  parts.push({geo:place(sg,0,0,0),mat:new THREE.MeshStandardMaterial({map:signTex,transparent:true,alphaTest:.1,depthWrite:false,side:THREE.DoubleSide})})
+  const shrubs=solid('#637b47'),bark=solid('#73513c'),leaves=solid('#695049')
+  wing.box(.34,3.2,.34,tx-1,1.6,tz-2,bark)
+  const tree=new THREE.IcosahedronGeometry(2.4,1);tree.scale(1,.8,1);parts.push({geo:place(tree,tx-1,4.15,tz-2),mat:leaves})
+  for(const [x,z] of [[tx-3,tz-1],[tx+3,tz-1],[tx+2,tz-2]]) {
+    const bush=new THREE.IcosahedronGeometry(.75,1);bush.scale(1,.7,1);parts.push({geo:place(bush,x,.58,z),mat:shrubs})
   }
   // Light upper service volume, set back from the principal glass roofline.
   const volume=new THREE.BoxGeometry(16,3.5,10);volume.translate(9,16.95,202);parts.push({geo:volume,mat:white})
@@ -987,7 +993,7 @@ function textileCenterParts(b: Building) {
   const mat=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.85,side:THREE.DoubleSide})
   const tile=new THREE.MeshStandardMaterial({map:facade('textiletile'),roughness:.95,side:THREE.DoubleSide})
   const brick=new THREE.MeshStandardMaterial({map:facade('textilebrick'),roughness:.95,side:THREE.DoubleSide})
-  const roof=mat('#e4e6df'),dark=mat('#354443'),metal=mat('#cad0ca')
+  const roof=mat('#e4e6df'),dark=mat('#354443'),metal=mat('#cad0ca'),garage=mat('#939b98')
   const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z);parts.push({geo,mat:m})}
   // Retain tile on the curved end and the projecting rear wing; use brick elsewhere.
   // Stop the lower walls at the tower opening while keeping the upper walls and roof.
@@ -1027,13 +1033,27 @@ function textileCenterParts(b: Building) {
     const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,-z);geo.rotateY(backAngle);geo.translate(bx,0,bz);parts.push({geo,mat:m})
   }
   for(const x of [-14,-8,-2,4,10]){
-    backBox(4.1,2.65,.12,x,1.55,.08,dark)
+    backBox(4.1,2.65,.12,x,1.55,.08,garage)
     backBox(4.25,.14,.18,x,2.95,.14,metal)
     for(const y of [.6,1.2,1.8,2.4])backBox(3.95,.035,.14,x,y,.16,metal)
   }
   backBox(1.5,2.4,.15,15.5,1.2,.1,metal)
   backBox(1.16,2.1,.17,15.5,1.15,.2,dark)
   backBox(.1,.5,.2,15.9,1.2,.31,roof)
+  // Refuse bins stand in the service area, clear of the loading doors.
+  const bin=mat('#49614d'),lid=mat('#273b31')
+  for(const x of [-8,2]) {
+    backBox(2.5,1.4,1.45,x,.7,4,bin);backBox(2.6,.16,1.55,x,1.47,4,lid)
+    for(const dx of [-.9,.9])backBox(.22,.22,.3,x+dx,.12,4.5,dark)
+  }
+  // Small glazed entrance on the projecting tiled wing, plus rear windows.
+  const edgeBox=(index:number,t:number,w:number,h:number,y:number,material:THREE.MeshStandardMaterial,off=.1)=>{
+    const p=b.poly[index],q=b.poly[(index+1)%b.poly.length],dx=q[0]-p[0],dz=q[1]-p[1],length=Math.hypot(dx,dz)
+    const geo=new THREE.BoxGeometry(w,h,.12);geo.rotateY(-Math.atan2(dz,dx));geo.translate(p[0]+dx*t+dz/length*off,y,p[1]+dz*t-dx/length*off);parts.push({geo,mat:material})
+  }
+  edgeBox(8,.55,1.8,2.5,1.25,metal);edgeBox(8,.55,1.5,2.2,1.2,dark,.2)
+  for(const t of [.16,.36,.56,.76]) edgeBox(4,t,2.2,1.3,4.55,dark)
+  edgeBox(4,.9,1.25,2.35,1.18,metal);edgeBox(4,.9,1,2.1,1.15,dark,.2)
   // Wall lettering follows a straight section of the curved wing footprint.
   const a=b.poly[15],c=b.poly[16], dx=c[0]-a[0], dz=c[1]-a[1],len=Math.hypot(dx,dz)
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256
@@ -1041,8 +1061,8 @@ function textileCenterParts(b: Building) {
   ctx.fillText('W. CLAIR HARRIS',512,103);ctx.font='bold 46px sans-serif';ctx.fillText('APPAREL AND TEXTILE CENTER',512,182)
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace
   const sign=new THREE.PlaneGeometry(Math.min(5.4,len*.82),1.35)
-  sign.rotateY(-Math.atan2(dz,dx));sign.translate((a[0]+c[0])/2+dz/len*.04,4.3,(a[1]+c[1])/2-dx/len*.04)
-  parts.push({geo:sign,mat:new THREE.MeshStandardMaterial({map:texture,transparent:true,side:THREE.DoubleSide,roughness:.9})})
+  sign.rotateY(-Math.atan2(dz,dx)+Math.PI);sign.translate((a[0]+c[0])/2+dz/len*.06,4.3,(a[1]+c[1])/2-dx/len*.06)
+  parts.push({geo:sign,mat:new THREE.MeshStandardMaterial({map:texture,transparent:true,alphaTest:.1,depthWrite:false,side:THREE.DoubleSide,roughness:.9})})
   // Building number on the end of the brick support.
   const number=document.createElement('canvas');number.width=256;number.height=128
   const n=number.getContext('2d')!;n.fillStyle='#edc22c';n.fillRect(0,0,256,128);n.fillStyle='#171c19';n.font='bold 84px sans-serif';n.textAlign='center';n.fillText('650',128,94)
@@ -1533,7 +1553,22 @@ function Ground({ campus, overlay = false }: { campus: Campus; overlay?: boolean
       if (a.kind === 'parking') add('parking', flatGeometry(a.poly, 0.05, 2.7))
       else if (a.kind.startsWith('pitch:')) {
         const sport = a.kind.slice(6)
-        add(sport === 'baseball' || sport === 'softball' ? 'diamond' : 'pitch', flatGeometry(a.poly, 0.055))
+        if (a.name === 'Practice Green') add('practicegrass', flatGeometry(a.poly, 0.055))
+        else if (a.name === 'S. Walter Kelly Sr. Memorial Field') {
+          add('fieldgrass',flatGeometry(a.poly,0.055))
+          // The infield is an arc of clay around a grass diamond, with a separate mound.
+          const arc: Pt[]=[]
+          for(let i=0;i<=32;i++){const t=Math.PI*.10+i*Math.PI*.8/32;arc.push([2+37*Math.cos(t),342+37*Math.sin(t)])}
+          for(let i=32;i>=0;i--){const t=Math.PI*.10+i*Math.PI*.8/32;arc.push([2+24*Math.cos(t),342+24*Math.sin(t)])}
+          add('diamond',flatGeometry(arc,.065))
+          const mound:Pt[]=[];for(let i=0;i<24;i++){const t=i*Math.PI/12;mound.push([2+3*Math.cos(t),352+3*Math.sin(t)])}
+          add('diamond',flatGeometry(mound,.068))
+          const plate:Pt[]=[];for(let i=0;i<24;i++){const t=i*Math.PI/12;plate.push([2+3*Math.cos(t),330+3*Math.sin(t)])}
+          add('diamond',flatGeometry(plate,.068))
+          for(const [x,z] of [[-18,354],[2,372],[22,354],[2,330]]) {
+            add('base',flatGeometry([[x-.55,z],[x,z-.55],[x+.55,z],[x,z+.55]],.075))
+          }
+        } else add(sport === 'baseball' || sport === 'softball' ? 'diamond' : 'pitch', flatGeometry(a.poly, 0.055))
       } else if (AREA_STYLE[a.kind]) add(a.kind, flatGeometry(a.poly, AREA_STYLE[a.kind].y))
     }
     for (const r of campus.roads) add(r.kind === 'service' ? 'service' : 'road', ribbonGeometry(r, r.kind === 'service' ? 0.06 : 0.065))
@@ -1549,7 +1584,7 @@ function Ground({ campus, overlay = false }: { campus: Campus; overlay?: boolean
     const parking = new THREE.MeshStandardMaterial({ map: parkingTexture(), roughness: 0.95 })
     return {
       wood: mat(AREA_STYLE.wood.color), grass: mat(AREA_STYLE.grass.color), water: mat(AREA_STYLE.water.color, 0.3),
-      track: mat(AREA_STYLE.track.color), pitch: mat('#7fb85a'), diamond: mat('#d9a172'), parking,
+      track: mat(AREA_STYLE.track.color), pitch: mat('#7fb85a'), fieldgrass: mat('#a8b777'), practicegrass: mat('#9cc46e'), base: mat('#f2f0e8'), diamond: mat('#ca865c'), parking,
       road: mat('#5b5d61'), service: mat('#6a6c70'), path: mat('#e2dccf'),
       steps: new THREE.MeshStandardMaterial({ map: stepsTexture(), roughness: 0.9, side: THREE.DoubleSide }),
     } as Record<string, THREE.Material>
