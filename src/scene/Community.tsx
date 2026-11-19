@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { Character } from '../characters/Character'
-import { studentFace } from './studentFace'
+import { studentFace, studentVariant, studentJersey } from './studentFace'
 import { Collider, pointInPoly, type Campus } from '../campus'
 import { player, spawnPoint, type AvatarLook } from './Player'
 import type { Profile } from '../ui/Welcome'
@@ -86,19 +86,22 @@ function AmbientStudents({campus}:{campus:Campus}) {
   },[campus])
   const head=useRef<THREE.InstancedMesh>(null), body=useRef<THREE.InstancedMesh>(null)
   const left=useRef<THREE.InstancedMesh>(null),right=useRef<THREE.InstancedMesh>(null)
-  const arms=useRef<THREE.InstancedMesh>(null)
-  const faces=useRef<THREE.InstancedMesh>(null), backpacks=useRef<THREE.InstancedMesh>(null)
-  const faceTexture=useMemo(studentFace,[])
+  const arms=useRef<THREE.InstancedMesh>(null), bareLegs=useRef<THREE.InstancedMesh>(null)
+  const faces=useRef<(THREE.InstancedMesh|null)[]>([]), backpacks=useRef<THREE.InstancedMesh>(null)
+  const hats=useRef<THREE.InstancedMesh>(null), brims=useRef<THREE.InstancedMesh>(null), bands=useRef<THREE.InstancedMesh>(null)
+  const glasses=useRef<THREE.InstancedMesh>(null), skirts=useRef<THREE.InstancedMesh>(null), jerseys=useRef<THREE.InstancedMesh>(null)
+  const jerseyTexture=useMemo(studentJersey,[])
+  const faceTextures=useMemo(()=>[0,1,2,3].map(studentFace),[])
   const helper=useMemo(()=>new THREE.Object3D(),[])
   const base=useMemo(()=>new THREE.Matrix4(),[]), part=useMemo(()=>new THREE.Matrix4(),[])
   const palette=useMemo(()=>['#8ab1e8','#e9876b','#aecb91','#b9a5e0','#f2cc5f','#6f90c4'].map(c=>new THREE.Color(c)),[])
   const shirts=useMemo(()=>['#ece9df','#333638','#c6a231','#849276','#8790a9','#b394ac'].map(c=>new THREE.Color(c)),[])
   useEffect(()=>{
-    walkers.states.forEach((_,i)=>{head.current?.setColorAt(i,palette[i%palette.length]);arms.current?.setColorAt(i*2,palette[i%palette.length]);arms.current?.setColorAt(i*2+1,palette[i%palette.length]);body.current?.setColorAt(i,shirts[(i*5)%shirts.length]);left.current?.setColorAt(i,new THREE.Color('#55586a'));right.current?.setColorAt(i,new THREE.Color('#55586a'));backpacks.current?.setColorAt(i,new THREE.Color(['#333b3b','#8b6e52','#dad1bd'][i%3]))})
-    for(const mesh of [head.current,body.current,left.current,right.current,arms.current,backpacks.current]) if(mesh?.instanceColor)mesh.instanceColor.needsUpdate=true
+    walkers.states.forEach((_,i)=>{head.current?.setColorAt(i,palette[i%palette.length]);arms.current?.setColorAt(i*2,palette[i%palette.length]);arms.current?.setColorAt(i*2+1,palette[i%palette.length]);bareLegs.current?.setColorAt(i*2,palette[i%palette.length]);bareLegs.current?.setColorAt(i*2+1,palette[i%palette.length]);body.current?.setColorAt(i,shirts[(i*5)%shirts.length]);left.current?.setColorAt(i,new THREE.Color('#55586a'));right.current?.setColorAt(i,new THREE.Color('#55586a'));backpacks.current?.setColorAt(i,new THREE.Color(['#333b3b','#8b6e52','#dad1bd'][i%3]));hats.current?.setColorAt(i,new THREE.Color(['#f0e9da','#403d45','#6a503d','#d1b56a','#1e2225'][studentVariant(i)%5]));brims.current?.setColorAt(i,new THREE.Color(['#f0e9da','#403d45','#6a503d','#d1b56a','#1e2225'][studentVariant(i)%5]));bands.current?.setColorAt(i,new THREE.Color(['#e8ba36','#eee9dd','#9a83b5'][i%3]));skirts.current?.setColorAt(i,new THREE.Color(['#5f627b','#967e9e','#343b3c'][i%3]))})
+    for(const mesh of [head.current,body.current,left.current,right.current,arms.current,bareLegs.current,backpacks.current,hats.current,brims.current,bands.current,skirts.current]) if(mesh?.instanceColor)mesh.instanceColor.needsUpdate=true
   },[walkers,palette,shirts])
   useFrame(({clock},delta)=>{
-    if(!head.current || !body.current || !left.current || !right.current || !arms.current || !faces.current || !backpacks.current)return
+    if(!head.current || !body.current || !left.current || !right.current || !arms.current || !bareLegs.current || faces.current.some(x=>!x) || !backpacks.current || !hats.current || !brims.current || !bands.current || !glasses.current || !skirts.current || !jerseys.current)return
     walkers.states.forEach((person,i)=>{
       const path=walkers.candidates[person.segment]
       const goal=person.target===0?path.a:path.b
@@ -114,28 +117,45 @@ function AmbientStudents({campus}:{campus:Campus}) {
       helper.position.set(person.x,0,person.z)
       helper.rotation.set(0,Math.atan2(dx,dz),0);helper.scale.setScalar(1);helper.updateMatrix();base.copy(helper.matrix)
       part.makeTranslation(0,1.13,0);head.current!.setMatrixAt(i,part.premultiply(base))
-      part.makeTranslation(0,1.15,0.342);faces.current!.setMatrixAt(i,part.premultiply(base))
+      part.makeTranslation(0,1.15,0.342);faces.current[i%4]?.setMatrixAt(Math.floor(i/4),part.premultiply(base))
+      const style=studentVariant(i)%8
+      helper.position.set(0,1.31,0);helper.rotation.set(0,0,0);helper.scale.set(style<=3?1:0,style===1?1.35:1,style<=3?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);hats.current!.setMatrixAt(i,part)
+      helper.position.set(0,1.32,style===0?-.27:0);helper.rotation.set(0,0,0);helper.scale.set(style===0?1:style===2?1.45:0,1,style===0?1:style===2?1.45:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);brims.current!.setMatrixAt(i,part)
+      helper.position.set(0,1.18,0);helper.rotation.set(Math.PI/2,0,0);helper.scale.setScalar(style===4?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);bands.current!.setMatrixAt(i,part)
+      for(const [j,side] of [-1,1].entries()){helper.position.set(side*.12,1.17,.342);helper.rotation.set(0,0,0);helper.scale.setScalar(studentVariant(i)%5===0?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);glasses.current!.setMatrixAt(i*2+j,part)}
+      helper.position.set(0,.39,0);helper.rotation.set(0,0,0);helper.scale.setScalar(studentVariant(i)%5===1?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);skirts.current!.setMatrixAt(i,part)
+      helper.position.set(0,.68,.232);helper.rotation.set(0,0,0);helper.scale.setScalar(studentVariant(i)%6===0?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);jerseys.current!.setMatrixAt(i,part)
       helper.position.set(0,.64,-.235);helper.rotation.set(0,0,0);helper.scale.setScalar(i%3===0?1:0);helper.updateMatrix()
       part.copy(helper.matrix).premultiply(base);backpacks.current!.setMatrixAt(i,part)
       part.makeTranslation(0,0.62,0);body.current!.setMatrixAt(i,part.premultiply(base))
       const swing=Math.sin(clock.elapsedTime*6+i)*0.05
-      part.makeTranslation(-0.12,0.20,swing);left.current!.setMatrixAt(i,part.premultiply(base))
-      part.makeTranslation(0.12,0.20,-swing);right.current!.setMatrixAt(i,part.premultiply(base))
+      for(const [j,side] of [-1,1].entries()) {
+        helper.position.set(side*.12,.20,swing*side);helper.rotation.set(0,0,0);helper.scale.set(1,studentVariant(i)%4===0?.7:1,1);helper.updateMatrix()
+        part.copy(helper.matrix).premultiply(base);(j===0?left.current!:right.current!).setMatrixAt(i,part)
+        helper.position.set(side*.12,.09,swing*side);helper.rotation.set(0,0,0);helper.scale.setScalar(studentVariant(i)%4===0?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);bareLegs.current!.setMatrixAt(i*2+j,part)
+      }
       for(const [j,side] of [-1,1].entries()) {
         helper.position.set(side*0.27,0.61,0);helper.rotation.set(swing*side*3,0,-side*0.22);helper.scale.setScalar(1);helper.updateMatrix()
         part.copy(helper.matrix).premultiply(base);arms.current!.setMatrixAt(i*2+j,part)
       }
     })
-    for(const mesh of [head.current,body.current,left.current,right.current,arms.current,faces.current,backpacks.current])mesh!.instanceMatrix.needsUpdate=true
+    for(const mesh of [head.current,body.current,left.current,right.current,arms.current,bareLegs.current,...faces.current,backpacks.current,hats.current,brims.current,bands.current,glasses.current,skirts.current,jerseys.current])if(mesh)mesh.instanceMatrix.needsUpdate=true
   })
   const n=walkers.states.length
   return <group>
     <instancedMesh ref={head} args={[undefined,undefined,n]} frustumCulled={false}><sphereGeometry args={[0.34,12,10]}/><meshStandardMaterial roughness={0.9}/></instancedMesh>
-    <instancedMesh ref={faces} args={[undefined,undefined,n]} frustumCulled={false}><planeGeometry args={[0.42,0.36]}/><meshBasicMaterial map={faceTexture} transparent alphaTest={0.05} depthWrite={false}/></instancedMesh>
+    {faceTextures.map((texture,k)=><instancedMesh key={k} ref={m=>{faces.current[k]=m}} args={[undefined,undefined,Math.ceil((n-k)/4)]} frustumCulled={false}><planeGeometry args={[0.42,0.36]}/><meshBasicMaterial map={texture} transparent alphaTest={0.05} depthWrite={false}/></instancedMesh>)}
+    <instancedMesh ref={hats} args={[undefined,undefined,n]} frustumCulled={false}><sphereGeometry args={[.35,12,8,0,Math.PI*2,0,Math.PI/2]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
+    <instancedMesh ref={brims} args={[undefined,undefined,n]} frustumCulled={false}><cylinderGeometry args={[.25,.25,.035,12]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
+    <instancedMesh ref={bands} args={[undefined,undefined,n]} frustumCulled={false}><torusGeometry args={[.337,.035,5,16]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
+    <instancedMesh ref={glasses} args={[undefined,undefined,n*2]} frustumCulled={false}><torusGeometry args={[.075,.012,5,12]}/><meshStandardMaterial color="#24242a"/></instancedMesh>
+    <instancedMesh ref={skirts} args={[undefined,undefined,n]} frustumCulled={false}><cylinderGeometry args={[.19,.29,.22,12]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
+    <instancedMesh ref={jerseys} args={[undefined,undefined,n]} frustumCulled={false}><planeGeometry args={[.28,.14]}/><meshBasicMaterial map={jerseyTexture} transparent alphaTest={.05} depthWrite={false}/></instancedMesh>
     <instancedMesh ref={backpacks} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[0.15,0.14,4,8]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
     <instancedMesh ref={body} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[0.23,0.18,4,10]}/><meshStandardMaterial roughness={0.95}/></instancedMesh>
     <instancedMesh ref={left} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[0.1,0.14,4,8]}/><meshStandardMaterial roughness={0.95}/></instancedMesh>
     <instancedMesh ref={right} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[0.1,0.14,4,8]}/><meshStandardMaterial roughness={0.95}/></instancedMesh>
+    <instancedMesh ref={bareLegs} args={[undefined,undefined,n*2]} frustumCulled={false}><capsuleGeometry args={[.075,.08,4,8]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
     <instancedMesh ref={arms} args={[undefined,undefined,n*2]} frustumCulled={false}><capsuleGeometry args={[0.07,0.16,4,8]}/><meshStandardMaterial roughness={0.95}/></instancedMesh>
   </group>
 }

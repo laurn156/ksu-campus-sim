@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { studentFace } from './studentFace'
+import { studentFace, studentVariant, studentJersey } from './studentFace'
 import { bbox, Collider, pointInPoly, type Campus, type Pt } from '../campus'
 
 type Route = Pt[]
@@ -95,7 +95,7 @@ function Rider({kind,index}:{kind:'bike'|'scooter'|'skate';index:number}) {
     {kind==='bike' && <group><Wheel z={-.65}/><Wheel z={.65}/><Rod a={[0,.34,-.65]} b={[0,.38,0]} color="#e2b529"/><Rod a={[0,.38,0]} b={[0,.34,.65]} color="#e2b529"/><Rod a={[0,.34,-.65]} b={[0,.85,-.18]} color="#e2b529"/><Rod a={[0,.85,-.18]} b={[0,.34,.65]} color="#e2b529"/><Rod a={[0,.34,.65]} b={[0,1.05,.55]}/><Rod a={[-.3,1.05,.55]} b={[.3,1.05,.55]}/><mesh position={[0,.86,-.18]}><boxGeometry args={[.27,.06,.3]}/><meshStandardMaterial color="#242424"/></mesh></group>}
     {kind==='scooter' && <group><Wheel z={-.47} r={.15}/><Wheel z={.5} r={.15}/><mesh position={[0,.19,0]}><boxGeometry args={[.26,.08,.95]}/><meshStandardMaterial color="#c4bdad"/></mesh><Rod a={[0,.2,.48]} b={[0,1.12,.43]}/><Rod a={[-.27,1.12,.43]} b={[.27,1.12,.43]}/></group>}
     {kind==='skate' && <group><mesh position={[0,.13,0]}><boxGeometry args={[.3,.08,.95]}/><meshStandardMaterial color="#b98145"/></mesh>{[-.33,.33].flatMap(z=>[-.14,.14].map(x=><mesh key={x+','+z} position={[x,.08,z]} rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[.07,.07,.06,10]}/><meshStandardMaterial color="#d5d4c8"/></mesh>))}</group>}
-    <group position={[0,kind==='bike'?.46:.18,kind==='bike'?-.13:0]} scale={.8}><SimplePerson color={colors[index%colors.length]} walking={false} backpack={index%3===0}/></group>
+    <group position={[0,kind==='bike'?.46:.18,kind==='bike'?-.13:0]} scale={.8}><SimplePerson color={colors[index%colors.length]} walking={false} backpack={index%3===0} index={index}/></group>
   </group>
 }
 export function Traffic({campus}:{campus:Campus}) {
@@ -112,34 +112,43 @@ const personBody = new THREE.CapsuleGeometry(.20,.16,4,10)
 const personLimb = new THREE.CapsuleGeometry(.075,.12,4,8)
 const shirtMaterial = new THREE.MeshStandardMaterial({color:'#eee9dd',roughness:.95})
 const pantsMaterial = new THREE.MeshStandardMaterial({color:'#55586a',roughness:.95})
-function SimplePerson({color,walking,backpack}:{color:string;walking:boolean;backpack:boolean}) {
+function SimplePerson({color,walking,backpack,index}:{color:string;walking:boolean;backpack:boolean;index:number}) {
   const left=useRef<THREE.Mesh>(null),right=useRef<THREE.Mesh>(null)
   const skin=useMemo(()=>new THREE.MeshStandardMaterial({color,roughness:.9}),[color])
-  const face=useMemo(studentFace,[])
+  const face=useMemo(()=>studentFace(index%4),[index])
+  const jersey=useMemo(studentJersey,[])
+  const style=studentVariant(index)%8
   useFrame(({clock})=>{if(walking && left.current && right.current){const swing=Math.sin(clock.elapsedTime*6)*.35;left.current.rotation.x=swing;right.current.rotation.x=-swing}})
   return <group>
     <mesh position={[0,1.12,0]} geometry={personHead} material={skin}/>
+    {style<4 && <mesh position={[0,1.27,0]} scale={[1,style===1?1.3:1,1]}><sphereGeometry args={[.30,12,8,0,Math.PI*2,0,Math.PI/2]}/><meshStandardMaterial color={['#eee9dc','#35343b','#624936','#c9ae78'][style]}/></mesh>}
+    {(style===0||style===2) && <mesh position={[0,1.28,style===0?-.23:0]}><cylinderGeometry args={[.22,.22,.03,12]}/><meshStandardMaterial color="#e4dbc8"/></mesh>}
+    {style===4 && <mesh position={[0,1.17,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.29,.025,5,16]}/><meshStandardMaterial color="#d4a82f"/></mesh>}
+    {studentVariant(index)%5===0 && [-1,1].map(side=><mesh key={side} position={[side*.105,1.15,.295]}><torusGeometry args={[.07,.01,5,12]}/><meshStandardMaterial color="#262629"/></mesh>)}
     <mesh position={[0,1.13,.292]}><planeGeometry args={[.36,.31]}/><meshBasicMaterial map={face} transparent alphaTest={.05} depthWrite={false}/></mesh>
     {backpack && <mesh position={[0,.65,-.22]} scale={[1,1,.65]}><capsuleGeometry args={[.14,.13,4,8]}/><meshStandardMaterial color="#554a42" roughness={.95}/></mesh>}
     <mesh position={[0,.63,0]} geometry={personBody} material={shirtMaterial}/>
+    {studentVariant(index)%6===0 && <mesh position={[0,.67,.205]}><planeGeometry args={[.26,.13]}/><meshBasicMaterial map={jersey} transparent alphaTest={.05} depthWrite={false}/></mesh>}
+    {studentVariant(index)%5===1 && <mesh position={[0,.38,0]}><cylinderGeometry args={[.17,.25,.2,12]}/><meshStandardMaterial color="#75607f"/></mesh>}
     {[-1,1].map(side=><mesh key={side} position={[side*.25,.63,0]} rotation={[0,0,-side*.2]} geometry={personLimb} material={skin}/>)}
     <mesh ref={left} position={[-.1,.2,0]} geometry={personLimb} material={pantsMaterial}/>
     <mesh ref={right} position={[.1,.2,0]} geometry={personLimb} material={pantsMaterial}/>
   </group>
 }
 function ParkingCrowd({routes}:{routes:Route[]}) {
-  const heads=useRef<THREE.InstancedMesh>(null), faces=useRef<THREE.InstancedMesh>(null)
+  const heads=useRef<THREE.InstancedMesh>(null), faces=useRef<(THREE.InstancedMesh|null)[]>([])
   const bodies=useRef<THREE.InstancedMesh>(null), limbs=useRef<THREE.InstancedMesh>(null), bags=useRef<THREE.InstancedMesh>(null)
-  const face=useMemo(studentFace,[]), helper=useMemo(()=>new THREE.Object3D(),[])
+  const faceTextures=useMemo(()=>[0,1,2,3].map(studentFace),[]), jerseyTexture=useMemo(studentJersey,[]), helper=useMemo(()=>new THREE.Object3D(),[])
+  const hats=useRef<THREE.InstancedMesh>(null),brims=useRef<THREE.InstancedMesh>(null),bands=useRef<THREE.InstancedMesh>(null),glasses=useRef<THREE.InstancedMesh>(null),skirts=useRef<THREE.InstancedMesh>(null),jerseys=useRef<THREE.InstancedMesh>(null)
   const base=useMemo(()=>new THREE.Matrix4(),[]), part=useMemo(()=>new THREE.Matrix4(),[])
   const journeys=useMemo(()=>routes.flatMap((path,i)=>[0,1].map(j=>({path,length:routeLength(path),index:i*2+j,speed:1.05+j*.12}))),[routes])
   const colors=useMemo(()=>['#aecb91','#8ab1e8','#e9876b','#b9a5e0','#f2cc5f'].map(c=>new THREE.Color(c)),[])
   useEffect(()=>{
-    journeys.forEach((_,i)=>{heads.current?.setColorAt(i,colors[i%colors.length]);bodies.current?.setColorAt(i,new THREE.Color(['#eee9dd','#323638','#aab698'][i%3]));bags.current?.setColorAt(i,new THREE.Color(['#554a42','#292c2b','#c8bfaa'][i%3]))})
-    for(const mesh of [heads.current,bodies.current,bags.current])if(mesh?.instanceColor)mesh.instanceColor.needsUpdate=true
+    journeys.forEach((_,i)=>{heads.current?.setColorAt(i,colors[i%colors.length]);bodies.current?.setColorAt(i,new THREE.Color(['#eee9dd','#323638','#aab698'][i%3]));bags.current?.setColorAt(i,new THREE.Color(['#554a42','#292c2b','#c8bfaa'][i%3]));hats.current?.setColorAt(i,new THREE.Color(['#ede5d7','#37353b','#6e503b','#d2b56c'][studentVariant(i)%4]));brims.current?.setColorAt(i,new THREE.Color(['#ede5d7','#37353b','#6e503b','#d2b56c'][studentVariant(i)%4]));skirts.current?.setColorAt(i,new THREE.Color(['#685f77','#5d667c','#464646'][i%3]))})
+    for(const mesh of [heads.current,bodies.current,bags.current,hats.current,brims.current,skirts.current])if(mesh?.instanceColor)mesh.instanceColor.needsUpdate=true
   },[journeys,colors])
   useFrame(({clock})=>{
-    if(!heads.current||!faces.current||!bodies.current||!limbs.current||!bags.current)return
+    if(!heads.current||faces.current.some(m=>!m)||!bodies.current||!limbs.current||!bags.current||!hats.current||!brims.current||!bands.current||!glasses.current||!skirts.current||!jerseys.current)return
     journeys.forEach((journey,i)=>{
       const {path,length,index,speed}=journey;if(!length)return
       const phase=(clock.elapsedTime*speed+index*length*.29)%(length*2),forward=phase<length
@@ -147,7 +156,14 @@ function ParkingCrowd({routes}:{routes:Route[]}) {
       const dir=forward?1:-1
       helper.position.set(pos.x,0,pos.z);helper.rotation.set(0,Math.atan2(pos.dx*dir,pos.dz*dir),0);helper.scale.setScalar(1);helper.updateMatrix();base.copy(helper.matrix)
       part.makeTranslation(0,1.12,0);heads.current!.setMatrixAt(i,part.premultiply(base))
-      part.makeTranslation(0,1.13,.292);faces.current!.setMatrixAt(i,part.premultiply(base))
+      part.makeTranslation(0,1.13,.292);faces.current[i%4]?.setMatrixAt(Math.floor(i/4),part.premultiply(base))
+      const style=studentVariant(i)%8
+      helper.position.set(0,1.27,0);helper.rotation.set(0,0,0);helper.scale.set(style<4?1:0,style===1?1.3:1,style<4?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);hats.current!.setMatrixAt(i,part)
+      helper.position.set(0,1.28,style===0?-.23:0);helper.rotation.set(0,0,0);helper.scale.setScalar(style===0||style===2?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);brims.current!.setMatrixAt(i,part)
+      helper.position.set(0,1.17,0);helper.rotation.set(Math.PI/2,0,0);helper.scale.setScalar(style===4?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);bands.current!.setMatrixAt(i,part)
+      for(const [j,side] of [-1,1].entries()){helper.position.set(side*.105,1.15,.295);helper.rotation.set(0,0,0);helper.scale.setScalar(studentVariant(i)%5===0?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);glasses.current!.setMatrixAt(i*2+j,part)}
+      helper.position.set(0,.38,0);helper.rotation.set(0,0,0);helper.scale.setScalar(studentVariant(i)%5===1?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);skirts.current!.setMatrixAt(i,part)
+      helper.position.set(0,.67,.205);helper.rotation.set(0,0,0);helper.scale.setScalar(studentVariant(i)%6===0?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);jerseys.current!.setMatrixAt(i,part)
       part.makeTranslation(0,.63,0);bodies.current!.setMatrixAt(i,part.premultiply(base))
       helper.position.set(0,.65,-.22);helper.rotation.set(0,0,0);helper.scale.setScalar(i%3===0?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);bags.current!.setMatrixAt(i,part)
       const swing=Math.sin(clock.elapsedTime*6+i)*.05
@@ -157,12 +173,18 @@ function ParkingCrowd({routes}:{routes:Route[]}) {
         part.copy(helper.matrix).premultiply(base);limbs.current!.setMatrixAt(i*4+k,part)
       }
     })
-    for(const m of [heads.current,faces.current,bodies.current,limbs.current,bags.current])m!.instanceMatrix.needsUpdate=true
+    for(const m of [heads.current,...faces.current,bodies.current,limbs.current,bags.current,hats.current,brims.current,bands.current,glasses.current,skirts.current,jerseys.current])if(m)m.instanceMatrix.needsUpdate=true
   })
   const n=journeys.length
   return <group>
     <instancedMesh ref={heads} args={[undefined,undefined,n]} frustumCulled={false}><sphereGeometry args={[.29,12,10]}/><meshStandardMaterial roughness={.9}/></instancedMesh>
-    <instancedMesh ref={faces} args={[undefined,undefined,n]} frustumCulled={false}><planeGeometry args={[.36,.31]}/><meshBasicMaterial map={face} transparent alphaTest={.05} depthWrite={false}/></instancedMesh>
+    {faceTextures.map((texture,k)=><instancedMesh key={k} ref={m=>{faces.current[k]=m}} args={[undefined,undefined,Math.ceil((n-k)/4)]} frustumCulled={false}><planeGeometry args={[.36,.31]}/><meshBasicMaterial map={texture} transparent alphaTest={.05} depthWrite={false}/></instancedMesh>)}
+    <instancedMesh ref={hats} args={[undefined,undefined,n]} frustumCulled={false}><sphereGeometry args={[.30,12,8,0,Math.PI*2,0,Math.PI/2]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
+    <instancedMesh ref={brims} args={[undefined,undefined,n]} frustumCulled={false}><cylinderGeometry args={[.22,.22,.03,12]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
+    <instancedMesh ref={bands} args={[undefined,undefined,n]} frustumCulled={false}><torusGeometry args={[.29,.025,5,16]}/><meshStandardMaterial color="#d4a82f"/></instancedMesh>
+    <instancedMesh ref={glasses} args={[undefined,undefined,n*2]} frustumCulled={false}><torusGeometry args={[.07,.01,5,12]}/><meshStandardMaterial color="#24242a"/></instancedMesh>
+    <instancedMesh ref={skirts} args={[undefined,undefined,n]} frustumCulled={false}><cylinderGeometry args={[.17,.25,.2,12]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
+    <instancedMesh ref={jerseys} args={[undefined,undefined,n]} frustumCulled={false}><planeGeometry args={[.26,.13]}/><meshBasicMaterial map={jerseyTexture} transparent alphaTest={.05} depthWrite={false}/></instancedMesh>
     <instancedMesh ref={bodies} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[.20,.16,4,10]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
     <instancedMesh ref={limbs} args={[undefined,undefined,n*4]} frustumCulled={false}><capsuleGeometry args={[.075,.12,4,8]}/><meshStandardMaterial color="#657080" roughness={.95}/></instancedMesh>
     <instancedMesh ref={bags} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[.14,.13,4,8]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
