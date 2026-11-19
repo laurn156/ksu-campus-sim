@@ -1,0 +1,24 @@
+:root { --gold: #FFC629; --black: #0B1315; --gray: #5b6066; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 900; font-size: 28px; color: var(--black); background: #cfe3f0; }
+.brandbar { position: absolute; top: 14px; left: 14px; background: var(--black); color: #fff; padding: 8px 16px; border-radius: 12px; font-weight: 900; font-size: 18px; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+.brandbar .ksu { color: var(--gold); letter-spacing: .06em; }
+.brandbar .sub { color: #b8bcc0; font-weight: 700; font-size: 14px; margin-left: 6px; }
+.nearcard { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: rgba(11,19,21,.92); color: #fff; padding: 8px 18px; border-radius: 14px;
+  border-bottom: 4px solid var(--gold); text-align: center; animation: drop .25s ease both; }
+.nearcard .kicker { color: var(--gold); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-weight: 800; }
+.nearcard .nname { font-size: 20px; font-weight: 900; }
+.nearcard .nname b { background: var(--gold); color: var(--black); border-radius: 6px; padding: 0 7px; margin-right: 4px; }
+@keyframes drop { from { opacity: 0; transform: translate(-50%, -8px) } to { opacity: 1; transform: translate(-50%, 0) } }
+.minimap { position: absolute; right: 14px; bottom: 14px; background: rgba(11,19,21,.88); border-radius: 16px; padding: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+.minimap svg { display: block; }
+.mm-campus { fill: #31463a; stroke: var(--gold); stroke-width: 1; stroke-dasharray: 3 2; }
+.mm-path { fill: none; stroke: #8a8f86; stroke-width: .6; }
+.mm-bldg { fill: #5b6066; }
+.mm-ksu { fill: #d9b44a; }
+.mm-me { fill: #fff; stroke: var(--black); stroke-width: 1; }
+.mm-n { position: absolute; top: 10px; left: 14px; color: var(--gold); font-weight: 900; font-size: 12px; }
+.controls { position: absolute; left: 14px; bottom: 14px; background: rgba(255,255,255,.85); color: var(--black); padding: 7px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; max-width: 60vw; }
+.controls b { background: var(--black); color: var(--gold); border-radius: 4px; padding: 0 5px; font-weight: 800; }
+.osm { position: absolute; right: 14px; top: 14px; font-size: 11px; color: var(--black); background: rgba(255,255,255,.7); padding: 2px 8px; border-radius: 6px; }
+.tag { background: rgba(11,19,21,.88); color: #fff; padding: 3px 9px; border-radius: 8px; white-space: nowrap; font-weight: 800; font-size: 13px; display: flex; gap: 6px; align-items: center; }
+.tag b { background: var(--gold); color: var(--black); border-radius: 4px; padding: 0 5px; }
