@@ -1937,7 +1937,7 @@ function Trees({ campus }: { campus: Campus }) {
     if (campus.treesFromAerial) {
       // real tree positions detected in the aerial photo
       // keep roughly 1 in 4 detected canopy points: the woods still read as woods, the lawns stay open
-      for (const t of campus.trees) if (!campus.areas.some((a) => a.name === 'S. Walter Kelly Sr. Memorial Field' && pointInPoly(t[0], t[1], a.poly)) && (rnd() < 0.12 || ((t[2] ?? 1) > 1.32 && rnd() < 0.22))) spots.push([t[0], t[1], (t[2] ?? 1) * 1.25])
+      for (const t of campus.trees) if (Math.hypot(t[0]+81.5,t[1]+75)>8.5 && !campus.areas.some((a) => a.name === 'S. Walter Kelly Sr. Memorial Field' && pointInPoly(t[0], t[1], a.poly)) && (rnd() < 0.12 || ((t[2] ?? 1) > 1.32 && rnd() < 0.22))) spots.push([t[0], t[1], (t[2] ?? 1) * 1.25])
     } else for (const [x, z] of campus.trees) tryAdd(x, z, 1.2)
     // lines of trees along walkways (like the aerial view)
     if (!campus.treesFromAerial) for (const p of campus.paths) {
@@ -1997,6 +1997,48 @@ function Trees({ campus }: { campus: Campus }) {
   )
 }
 
+/** Small terraced amphitheater between the library and Norton Hall. */
+function LibraryAmphitheater() {
+  const group=useMemo(()=>{
+    const root=new THREE.Group(),cx=-81.5,cz=-75
+    const brick=new THREE.MeshStandardMaterial({map:facade('textilebrick'),roughness:.95,side:THREE.DoubleSide})
+    const concrete=new THREE.MeshStandardMaterial({color:'#c8c6bb',roughness:.95,side:THREE.DoubleSide})
+    const rail=new THREE.MeshStandardMaterial({color:'#cbd1c8',roughness:.65,metalness:.2})
+    const add=(geometry:THREE.BufferGeometry,material:THREE.Material)=>{const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh)}
+    const disc=new THREE.CylinderGeometry(4.4,4.4,.25,48);disc.translate(cx,.125,cz);add(disc,concrete)
+    // Three semicircular brick risers with broad concrete seating surfaces.
+    const ring=(inner:number,outer:number,height:number,material:THREE.Material)=>{
+      const shape=new THREE.Shape()
+      for(let i=0;i<=48;i++){const t=Math.PI/2+Math.PI*i/48,x=outer*Math.cos(t),y=outer*Math.sin(t);if(i===0)shape.moveTo(x,y);else shape.lineTo(x,y)}
+      for(let i=48;i>=0;i--){const t=Math.PI/2+Math.PI*i/48;shape.lineTo(inner*Math.cos(t),inner*Math.sin(t))}
+      shape.closePath()
+      const geo=new THREE.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false,curveSegments:48})
+      geo.rotateX(-Math.PI/2);geo.translate(cx,0,cz);add(geo,material)
+    }
+    for(const [inner,outer,height] of [[4.4,5.55,.35],[5.55,6.7,.66],[6.7,7.85,.97]]){
+      ring(inner,outer,height,brick)
+      // A thin cap leaves the brick riser visible below each tier.
+      const shape=new THREE.Shape()
+      for(let i=0;i<=48;i++){const t=Math.PI/2+Math.PI*i/48,x=outer*Math.cos(t),y=outer*Math.sin(t);if(i===0)shape.moveTo(x,y);else shape.lineTo(x,y)}
+      for(let i=48;i>=0;i--){const t=Math.PI/2+Math.PI*i/48;shape.lineTo(inner*Math.cos(t),inner*Math.sin(t))}
+      shape.closePath();const cap=new THREE.ShapeGeometry(shape);cap.rotateX(-Math.PI/2);cap.translate(cx,height+.012,cz);add(cap,concrete)
+    }
+    // Steel guardrail follows the outside curve of the upper row.
+    const bar=(a:THREE.Vector3,b:THREE.Vector3,r=.035)=>{
+      const v=new THREE.Vector3().subVectors(b,a),g=new THREE.CylinderGeometry(r,r,v.length(),7)
+      g.rotateZ(Math.PI/2)
+      const m=new THREE.Mesh(g,rail);m.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),v.normalize());m.position.copy(a).add(b).multiplyScalar(.5);root.add(m)
+    }
+    const point=(t:number,y:number)=>new THREE.Vector3(cx+7.85*Math.cos(t),y,cz-7.85*Math.sin(t))
+    for(let i=0;i<=16;i++){
+      const t=Math.PI/2+Math.PI*i/16;bar(point(t,.97),point(t,2.05),.04)
+      if(i<16)for(const y of [1.28,1.62,1.98])bar(point(t,y),point(t+Math.PI/16,y),.035)
+    }
+    return root
+  },[])
+  return <primitive object={group} />
+}
+
 /** Two dugouts and stepped spectator seating flanking the baseball diamond. */
 function BaseballSeating() {
   const items=useMemo(()=>{
@@ -2038,6 +2080,7 @@ export function CampusScene({ campus, ground = 'drawn' }: { campus: Campus; grou
       )}
       <Buildings campus={campus} />
       <BaseballSeating />
+      <LibraryAmphitheater />
       <Landmarks campus={campus} />
       <Props campus={campus} cars={ground !== 'photo'} roofUnits />
       <Buses campus={campus} />
