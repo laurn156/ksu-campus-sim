@@ -824,9 +824,10 @@ function designTwoDetails(b:Building){
   const chairs=chairColors.map(color=>new THREE.MeshStandardMaterial({color,roughness:.75}))
   for(const [bay,x] of [-236.5,-222,-207].entries())for(let side=0;side<2;side++){
     const cx=x+(side===0?-.8:.8),z=40.2,mat=chairs[bay*2+side]
-    worldBox(.65,.12,.65,cx,4.3,z,mat)
-    worldBox(.65,.72,.12,cx,4.67,z-.28,mat)
-    for(const dx of [-.24,.24])for(const dz of [-.23,.23])worldBox(.07,.48,.07,cx+dx,4.04,z+dz,dark)
+    // A rounded molded shell: a low seat and a curved back that opens toward -Z.
+    const seat=new THREE.SphereGeometry(.52,24,12);seat.scale(1,.34,.9);seat.translate(cx,4.05,z);out.push({geo:seat,mat})
+    const profile=[new THREE.Vector2(.35,.03),new THREE.Vector2(.49,.1),new THREE.Vector2(.53,.4),new THREE.Vector2(.49,.77),new THREE.Vector2(.39,.76),new THREE.Vector2(.37,.4),new THREE.Vector2(.27,.2)]
+    const shell=new THREE.LatheGeometry(profile,32,-Math.PI*.72,Math.PI*1.44);shell.translate(cx,3.94,z);out.push({geo:shell,mat})
   }
   // Upper portions of Design 1 project from the facade above the terrace.
   // They leave the terrace level open beneath them, without freestanding canopies.
@@ -854,28 +855,35 @@ function designTwoDetails(b:Building){
   // Eastern approach: paved ramp, low retaining wall and a planted strip.
   const ramp=new THREE.BufferGeometry()
   ramp.setAttribute('position',new THREE.Float32BufferAttribute([
-    -204,0,61,-179,1.1,61,-179,1.1,64,
-    -204,0,61,-179,1.1,64,-204,0,64,
-    -204,0,64,-179,1.1,64,-179,0,64,
-    -204,0,64,-179,0,64,-204,0,64],3))
+    -204,0,61,-173,1.1,61,-173,1.1,64,
+    -204,0,61,-173,1.1,64,-204,0,64,
+    -204,0,64,-173,1.1,64,-173,0,64,
+    -204,0,64,-173,0,64,-204,0,64],3))
   ramp.computeVertexNormals();out.push({geo:ramp,mat:concrete})
-  worldBox(25,.5,.3,-191.5,.25,64.2,white)
+  // Railings follow the incline on both sides of the ramp.
+  for(const z of [60.9,64.1]){
+    rail(new THREE.Vector3(-204,.9,z),new THREE.Vector3(-173,2,z))
+    for(let i=0;i<=5;i++){const x=-204+i*6.2,y=i*1.1/5;rail(new THREE.Vector3(x,y,z),new THREE.Vector3(x,y+.9,z))}
+  }
   worldBox(23,.1,1.5,-191.5,.08,58.7,soil)
   const shrub=new THREE.MeshStandardMaterial({color:'#718f57',roughness:.9})
   for(let x=-202;x<=-181;x+=1.7){const g=new THREE.IcosahedronGeometry(.43,1);g.scale(1,.7,1);g.translate(x,.35,58.7);out.push({geo:g,mat:shrub})}
-  worldBox(8,1.1,3,-175.5,.55,61.5,concrete)
-  // Three stair flights and landings continue uphill to the shared upper terrace.
+  worldBox(3.2,1.1,3,-171.8,.55,61.5,concrete)
+  // Three distinct flights, separated by flat landings long enough to walk across.
   for(let flight=0;flight<3;flight++){
+    const start=59-flight*7.2
     for(let step=0;step<6;step++){
-      const h=1.1+(flight*6+step+1)*.15,z=59-(flight*7+step)*1.05
-      worldBox(3,h,1.07,-171.8,h/2,z,concrete)
+      const h=1.1+(flight*6+step+1)*.15,z=start-step*.85
+      worldBox(3,h,.87,-171.8,h/2,z,concrete)
     }
-    const h=1.1+(flight+1)*.9,z=59-(flight*7+6)*1.05
-    worldBox(3,h,1.15,-171.8,h/2,z,concrete)
+    const h=1.1+(flight+1)*.9,z=start-6.05
+    worldBox(3,h,2.15,-171.8,h/2,z,concrete)
+    const y0=1.1+flight*.9,y1=y0+.9
+    rail(new THREE.Vector3(-170.25,y0+.85,start+.45),new THREE.Vector3(-170.25,y1+.85,start-4.7))
+    rail(new THREE.Vector3(-170.25,y1+.85,start-4.7),new THREE.Vector3(-170.25,y1+.85,start-7.1))
+    for(const [zPost,yPost] of [[start,y0],[start-4.7,y1],[start-7.1,y1]])rail(new THREE.Vector3(-170.25,yPost,zPost),new THREE.Vector3(-170.25,yPost+.85,zPost))
   }
   worldBox(8,3.8,3,-175.5,1.9,36.6,concrete)
-  rail(new THREE.Vector3(-170.25,1.95,59.5),new THREE.Vector3(-170.25,4.65,36.5))
-  for(const [z,y] of [[59,1.1],[52,2],[45,2.9],[37,3.8]])rail(new THREE.Vector3(-170.25,y,z),new THREE.Vector3(-170.25,y+.85,z))
   // The adjacent Design 1 end is a solid brick wall with a recessed entrance.
   const endBrick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.9,side:THREE.DoubleSide})
   worldBox(.18,7.35,8.7,-262.35,3.68,24,endBrick)
