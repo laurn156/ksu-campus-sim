@@ -810,7 +810,7 @@ function designTwoDetails(b:Building){
   out.push({geo:label,mat:new THREE.MeshStandardMaterial({map:text,side:THREE.DoubleSide})})
   // Roof terrace sits above the lower linking wing between the two buildings.
   worldBox(67,.18,3.3,-214,3.91,33.4,concrete)
-  for(const x of [-243,-235,-227,-219,-211,-203,-195,-187]){
+  for(const x of [-235,-227,-203,-187]){
     worldBox(3.4,.48,1.5,x,4.2,31.55,white)
     worldBox(3.08,.08,1.2,x,4.48,31.55,soil)
   }
@@ -818,6 +818,15 @@ function designTwoDetails(b:Building){
     const top=new THREE.CylinderGeometry(.75,.75,.1,16);top.translate(x,4.78,33.4);out.push({geo:top,mat:white})
     const stem=new THREE.CylinderGeometry(.06,.06,.75,8);stem.translate(x,4.34,33.4);out.push({geo:stem,mat:dark})
     for(const dx of [-1.1,1.1])worldBox(.55,.1,.55,x+dx,4.4,33.4,dark)
+  }
+  // Seating in the three open pockets between the projecting Design 2 wings.
+  const chairColors=['#3984c7','#e5be31','#55a568','#d95c4f','#3984c7','#e5be31']
+  const chairs=chairColors.map(color=>new THREE.MeshStandardMaterial({color,roughness:.75}))
+  for(const [bay,x] of [-236.5,-222,-207].entries())for(let side=0;side<2;side++){
+    const cx=x+(side===0?-.8:.8),z=40.2,mat=chairs[bay*2+side]
+    worldBox(.65,.12,.65,cx,4.3,z,mat)
+    worldBox(.65,.72,.12,cx,4.67,z-.28,mat)
+    for(const dx of [-.24,.24])for(const dz of [-.23,.23])worldBox(.07,.48,.07,cx+dx,4.04,z+dz,dark)
   }
   // Upper portions of Design 1 project from the facade above the terrace.
   // They leave the terrace level open beneath them, without freestanding canopies.
@@ -854,18 +863,19 @@ function designTwoDetails(b:Building){
   worldBox(23,.1,1.5,-191.5,.08,58.7,soil)
   const shrub=new THREE.MeshStandardMaterial({color:'#718f57',roughness:.9})
   for(let x=-202;x<=-181;x+=1.7){const g=new THREE.IcosahedronGeometry(.43,1);g.scale(1,.7,1);g.translate(x,.35,58.7);out.push({geo:g,mat:shrub})}
+  worldBox(8,1.1,3,-175.5,.55,61.5,concrete)
   // Three stair flights and landings continue uphill to the shared upper terrace.
   for(let flight=0;flight<3;flight++){
     for(let step=0;step<6;step++){
       const h=1.1+(flight*6+step+1)*.15,z=59-(flight*7+step)*1.05
-      worldBox(3,h,1.07,-176.3,h/2,z,concrete)
+      worldBox(3,h,1.07,-171.8,h/2,z,concrete)
     }
     const h=1.1+(flight+1)*.9,z=59-(flight*7+6)*1.05
-    worldBox(3,h,1.15,-176.3,h/2,z,concrete)
+    worldBox(3,h,1.15,-171.8,h/2,z,concrete)
   }
-  worldBox(5,3.8,3,-178.8,1.9,36.6,concrete)
-  rail(new THREE.Vector3(-174.8,1.95,59.5),new THREE.Vector3(-174.8,4.65,36.5))
-  for(const [z,y] of [[59,1.1],[52,2],[45,2.9],[37,3.8]])rail(new THREE.Vector3(-174.8,y,z),new THREE.Vector3(-174.8,y+.85,z))
+  worldBox(8,3.8,3,-175.5,1.9,36.6,concrete)
+  rail(new THREE.Vector3(-170.25,1.95,59.5),new THREE.Vector3(-170.25,4.65,36.5))
+  for(const [z,y] of [[59,1.1],[52,2],[45,2.9],[37,3.8]])rail(new THREE.Vector3(-170.25,y,z),new THREE.Vector3(-170.25,y+.85,z))
   // The adjacent Design 1 end is a solid brick wall with a recessed entrance.
   const endBrick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.9,side:THREE.DoubleSide})
   worldBox(.18,7.35,8.7,-262.35,3.68,24,endBrick)
