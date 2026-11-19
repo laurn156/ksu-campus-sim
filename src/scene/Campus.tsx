@@ -249,6 +249,57 @@ function studentCenterDetails() {
   return pieces
 }
 
+/** Approximate the distinctive 806 entrance and curved dining-room glazing from reference photos.
+ * The mapped footprint remains the source of the building location and collision boundary. */
+function stingersDetails(b: Building) {
+  const pieces: {geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const material=(color:string,roughness=0.8)=>new THREE.MeshStandardMaterial({color,roughness,side:THREE.DoubleSide})
+  const brick=material('#a74630'), white=material('#e4e5de'), trim=material('#bdc4c1'), glass=material('#396b6d',0.26), dark=material('#394948')
+  const a=b.poly[27], c=b.poly[28]
+  const dx=c[0]-a[0], dz=c[1]-a[1], length=Math.hypot(dx,dz), angle=Math.atan2(-dz,dx)
+  const origin=new THREE.Vector3((a[0]+c[0])/2,0,(a[1]+c[1])/2)
+  const box=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>{
+    const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z);geo.rotateY(angle);geo.translate(origin.x,0,origin.z);pieces.push({geo,mat})
+  }
+  // Entrance volume, silver-framed double doors, upper glass and a broad white overhang.
+  box(length,9.3,.18,0,4.65,.08,brick)
+  box(5.4,6.2,.18,-.45,4.3,.22,glass)
+  for(const x of [-3.15,-1.8,-.45,.9,2.25])box(.10,6.25,.20,x,4.3,.35,trim)
+  for(const y of [1.2,3.35,5.1,7.42])box(5.55,.11,.22,-.45,y,.36,trim)
+  box(3.4,2.9,.22,-.45,1.55,.42,dark)
+  for(const x of [-1.3,.4]){box(1.55,2.7,.12,x,1.55,.56,glass);box(.09,2.8,.18,x-.79,1.55,.64,white);box(.08,.55,.16,x+.45,1.48,.67,white)}
+  box(3.6,.12,.18,-.45,2.9,.65,white)
+  // Entry canopy and roof fascia stand out in the reference photographs.
+  box(6.2,.18,2.0,-.45,3.05,1.1,trim)
+  box(length+1.1,.23,1.4,0,9.05,.55,white)
+  box(length+1.45,.24,1.85,0,8.78,.75,white)
+  box(length+1.65,.16,2.0,0,8.55,.82,trim)
+  // Building number plaque.
+  box(1.45,.72,.08,3.15,7.0,.36,material('#e9b42f'))
+  const numberCanvas=document.createElement('canvas');numberCanvas.width=256;numberCanvas.height=128
+  const numberCtx=numberCanvas.getContext('2d')!;numberCtx.fillStyle='#e9b42f';numberCtx.fillRect(0,0,256,128);numberCtx.fillStyle='#202a28';numberCtx.textAlign='center';numberCtx.font='bold 78px sans-serif';numberCtx.fillText('806',128,91)
+  const numberTexture=new THREE.CanvasTexture(numberCanvas);numberTexture.colorSpace=THREE.SRGBColorSpace
+  const numberGeo=new THREE.PlaneGeometry(1.4,.68);numberGeo.translate(3.15,7,.42);numberGeo.rotateY(angle);numberGeo.translate(origin.x,0,origin.z)
+  pieces.push({geo:numberGeo,mat:new THREE.MeshStandardMaterial({map:numberTexture,side:THREE.DoubleSide})})
+  const signCanvas=document.createElement('canvas');signCanvas.width=512;signCanvas.height=128
+  const ctx=signCanvas.getContext('2d')!;ctx.fillStyle='#f2f3ec';ctx.font='bold 40px sans-serif';ctx.textAlign='center';ctx.fillText('STINGERS RESTAURANT',256,52);ctx.font='bold 27px sans-serif';ctx.fillText('AT THE X',256,89)
+  const texture=new THREE.CanvasTexture(signCanvas);texture.colorSpace=THREE.SRGBColorSpace
+  const label=new THREE.PlaneGeometry(4.6,1.1);label.translate(-.45,3.55,.75);label.rotateY(angle);label.translate(origin.x,0,origin.z)
+  pieces.push({geo:label,mat:new THREE.MeshStandardMaterial({map:texture,transparent:true,depthWrite:false,side:THREE.DoubleSide})})
+  // Polygon edges 13–25 trace the round bay in the mapped footprint.
+  // Overlay full-height glazing, vertical mullions, and the pale curved fascia.
+  for(let i=13;i<26;i++){
+    const p=b.poly[i],q=b.poly[i+1],ex=q[0]-p[0],ez=q[1]-p[1],len=Math.hypot(ex,ez);if(len<.01)continue
+    const edgeAngle=Math.atan2(-ez,ex),mx=(p[0]+q[0])/2,mz=(p[1]+q[1])/2
+    const slab=(w:number,h:number,depth:number,y:number,offset:number,mat:THREE.MeshStandardMaterial)=>{const g=new THREE.BoxGeometry(w,h,depth);g.translate(0,y,offset);g.rotateY(edgeAngle);g.translate(mx,0,mz);pieces.push({geo:g,mat})}
+    slab(len+.08,6.35,.16,3.55,.1,glass)
+    for(const y of [.45,2.35,4.25,6.65])slab(len+.1,.09,.22,y,.22,trim)
+    slab(len+.1,.8,.4,7.05,.2,white)
+    const mullion=new THREE.BoxGeometry(.09,6.35,.2);mullion.translate(-len/2,3.55,.24);mullion.rotateY(edgeAngle);mullion.translate(mx,0,mz);pieces.push({geo:mullion,mat:trim})
+  }
+  return pieces
+}
+
 function Buildings({ campus }: { campus: Campus }) {
   useEffect(() => () => { occluders.meshes.length = 0 }, [])
   const items = useMemo(() => {
@@ -265,9 +316,9 @@ function Buildings({ campus }: { campus: Campus }) {
         b.h = look.floors * FLOOR
       }
       const parts: { geo: THREE.BufferGeometry; mat: THREE.MeshStandardMaterial }[] = []
-      const split = (look.base || b.code === 'A') && b.h > FLOOR * 1.5 ? FLOOR : 0
+      const split = (look.base || b.code === 'A') && b.code !== 'X' && b.h > FLOOR * 1.5 ? FLOOR : 0
       if (split) parts.push({ geo: wallsGeometry(b, 0, split), mat: getWall(look.base ?? 'redbrick') })
-      parts.push({ geo: wallsGeometry(b, split, b.h), mat: getWall(b.code === 'A' ? 'studentmetal' : look.wall) })
+      parts.push({ geo: wallsGeometry(b, split, b.h), mat: getWall(b.code === 'A' ? 'studentmetal' : b.code === 'X' ? 'redbrick' : look.wall) })
       if (look.roof === 'hip') {
         parts.push({ geo: hipRoofGeometry(b, 4.2), mat: new THREE.MeshStandardMaterial({ color: look.roofColor ?? '#6b6966', roughness: 0.9, flatShading: true, side: THREE.DoubleSide }) })
       } else {
@@ -275,6 +326,7 @@ function Buildings({ campus }: { campus: Campus }) {
         parts.push({ geo: flatGeometry(b.poly, b.h + 0.02, 8), mat: m })
       }
       if (b.code === 'A') parts.push(...studentCenterDetails())
+      if (b.code === 'X') parts.push(...stingersDetails(b))
       return { b, parts, flat: look.roof === 'flat' }
     })
   }, [campus])
