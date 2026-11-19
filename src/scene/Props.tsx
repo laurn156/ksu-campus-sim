@@ -38,7 +38,7 @@ function longestEdgeAngle(poly: Pt[]): number {
   return ang
 }
 
-export function Props({ campus }: { campus: Campus }) {
+export function Props({ campus, cars: showCars = true, roofUnits = true }: { campus: Campus; cars?: boolean; roofUnits?: boolean }) {
   const built = useMemo(() => {
     seed = 777
     // --- parapets + rooftop AC units
@@ -145,8 +145,8 @@ export function Props({ campus }: { campus: Campus }) {
       <mesh geometry={built.parapet} castShadow>
         <meshStandardMaterial color="#d8cbb4" roughness={0.9} side={THREE.DoubleSide} />
       </mesh>
-      <primitive object={built.ac} />
-      <primitive object={built.car} />
+      {roofUnits && <primitive object={built.ac} />}
+      {showCars && <primitive object={built.car} />}
       <primitive object={built.lamp} />
     </group>
   )

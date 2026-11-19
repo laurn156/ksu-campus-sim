@@ -87,9 +87,9 @@ export function Hud({ campus }: { campus: Campus }) {
       )}
       <Minimap campus={campus} />
       <div className="controls">
-        <b>WASD</b> walk · <b>Shift</b> run · <b>click</b> to walk there · <b>Q/E</b> or right-drag to turn · <b>wheel</b> zoom · <b>M</b> mute
+        <b>WASD</b> walk · <b>Shift</b> run · <b>click</b> to walk there · <b>Q/E</b> or right-drag to turn · <b>wheel</b> zoom · <b>G</b> ground style · <b>M</b> mute
       </div>
-      <div className="osm">{campus.attribution}</div>
+      <div className="osm">{campus.attribution} · Aerial imagery: USDA NAIP (public domain)</div>
     </>
   )
 }

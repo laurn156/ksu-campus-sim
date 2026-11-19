@@ -33,7 +33,8 @@ export interface Campus {
   paths: Line[]
   roads: Line[]
   areas: Area[]
-  trees: Pt[]
+  trees: (Pt | [number, number, number])[] // [x, z] or [x, z, scale] when detected from the aerial photo
+  treesFromAerial?: boolean
   extent: [number, number, number, number]
   attribution: string
 }

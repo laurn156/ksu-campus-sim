@@ -22,9 +22,22 @@ camera, mouse **wheel** to zoom, **M** mute.
   real-scale window grids, parapets and rooftop units, instanced trees, parked cars and lamp posts.
   Buildings between the camera and your character fade out (cutaway, like The Sims).
 
-Regenerate the campus data: `python3 scripts/osm_to_campus.py data/marietta.osm public/campus.json`
+- **Ground from real aerial photography:** `public/aerial.jpg` is USDA NAIP imagery (public domain, ~0.5 m/px)
+  of the exact campus area. `scripts/stylize_aerial.py` repaints it into our illustrated ground
+  (`public/ground.jpg`: lawn, tree canopy, pavement, asphalt, infield), so every real walkway, plaza and lawn
+  shape is in the right place. `scripts/trees_from_aerial.py` places a 3D tree on every patch of real canopy
+  (~12,000 trees). Roofs show their own patch of the photo. **G** cycles ground styles: illustrated / photo / drawn.
+
+Regenerate the campus data (in order):
+
+```bash
+python3 scripts/osm_to_campus.py data/marietta.osm public/campus.json
+python3 scripts/trees_from_aerial.py public/aerial.jpg public/campus.json      # needs numpy + pillow
+python3 scripts/stylize_aerial.py public/aerial.jpg public/ground.jpg
+```
 
 ## Credits
 
 Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, available under the
-Open Database License (ODbL). Not an official Kennesaw State University product.
+Open Database License (ODbL). Aerial imagery: USDA National Agriculture Imagery Program (NAIP), public domain,
+via the USGS National Map. Not an official Kennesaw State University product.

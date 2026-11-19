@@ -5,6 +5,30 @@ import { bbox, Collider, distToSeg, pointInPoly, type Building, type Campus, typ
 import { facade, parkingTexture } from './textures'
 import { Props } from './Props'
 
+let aerialTex: THREE.Texture | null = null
+/** The public-domain aerial photo, loaded once and shared (ground + roofs). */
+export function aerial(): THREE.Texture {
+  if (!aerialTex) {
+    aerialTex = new THREE.TextureLoader().load('/aerial.jpg')
+    aerialTex.colorSpace = THREE.SRGBColorSpace
+    aerialTex.anisotropy = 8
+  }
+  return aerialTex
+}
+
+/** UVs that map world x/z onto the aerial photo (north = top of the image). */
+function aerialUV(g: THREE.BufferGeometry, ext: [number, number, number, number]) {
+  const [x0, z0, x1, z1] = ext
+  const pos = g.getAttribute('position')
+  const uv = new Float32Array(pos.count * 2)
+  for (let i = 0; i < pos.count; i++) {
+    uv[i * 2] = (pos.getX(i) - x0) / (x1 - x0)
+    uv[i * 2 + 1] = 1 - (pos.getZ(i) - z0) / (z1 - z0)
+  }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2))
+  return g
+}
+
 const BAY = 3.2 // m per window bay (texture repeat)
 const FLOOR = 3.8 // m per floor
 
@@ -91,9 +115,10 @@ const AREA_STYLE: Record<string, { color: string; y: number }> = {
  *  can turn see-through, like The Sims' cutaway walls. */
 export const occluders: { meshes: THREE.Mesh[] } = { meshes: [] }
 
-function Buildings({ campus }: { campus: Campus }) {
+function Buildings({ campus, aerialRoofs }: { campus: Campus; aerialRoofs: boolean }) {
   const items = useMemo(() => {
-    const roofMat = mat('#a9a6a0', 0.95)
+    // real roofs: each roof shows its own patch of the aerial photo (AC units, skylights, colors)
+    const roofMat = aerialRoofs ? new THREE.MeshStandardMaterial({ map: aerial(), color: '#d7dbd0', roughness: 0.95 }) : mat('#a9a6a0', 0.95)
     const styleMat = new Map<string, THREE.MeshStandardMaterial>()
     const list = campus.buildings.map((b) => {
       if (!styleMat.has(b.style))
@@ -101,10 +126,11 @@ function Buildings({ campus }: { campus: Campus }) {
       const wm = styleMat.get(b.style)!.clone()
       const rm = roofMat.clone()
       wm.transparent = rm.transparent = true
-      return { b, walls: wallsGeometry(b), roof: flatGeometry(b.poly, b.h), wm, rm }
+      const roof = flatGeometry(b.poly, b.h + 0.02)
+      return { b, walls: wallsGeometry(b), roof: aerialRoofs ? aerialUV(roof, campus.extent) : roof, wm, rm }
     })
     return list
-  }, [campus])
+  }, [campus, aerialRoofs])
   return (
     <group>
       {items.map(({ b, walls, roof, wm, rm }) => (
@@ -117,7 +143,39 @@ function Buildings({ campus }: { campus: Campus }) {
   )
 }
 
-function Ground({ campus }: { campus: Campus }) {
+let groundTex: THREE.Texture | null = null
+function illustrated(): THREE.Texture {
+  if (!groundTex) {
+    groundTex = new THREE.TextureLoader().load('/ground.jpg')
+    groundTex.colorSpace = THREE.SRGBColorSpace
+    groundTex.anisotropy = 8
+  }
+  return groundTex
+}
+
+/** Ground image over the exact campus extent: the public-domain aerial photo (USDA NAIP) or our
+ *  illustrated map derived from it (scripts/stylize_aerial.py). */
+function AerialGround({ campus, style }: { campus: Campus; style: 'photo' | 'illustrated' }) {
+  const tex = useMemo(() => (style === 'photo' ? aerial() : illustrated()), [style])
+  const [x0, z0, x1, z1] = campus.extent
+  return (
+    <group>
+      {/* soft green beyond the photo's edge */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(x0 + x1) / 2, -0.02, (z0 + z1) / 2]} receiveShadow>
+        <planeGeometry args={[(x1 - x0) * 4, (z1 - z0) * 4]} />
+        <meshStandardMaterial color="#6f8f55" roughness={1} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(x0 + x1) / 2, 0.01, (z0 + z1) / 2]} receiveShadow>
+        <planeGeometry args={[x1 - x0, z1 - z0]} />
+        {/* slight warm/bright grade so the photo sits with the illustrated buildings */}
+        {/* toned down so the sunlit photo sits with the illustrated buildings */}
+        <meshStandardMaterial map={tex} color={style === 'photo' ? '#c9d0bf' : '#e6e9e0'} roughness={1} />
+      </mesh>
+    </group>
+  )
+}
+
+function Ground({ campus, overlay = false }: { campus: Campus; overlay?: boolean }) {
   const g = useMemo(() => {
     const groups: Record<string, THREE.BufferGeometry[]> = {}
     const add = (k: string, geo: THREE.BufferGeometry | null) => {
@@ -151,10 +209,12 @@ function Ground({ campus }: { campus: Campus }) {
   const [x0, z0, x1, z1] = campus.extent
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(x0 + x1) / 2, 0, (z0 + z1) / 2]} receiveShadow>
-        <planeGeometry args={[(x1 - x0) * 3, (z1 - z0) * 3]} />
-        <meshStandardMaterial color="#9cc46e" roughness={1} />
-      </mesh>
+      {!overlay && (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(x0 + x1) / 2, 0, (z0 + z1) / 2]} receiveShadow>
+          <planeGeometry args={[(x1 - x0) * 3, (z1 - z0) * 3]} />
+          <meshStandardMaterial color="#9cc46e" roughness={1} />
+        </mesh>
+      )}
       {Object.entries(g).map(([k, geo]) => (
         <mesh key={k} geometry={geo} material={mats[k]} receiveShadow />
       ))}
@@ -193,13 +253,16 @@ function Trees({ campus }: { campus: Campus }) {
     const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647)
     const spots: [number, number, number][] = [] // x, z, scale
     const tryAdd = (x: number, z: number, sc: number) => {
-      if (spots.length > 7000) return
+      if (spots.length > 14000) return
       if (collider.blocked(x, z, 3) || onPavement(x, z)) return
       spots.push([x, z, sc])
     }
-    for (const [x, z] of campus.trees) tryAdd(x, z, 1.2)
+    if (campus.treesFromAerial) {
+      // real tree positions detected in the aerial photo
+      for (const t of campus.trees) spots.push([t[0], t[1], (t[2] ?? 1) * 1.05])
+    } else for (const [x, z] of campus.trees) tryAdd(x, z, 1.2)
     // lines of trees along walkways (like the aerial view)
-    for (const p of campus.paths) {
+    if (!campus.treesFromAerial) for (const p of campus.paths) {
       for (let i = 0; i < p.pts.length - 1; i++) {
         const [x1, z1] = p.pts[i]
         const [x2, z2] = p.pts[i + 1]
@@ -215,7 +278,7 @@ function Trees({ campus }: { campus: Campus }) {
       }
     }
     // woods: dense; lawns: scattered
-    for (const a of campus.areas) {
+    for (const a of campus.treesFromAerial ? [] : campus.areas) {
       if (a.kind !== 'wood' && a.kind !== 'grass') continue
       const [x0, z0, x1, z1] = bbox(a.poly)
       const step = a.kind === 'wood' ? 7.5 : 22
@@ -256,12 +319,21 @@ function Trees({ campus }: { campus: Campus }) {
   )
 }
 
-export function CampusScene({ campus }: { campus: Campus }) {
+export type GroundStyle = 'illustrated' | 'photo' | 'drawn'
+
+export function CampusScene({ campus, ground = 'illustrated' }: { campus: Campus; ground?: GroundStyle }) {
   return (
     <group>
-      <Ground campus={campus} />
-      <Buildings campus={campus} />
-      <Props campus={campus} />
+      {ground === 'drawn' ? (
+        <Ground campus={campus} />
+      ) : (
+        <>
+          <AerialGround campus={campus} style={ground} />
+          {ground === 'illustrated' && <Ground campus={campus} overlay />}
+        </>
+      )}
+      <Buildings campus={campus} aerialRoofs={ground !== 'drawn'} />
+      <Props campus={campus} cars={ground !== 'photo'} roofUnits={ground === 'drawn'} />
       <Trees campus={campus} />
     </group>
   )
