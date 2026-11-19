@@ -8,12 +8,12 @@ import { player, type AvatarLook } from '../scene/Player'
 import { supabase } from './client'
 import { DEFAULT_PROFILE } from '../ui/Welcome'
 import './connect.css'
-type Peer={id:string;name:string;look:AvatarLook;x:number;z:number;heading:number;moving:boolean}
+export type Peer={id:string;name:string;look:AvatarLook;x:number;z:number;heading:number;moving:boolean;waveUntil?:number}
 type Chat={id:string;name:string;text:string}
-type World={peers:Peer[];messages:Chat[];status:string;send:(text:string)=>void;error:string}
+type World={peers:Peer[];messages:Chat[];status:string;send:(text:string)=>void;wave:()=>void;error:string}
 export function useConnectWorld(userId:string,username:string):World {
  const [peers,setPeers]=useState<Peer[]>([]),[messages,setMessages]=useState<Chat[]>([]),[status,setStatus]=useState('Connecting…'),[error,setError]=useState('')
- const sendRef=useRef<(text:string)=>void>(()=>{}),lastChat=useRef(0)
+ const sendRef=useRef<(text:string)=>void>(()=>{}),waveRef=useRef<()=>void>(()=>{}),lastChat=useRef(0)
  useEffect(()=>{
   if(!supabase)return
   const client=supabase,channels=new Map<string,RealtimeChannel>(),presence=client.channel('campus-presence',{config:{private:true,presence:{key:userId}}}), own=client.channel('campus-player:'+userId,{config:{private:true}})
@@ -41,11 +41,11 @@ export function useConnectWorld(userId:string,username:string):World {
       jerseyNumber:typeof raw.jerseyNumber==='string'&&/^\d{1,2}$/.test(raw.jerseyNumber)?raw.jerseyNumber:'12',backpack:false} as AvatarLook
      ch.on('broadcast',{event:'move'},({payload})=>{
       if(!Number.isFinite(payload?.x)||!Number.isFinite(payload?.z)||!Number.isFinite(payload?.heading)||Math.abs(payload.x)>10000||Math.abs(payload.z)>10000)return
-      setPeers(old=>[...old.filter(p=>p.id!==id),{id,name,look,x:payload.x,z:payload.z,heading:payload.heading,moving:payload.moving===true}])
+      setPeers(old=>[...old.filter(p=>p.id!==id),{id,name,look,x:payload.x,z:payload.z,heading:payload.heading,moving:payload.moving===true,waveUntil:old.find(p=>p.id===id)?.waveUntil}])
      }).on('broadcast',{event:'chat'},({payload})=>{
       if(typeof payload?.text!=='string')return;const text=payload.text.trim().slice(0,200);if(!text)return
       setMessages(old=>[...old,{id:crypto.randomUUID(),name,text}].slice(-50))
-     }).subscribe()
+     }).on('broadcast',{event:'wave'},()=>{setPeers(old=>old.map(p=>p.id===id?{...p,waveUntil:Date.now()+4000}:p));setMessages(old=>[...old,{id:crypto.randomUUID(),name,text:'waved hello 👋'}].slice(-50))}).subscribe()
     })
    }
   }
@@ -61,15 +61,16 @@ export function useConnectWorld(userId:string,username:string):World {
    own.subscribe(state=>{joined=state==='SUBSCRIBED';if(state==='CHANNEL_ERROR')setStatus('Connection error')})
   }).catch(()=>{if(alive)setStatus('Could not authenticate connection')})
   const interval=setInterval(()=>{if(joined)void own.send({type:'broadcast',event:'move',payload:{x:player.x,z:player.z,heading:player.heading,moving:player.moving}})},200)
+  waveRef.current=()=>{if(joined)void own.send({type:'broadcast',event:'wave',payload:{}})}
   sendRef.current=(raw)=>{const text=raw.trim().slice(0,200);if(!text)return;if(!joined){setError('Chat is disconnected.');return}if(Date.now()-lastChat.current<1500){setError('Please wait a moment before sending another message.');return}lastChat.current=Date.now();setError('');void own.send({type:'broadcast',event:'chat',payload:{text}});setMessages(old=>[...old,{id:crypto.randomUUID(),name:username,text}].slice(-50))}
   return()=>{alive=false;clearInterval(interval);sendRef.current=()=>{};void presence.untrack();void client.removeChannel(presence);void client.removeChannel(own);for(const ch of channels.values())void client.removeChannel(ch)}
  },[userId,username])
- return {peers,messages,status,send:text=>sendRef.current(text),error}
+ return {peers,messages,status,send:text=>sendRef.current(text),wave:()=>waveRef.current(),error}
 }
 function Remote({peer}:{peer:Peer}){
  const ref=useRef<THREE.Group>(null),walk=useRef(0)
  useFrame((_,dt)=>{if(ref.current){ref.current.position.lerp(new THREE.Vector3(peer.x,0,peer.z),Math.min(1,dt*10));ref.current.rotation.y=peer.heading}walk.current=THREE.MathUtils.lerp(walk.current,peer.moving?.75:0,Math.min(1,dt*8))})
- return <group ref={ref} position={[peer.x,0,peer.z]}><Character {...peer.look} walk={walk} scale={1.15}/><Html position={[0,2,0]} center distanceFactor={18}><div className="student-label">● {peer.name}</div></Html></group>
+ return <group ref={ref} position={[peer.x,0,peer.z]}><Character {...peer.look} walk={walk} scale={1.15}/><Html position={[0,2,0]} center distanceFactor={18}><button className="student-label" onClick={event=>{event.stopPropagation();window.dispatchEvent(new CustomEvent('connect-player',{detail:peer.id}))}}>● {peer.name} {peer.waveUntil && peer.waveUntil>Date.now()?'👋':''}</button></Html></group>
 }
 export function OnlinePlayers({peers}:{peers:Peer[]}){return <>{peers.map(p=><Remote key={p.id} peer={p}/>)}</>}
 export function ConnectChat({world}:{world:World}){const [open,setOpen]=useState(true),[text,setText]=useState('');return <div className="connect-chat"><button onClick={()=>setOpen(!open)}>💬 Campus chat {open?'−':'+'}</button><small>{world.status} · {world.peers.length} other players</small>{open&&<><div className="connect-messages">{world.messages.length===0?<p>No messages yet. Say hello!</p>:world.messages.map(m=><p key={m.id}><b>{m.name}:</b> {m.text}</p>)}</div><form onSubmit={e=>{e.preventDefault();if(text.trim()){world.send(text);setText('')}}}><input aria-label="Campus chat message" maxLength={200} value={text} onChange={e=>setText(e.target.value)} placeholder="Message everyone…"/><button>Send</button></form>{world.error&&<small role="alert">{world.error}</small>}</>}</div>}

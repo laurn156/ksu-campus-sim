@@ -11,6 +11,8 @@ import { CampusStudents } from './scene/Community'
 import { Auth } from './connect/Auth'
 import { supabase } from './connect/client'
 import { useConnectWorld, OnlinePlayers, ConnectChat } from './connect/World'
+import { useSocial, SocialPanel } from './connect/Social'
+import { OfflineFriends } from './connect/OfflineFriends'
 import type { User } from '@supabase/supabase-js'
 import { useLife } from './life/useLife'
 import { LifeUI } from './life/LifeUI'
@@ -120,5 +122,6 @@ function ConnectSession({campus,user,profile,username,onEdit,onModes}:{campus:Ca
 }
 function ConnectedCampus({campus,user,profile,username,onEdit,onModes}:{campus:Campus;user:User;profile:Profile;username:string;onEdit:()=>void;onModes:()=>void}){
  const world=useConnectWorld(user.id,username)
- return <><Canvas shadows="percentage" camera={{position:[0,40,40],fov:45,near:.5,far:3000}} dpr={[1,2]}><color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/><hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={profile.look}/><OnlinePlayers peers={world.peers}/></Canvas><Hud campus={campus} onEdit={onEdit} mode="connect" onModes={onModes}/><ConnectChat world={world}/></>
+ const social=useSocial(user.id)
+ return <><Canvas shadows="percentage" camera={{position:[0,40,40],fov:45,near:.5,far:3000}} dpr={[1,2]}><color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/><hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={profile.look}/><OnlinePlayers peers={world.peers.filter(p=>!social.blocked.includes(p.id))}/><OfflineFriends userId={user.id} peers={world.peers} social={social}/></Canvas><Hud campus={campus} onEdit={onEdit} mode="connect" onModes={onModes}/><ConnectChat world={world}/><SocialPanel userId={user.id} peers={world.peers} social={social} wave={world.wave}/></>
 }

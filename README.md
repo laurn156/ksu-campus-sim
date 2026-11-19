@@ -75,3 +75,7 @@ Connect uses Supabase anonymous Auth, a profile table, and private Realtime chan
 6. Test two accounts in separate browsers/computers: profiles, appearance, movement, chat, reconnect and departure. A static deployment also requires the two public Vite environment variables at build time. Repeat the tests on the deployed URL.
 
 Online accounts use the same avatar editor in both modes; guest profiles and Campus Life progress remain local to their browser. The previous same-browser Connect demo is no longer the Connect mode. Friends, reporting, blocking, direct messages, and activities are not implemented.
+
+### Connect social prototype
+
+Run `supabase/migrations/social.sql` once after the initial setup. Click a player's name or open **Social** to view the player, send a friend request, start a private message, wave, invite them to meet, block, or report them. The Friends tab shows incoming requests and online status; accepted offline friends appear as clearly labeled, locally roaming representations, not live players. Direct messages and invitations are stored with participant-only database policies and refresh approximately every three seconds. Meet-up invitations are social coordination, not synchronized minigames. Reports need an organizer to review them in Supabase; moderation tooling, server-side spam controls, and full public-release protections are not implemented. Anonymous demo profiles remain tied to their browser session.
