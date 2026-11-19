@@ -35,6 +35,15 @@ function win(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: nu
 }
 
 const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
+  // Design 2: broad glass panes separated by pale mullions and a low sill.
+  designlargeglass: (g) => {
+    g.fillStyle = '#415e5b'; g.fillRect(0, 0, W, H)
+    const light = g.createLinearGradient(0, 0, W, H)
+    light.addColorStop(0, 'rgba(170,202,194,.28)'); light.addColorStop(1, 'rgba(20,44,42,.12)')
+    g.fillStyle = light; g.fillRect(0, 0, W, H)
+    g.fillStyle = '#d4dcd5'; g.fillRect(0, 0, 5, H); g.fillRect(W - 5, 0, 5, H)
+    g.fillRect(0, 0, W, 6); g.fillRect(0, H - 19, W, 6); g.fillRect(0, H - 5, W, 5)
+  },
   // Mathematics: dark glazed ground floor behind slim pale frames.
   mathglass: (g) => {
     g.fillStyle = '#334c49'; g.fillRect(0, 0, W, H)
