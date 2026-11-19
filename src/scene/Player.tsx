@@ -67,6 +67,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   const ray = useMemo(() => new THREE.Raycaster(), [])
   const drag = useRef<{ x: number; y: number; pan: boolean } | null>(null)
   const pan = useRef(new THREE.Vector2())
+  const cameraTarget = useRef(new THREE.Vector3())
   const { camera, gl } = useThree()
 
   useEffect(() => {
@@ -84,6 +85,8 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     player.z = z
     player.yaw = yaw
     player.heading = yaw + Math.PI
+    cameraTarget.current.set(x, 1.2, z)
+    snap.current = true
     const down = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return
       keys.current.add(e.key.toLowerCase())
@@ -92,7 +95,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     const wheel = (e: WheelEvent) => (dist.current = THREE.MathUtils.clamp(dist.current * (1 + Math.sign(e.deltaY) * 0.1), 8, 140))
     const pdown = (e: PointerEvent) => {
       // left or right drag looks around (no click-to-walk)
-      if (e.button <= 2) { e.preventDefault(); drag.current = { x: e.clientX, y: e.clientY, pan: e.button === 1 || e.shiftKey } }
+      if (e.button <= 2) { e.preventDefault(); gl.domElement.setPointerCapture(e.pointerId); drag.current = { x: e.clientX, y: e.clientY, pan: e.button === 1 || e.shiftKey } }
     }
     const pmove = (e: PointerEvent) => {
       if (!drag.current) return
@@ -182,11 +185,18 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
       Math.sin(pitch) * dist.current,
       player.z + pan.current.y + Math.cos(player.yaw) * Math.cos(pitch) * dist.current,
     )
+    const focus = new THREE.Vector3(player.x + pan.current.x, 1.2, player.z + pan.current.y)
     if (snap.current) {
       camera.position.copy(want)
+      cameraTarget.current.copy(focus)
       snap.current = false
-    } else camera.position.lerp(want, Math.min(1, dt * 6))
-    camera.lookAt(player.x + pan.current.x, 1.2, player.z + pan.current.y)
+    } else {
+      // Smooth position and target together; smoothing just position makes the view wobble while panning.
+      const smoothing = 1 - Math.exp(-dt * 12)
+      camera.position.lerp(want, smoothing)
+      cameraTarget.current.lerp(focus, smoothing)
+    }
+    camera.lookAt(cameraTarget.current)
     // cutaway: buildings between the camera and the player fade out
     cut.current += dt
     if (cut.current > 0.08) {
