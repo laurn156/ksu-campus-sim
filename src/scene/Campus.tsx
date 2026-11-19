@@ -418,18 +418,42 @@ function engineeringCenterDetails(b:Building){
   const white=material('#e7e7e0'),silver=material('#b5c2bd',.5),glass=material('#487c79',.25),concrete=material('#c8c5b9'),dark=material('#465451')
   const transform=(g:THREE.BufferGeometry,x:number,y:number,z:number)=>{g.translate(x,y,z);g.rotateY(angle);g.translate(mx,0,mz);return g}
   const box=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>out.push({geo:transform(new THREE.BoxGeometry(w,h,d),x,y,z),mat})
+  // Ground-floor entrance on the shorter end facade, below a projecting header.
+  const sideA=b.poly[2],sideB=b.poly[3],sideLen=Math.hypot(sideB[0]-sideA[0],sideB[1]-sideA[1])
+  const sideAngle=Math.atan2(-(sideB[1]-sideA[1]),sideB[0]-sideA[0])
+  const sx=sideA[0]+(sideB[0]-sideA[0])*.22,sz=sideA[1]+(sideB[1]-sideA[1])*.22
+  const sideBox=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>{
+    const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z);geo.rotateY(sideAngle);geo.translate(sx,0,sz);out.push({geo,mat})
+  }
+  sideBox(7.4,.48,1.5,0,3.5,.65,white)
+  sideBox(5.7,2.75,.16,0,1.4,.12,glass)
+  for(const x of [-2.85,-1.42,0,1.42,2.85])sideBox(.08,2.8,.2,x,1.4,.23,silver)
+  sideBox(5.7,.1,.2,0,2.78,.23,silver)
+  sideBox(.08,.55,.15,.55,1.3,.3,white)
+  const sideCanvas=document.createElement('canvas');sideCanvas.width=1024;sideCanvas.height=128
+  const sideCtx=sideCanvas.getContext('2d')!;sideCtx.fillStyle='#f4f4ef';sideCtx.font='bold 45px sans-serif';sideCtx.textAlign='center';sideCtx.fillText('ENGINEERING TECHNOLOGY CENTER',512,80)
+  const sideTexture=new THREE.CanvasTexture(sideCanvas);sideTexture.colorSpace=THREE.SRGBColorSpace
+  const sideText=new THREE.PlaneGeometry(Math.min(7,sideLen*.2),.75);sideText.rotateY(sideAngle);sideText.translate(sx,3.1,sz);sideText.translate(Math.sin(sideAngle)*1.44,0,Math.cos(sideAngle)*1.44)
+  out.push({geo:sideText,mat:new THREE.MeshStandardMaterial({map:sideTexture,transparent:true,depthWrite:false,side:THREE.DoubleSide})})
   // Long curtain wall is topped by the deep, light roof edge in the photographs.
   box(length+.4,.36,1.0,0,b.h-.1,.32,white)
   box(length+.7,.20,1.45,0,b.h-.42,.47,white)
   // Elevated entry landing, glazed vestibule, metal mullions and double doors.
   // Continuous upper pavement, with a wider landing where the side stairs meet it.
+  // Solid retaining base supports the elevated pavement all the way to ground.
+  box(length,3.56,4.4,0,1.78,2.15,concrete)
   box(length,.24,4.4,0,3.68,2.15,concrete)
+  box(4,3.56,3.3,-11.6,1.78,5.85,concrete)
   box(4,.24,3.3,-11.6,3.68,5.85,concrete)
   // At the far end the pavement descends gradually toward the surrounding paths.
   const ramp=new THREE.BufferGeometry()
   ramp.setAttribute('position',new THREE.Float32BufferAttribute([
     length/2,3.8,0,length/2+17,0,0,length/2+17,0,4.35,
-    length/2,3.8,0,length/2+17,0,4.35,length/2,3.8,4.35],3))
+    length/2,3.8,0,length/2+17,0,4.35,length/2,3.8,4.35,
+    length/2,0,0,length/2+17,0,0,length/2,3.8,0,
+    length/2,0,4.35,length/2,3.8,4.35,length/2+17,0,4.35,
+    length/2,0,0,length/2,3.8,0,length/2,3.8,4.35,
+    length/2,0,0,length/2,3.8,4.35,length/2,0,4.35],3))
   ramp.computeVertexNormals();ramp.rotateY(angle);ramp.translate(mx,0,mz);out.push({geo:ramp,mat:concrete})
   box(9.2,3.25,.14,0,5.5,.16,glass)
   for(const x of [-4.55,-3.03,-1.52,0,1.52,3.03,4.55])box(.08,3.25,.18,x,5.5,.27,silver)
@@ -528,6 +552,43 @@ function greenhouseParts(b:Building){
   return parts
 }
 
+
+/** Hornet Hub: low metal workshop, a public entrance, and six team garage bays. */
+function hornetHubParts(b:Building){
+  const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const mat=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.85,side:THREE.DoubleSide})
+  const metal=mat('#4b5353'),brick=mat('#755452'),roof=mat('#9da7a5'),trim=mat('#c4c9c2'),glass=mat('#344b4a'),garage=mat('#aab2ae')
+  out.push({geo:wallsGeometry(b,0,2.4),mat:brick},{geo:wallsGeometry(b,2.4,b.h),mat:metal},{geo:hipRoofGeometry(b,1.1),mat:roof})
+  const wall=(a:Pt,c:Pt,fn:(box:(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>void,len:number,plane:(g:THREE.BufferGeometry,x:number,y:number,z:number)=>THREE.BufferGeometry)=>void)=>{
+    const length=Math.hypot(c[0]-a[0],c[1]-a[1]),angle=Math.atan2(-(c[1]-a[1]),c[0]-a[0]),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    const plane=(g:THREE.BufferGeometry,x:number,y:number,z:number)=>{g.translate(x,y,z);g.rotateY(angle);g.translate(mx,0,mz);return g}
+    const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>out.push({geo:plane(new THREE.BoxGeometry(w,h,d),x,y,z),mat:m})
+    fn(box,length,plane)
+  }
+  // The north edge faces the ETC. Each bay is kept clear for future team logos.
+  wall(b.poly[3],b.poly[2],(box,len)=>{
+    const spacing=len/6
+    for(let i=0;i<6;i++){
+      const x=-len/2+spacing*(i+.5),w=spacing-.65
+      box(w,3.3,.16,x,1.65,.11,garage)
+      for(let y=.55;y<3.3;y+=.55)box(w,.045,.05,x,y,.22,trim)
+      for(const dx of [-w/2,w/2])box(.1,3.45,.2,x+dx,1.72,.15,metal)
+    }
+  })
+  // Opposite face has the signed pedestrian entrance and small workshop windows.
+  wall(b.poly[1],b.poly[0],(box,len,plane)=>{
+    box(2.2,2.8,.16,1,1.4,.1,glass)
+    for(const x of [-.1,1,2.1])box(.1,2.85,.2,x,1.43,.2,trim)
+    box(2.2,.12,.2,1,2.84,.2,trim)
+    for(const x of [-len*.32,-len*.19,len*.3]){box(2.4,1,.16,x,1.85,.1,glass);box(2.5,.09,.2,x,1.32,.2,trim)}
+    const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=160
+    const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f2f2ed';ctx.font='bold 100px sans-serif';ctx.textAlign='center';ctx.fillText('HORNET HUB',512,112)
+    const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace
+    out.push({geo:plane(new THREE.PlaneGeometry(9,1.3),len*.23,4.05,.2),mat:new THREE.MeshStandardMaterial({map:texture,transparent:true,depthWrite:false,side:THREE.DoubleSide})})
+  })
+  return out
+}
+
 function Buildings({ campus }: { campus: Campus }) {
   useEffect(() => () => { occluders.meshes.length = 0 }, [])
   const items = useMemo(() => {
@@ -538,6 +599,10 @@ function Buildings({ campus }: { campus: Campus }) {
     }
     const roofTex = roofTexture()
     return campus.buildings.map((b) => {
+      if (b.id === '1504299650') {
+        b.name = 'Hornet Hub'; b.short = 'Hornet Hub'; b.h = 5
+        return { b, parts: hornetHubParts(b), flat: false }
+      }
       if (b.kind === 'greenhouse' && b.poly.length === 4) {
         b.h = 4.55
         return { b, parts: greenhouseParts(b), flat: false }
