@@ -10,6 +10,13 @@ await writeFile(join(folder,'simulation.ts'),(await readFile(new URL('../src/lif
 const {freshLife,advance,doActivity,talk,relation,level,saveLife,loadLife}=await import(pathToFileURL(join(folder,'simulation.ts')).href)
 const store=new Map()
 globalThis.localStorage={getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)}
+const first=talk(freshLife(),'imani','custom','Do you remember me?','Owl')
+assert.match(first.reply,/don’t think we’ve met/i)
+const again=talk(first.state,'imani','custom','Do you remember me?','Owl')
+assert.match(again.reply,/Owl/)
+assert.doesNotMatch(again.reply,/robotics|workshop|drone/i)
+const third=talk(again.state,'imani','custom','Do you remember me?','Owl')
+assert.notEqual(third.reply,again.reply)
 let state=freshLife()
 state=talk(state,'imani','introduce','','Owl').state
 assert.equal(relation(state,'imani').met,true)
@@ -19,6 +26,7 @@ assert.match(refusal.reply,/better first/)
 assert.equal(level(relation(refusal.state,'imani').score),'Stranger')
 state=talk(state,'imani','custom','I love robotics','Owl').state
 assert.ok(relation(state,'imani').memories.includes('robotics'))
+assert.match(talk(state,'imani','custom','Do you remember me?','Owl').reply,/robotics/i)
 state=advance(state,1440)
 const next=talk(state,'imani','chat','','Owl')
 assert.match(next.reply,/robot/i)

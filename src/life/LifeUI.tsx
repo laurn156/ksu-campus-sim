@@ -3,7 +3,7 @@ import { distToSeg, type Campus } from '../campus'
 import { player } from '../scene/Player'
 import { community } from '../scene/Community'
 import { STUDENTS, scheduleFor, moodFor, type StudentId } from './students'
-import { level, relation, type Activity, type SocialAction } from './simulation'
+import { isMemoryQuestion, level, relation, type Activity, type SocialAction } from './simulation'
 import { optionalDialogue, type DialogueTurn } from './dialogue'
 import type { LifeController } from './useLife'
 import './life.css'
@@ -30,6 +30,7 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
   const [near,setNear]=useState<string[]>([]),[nearBench,setNearBench]=useState(false),[message,setMessage]=useState(''),[feedback,setFeedback]=useState(''),[invitation,setInvitation]=useState<StudentId|null>(null)
   const [aiReply,setAiReply]=useState(''), [thinking,setThinking]=useState(false), request=useRef<AbortController|null>(null), lastInvite=useRef(0)
   const history=useRef<Partial<Record<StudentId,DialogueTurn[]>>>({})
+  const [replySource,setReplySource]=useState<'memory'|'qwen'|'fallback'|null>(null)
   const npc=STUDENTS.find(s=>s.id===talking)
   const r=npc?relation(life.state,npc.id):null
   useEffect(()=>{player.speedMultiplier=life.state.needs.energy<20?.8:1;return()=>{player.speedMultiplier=1}},[life.state.needs.energy])
@@ -63,11 +64,15 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
     const controller=new AbortController();request.current=controller;setThinking(true)
     const previous=history.current[npc.id]??[]
     const playerLine=action==='custom'?text:(interactions.flatMap(group=>group.items).find(item=>item.id===action)?.label??action)
+    if(action==='custom' && isMemoryQuestion(text)){
+      history.current[npc.id]=[...previous,{role:'user' as const,content:playerLine},{role:'assistant' as const,content:result.reply}].slice(-6)
+      setReplySource('memory');setAiReply(result.reply);setThinking(false);setMessage('');return
+    }
     void optionalDialogue(npc,result.state,action,text,playerName,result.reply,previous,controller.signal).then(reply=>{
       if(controller.signal.aborted)return
       const spoken=reply||result.reply
       history.current[npc.id]=[...previous,{role:'user' as const,content:playerLine},{role:'assistant' as const,content:spoken}].slice(-6)
-      setAiReply(spoken);setThinking(false)
+      setReplySource(reply?'qwen':'fallback');setAiReply(spoken);setThinking(false)
     })
     setMessage('')
   }
@@ -80,8 +85,8 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
     {feedback&&<div className="life-feedback" role="status">{feedback}</div>}
     {(nearbyPlaces.length>0||nearBench)&&!player.view&&<section className="life-actions"><b>Nearby</b>{nearBench&&<div><strong>Bench</strong><button onClick={()=>doPlace('rest')}>Sit and rest · 30 min</button></div>}{nearbyPlaces.map(p=><div key={p.code}><strong>{p.title}</strong>{p.actions.map(a=><button key={a.id} onClick={()=>doPlace(a.id)}>{a.label}</button>)}{event?.code===p.code&&<button onClick={()=>doPlace('club')}>Join {event.name} · 1 hr</button>}</div>)}</section>}
     {invitation&&!talking&&<div className="life-invite"><b>{STUDENTS.find(s=>s.id===invitation)?.name}</b> waves you over. Want to chat?<div><button onClick={()=>{setTalking(invitation);setInvitation(null)}}>Say hello</button><button onClick={()=>setInvitation(null)}>Not now</button></div></div>}
-    {talking&&npc&&r&&<div className="life-modal-back"><section className="life-dialog" role="dialog" aria-modal="true" aria-label={'Talk to '+npc.name}><header><div><small>{npc.major} · {moodFor(npc,life.state.minute,r.score)} · {scheduleFor(npc,life.state.minute).label}</small><h2>{npc.name}</h2><span>{npc.personality}</span></div><button onClick={()=>{request.current?.abort();setThinking(false);setTalking(null);life.setReply('');setAiReply('')}}>✕</button></header>
-      <div className="life-speech"><b>{npc.name}</b><p>{thinking?'Thinking…':aiReply||life.reply||(r.met ? `Hi ${playerName}! Good to see you again.` : 'Hi! Want to introduce yourself?')}</p><small>{level(r.score)} · {r.score} relationship</small></div>
+    {talking&&npc&&r&&<div className="life-modal-back"><section className="life-dialog" role="dialog" aria-modal="true" aria-label={'Talk to '+npc.name}><header><div><small>{npc.major} · {moodFor(npc,life.state.minute,r.score)} · {scheduleFor(npc,life.state.minute).label}</small><h2>{npc.name}</h2><span>{npc.personality}</span></div><button onClick={()=>{request.current?.abort();setThinking(false);setTalking(null);life.setReply('');setAiReply('');setReplySource(null)}}>✕</button></header>
+      <div className="life-speech"><b>{npc.name}</b><p>{thinking?'Thinking…':aiReply||life.reply||(r.met ? `Hi ${playerName}! Good to see you again.` : 'Hi! Want to introduce yourself?')}</p><small>{level(r.score)} · {r.score} relationship{!thinking&&replySource ? ` · ${replySource==='qwen'?'Local Qwen':replySource==='memory'?'Saved memory':'Offline fallback'}` : ''}</small></div>
       <div className="life-interactions">{interactions.map(group=><div key={group.label}><b>{group.label}</b><div>{group.items.map(a=><button key={a.id} onClick={()=>interact(a.id)}>{a.label}</button>)}</div></div>)}</div>
       <form onSubmit={e=>{e.preventDefault();if(message.trim())interact('custom',message)}}><label htmlFor="life-message">Say something</label><div><input id="life-message" maxLength={240} placeholder="Type a message…" value={message} onChange={e=>setMessage(e.target.value)}/><button type="submit">Send</button></div><small>Local Qwen dialogue is used when Ollama is running; otherwise, local demo replies are shown.</small></form>
     </section></div>}

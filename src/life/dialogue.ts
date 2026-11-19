@@ -12,7 +12,7 @@ export async function optionalDialogue(npc:StudentProfile, state:LifeState, acti
     const r=relation(state,npc.id)
     const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify({
       student:{name:npc.name,personality:npc.personality,major:npc.major,likes:npc.likes,dislikes:npc.dislikes,background:npc.background},
-      playerName,day:state.day,time:state.minute,mood:moodFor(npc,state.minute,r.score),relationship:level(r.score),memories:r.memories.slice(-5),action,message:text.slice(0,240),gameOutcome:action==='custom'?null:outcome,history:history.slice(-6)
+      playerName,day:state.day,time:state.minute,mood:moodFor(npc,state.minute,r.score),relationship:level(r.score),hasMet:r.met,memories:r.memories.slice(-5),action,message:text.slice(0,240),gameOutcome:action==='custom'?null:outcome,history:history.slice(-6)
     })})
     if(!response.ok)return null
     const json=await response.json()

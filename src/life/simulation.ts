@@ -30,6 +30,7 @@ export function doActivity(state:LifeState,id:Activity):LifeState {
   for(const k of Object.keys(info.delta) as (keyof Needs)[])needs[k]=clamp(needs[k]+(info.delta[k]??0))
   return {...next,needs,academics:Math.min(999,next.academics+(info.academics??0)),involvement:Math.min(999,next.involvement+(info.involvement??0)),journal:[...next.journal,`Day ${state.day}: ${info.label}.`].slice(-30)}
 }
+export function isMemoryQuestion(text:string){return /\b(?:remember|recall)\b.{0,30}\b(?:me|my name|who i am)\b|\b(?:met|meet)\b.{0,20}\bbefore\b|\bknow who i am\b/i.test(text)}
 export function talk(state:LifeState,id:StudentId,action:SocialAction,text='',playerName='student'):{state:LifeState;reply:string} {
   const npc=STUDENTS.find(s=>s.id===id);if(!npc)return {state,reply:'See you around!'}
   const prev=relation(state,id), negative=['tease','disagree','complain','argue'].includes(action), invite=['hangout','lunch','study','friend'].includes(action)
@@ -41,6 +42,11 @@ export function talk(state:LifeState,id:StudentId,action:SocialAction,text='',pl
   const score=Math.max(-100,Math.min(100,prev.score+delta))
   let reply:string
   if(action==='introduce')reply=prev.met?`We’ve met, ${playerName}! Good to see you again.`:`Hi, ${playerName}! I’m ${npc.name}. I study ${npc.major}. ${npc.background}`
+  else if(action==='custom' && isMemoryQuestion(custom)){
+    if(!prev.met)reply=`I don’t think we’ve met yet. I’m ${npc.name} — it’s nice to meet you!`
+    else if(prev.memories.length){const memory=prev.memories[prev.memories.length-1];reply=[`Of course, ${playerName}! I remember ${memory}.`,`Yes, ${playerName}! Last time, ${memory} came up.`,`I do, ${playerName}. I remember ${memory} from before.`][prev.interactions%3]}
+    else reply=[`Yes, ${playerName}, we’ve met! I’m still getting to know you.`,`I remember meeting you, ${playerName}. We haven’t talked about much yet.`,`Of course, ${playerName}! It’s good to see you again.`][prev.interactions%3]
+  }
   else if(!prev.met)reply=`Hi! I’m ${npc.name}. Before we make plans, what should I call you?`
   else if(invite&&!accepted)reply=action==='friend'?`I’d like to get to know you better first, ${playerName}.`:`Maybe another time, ${playerName}. Let’s chat a little more first.`
   else if(action==='know'||action==='interests'||action==='clubs')reply=`I’m into ${npc.likes.join(', ')}. ${npc.background}`
