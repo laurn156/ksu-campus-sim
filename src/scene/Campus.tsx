@@ -859,23 +859,27 @@ function designTwoDetails(b:Building){
     -170,3.8,35,-170,0,66,-154,0,66, -170,3.8,35,-154,0,66,-154,3.8,35,
     -154,3.8,35,-154,0,66,-146,0,66, -154,3.8,35,-146,0,66,-146,0,35],3))
   slope.computeVertexNormals();out.push({geo:slope,mat:lawn})
-  // Narrow ramp hugs the Design 2 wall; it is separate from the broad sidewalk.
+  // A narrow inclined path sits directly beside the glazing, above a low
+  // retaining wall; the main paved pedestrian route stays clear in front.
   const ramp=new THREE.BufferGeometry()
   ramp.setAttribute('position',new THREE.Float32BufferAttribute([
-    -204,0,58.6,-179,1.1,58.6,-179,1.1,60.6,
-    -204,0,58.6,-179,1.1,60.6,-204,0,60.6,
-    -204,0,60.6,-179,1.1,60.6,-179,0,60.6],3))
+    -204,.08,59.05,-179,1.1,59.05,-179,1.1,60.9,
+    -204,.08,59.05,-179,1.1,60.9,-204,.08,60.9],3))
   ramp.computeVertexNormals();out.push({geo:ramp,mat:concrete})
-  const whiteRail=(a:THREE.Vector3,c:THREE.Vector3)=>{const v=c.clone().sub(a),g=new THREE.CylinderGeometry(.055,.055,v.length(),8);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize()));g.translate((a.x+c.x)/2,(a.y+c.y)/2,(a.z+c.z)/2);out.push({geo:g,mat:white})}
-  for(const z of [58.55,60.65]){
-    whiteRail(new THREE.Vector3(-204,.85,z),new THREE.Vector3(-179,1.95,z))
-    for(let i=0;i<=5;i++){const x=-204+i*5,y=i*1.1/5;whiteRail(new THREE.Vector3(x,y,z),new THREE.Vector3(x,y+.85,z))}
-  }
-  worldBox(23,.1,1.1,-191.5,.08,57.7,soil)
+  const wall=new THREE.BufferGeometry()
+  wall.setAttribute('position',new THREE.Float32BufferAttribute([
+    -204,0,60.95,-179,0,60.95,-179,1.1,60.95,
+    -204,0,60.95,-179,1.1,60.95,-204,.08,60.95],3))
+  wall.computeVertexNormals();out.push({geo:wall,mat:white})
+  const whiteRail=(a:THREE.Vector3,c:THREE.Vector3)=>{const v=c.clone().sub(a),g=new THREE.CylinderGeometry(.045,.045,v.length(),8);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize()));g.translate((a.x+c.x)/2,(a.y+c.y)/2,(a.z+c.z)/2);out.push({geo:g,mat:white})}
+  // Only the exposed retaining-wall edge has a rail; it does not cross the path.
+  whiteRail(new THREE.Vector3(-204,.9,60.9),new THREE.Vector3(-179,1.92,60.9))
+  whiteRail(new THREE.Vector3(-204,.5,60.9),new THREE.Vector3(-179,1.52,60.9))
+  for(let i=0;i<=6;i++){const x=-204+i*25/6,y=.08+i*1.02/6;whiteRail(new THREE.Vector3(x,y,60.9),new THREE.Vector3(x,y+.82,60.9))}
+  // The ramp and stair foot share a small landing, with planting beside the wall.
+  worldBox(6,1.1,2.1,-176,.55,59.95,concrete)
   const shrub=new THREE.MeshStandardMaterial({color:'#718f57',roughness:.9})
-  for(let x=-202;x<=-181;x+=1.7){const g=new THREE.IcosahedronGeometry(.4,1);g.scale(1,.7,1);g.translate(x,.35,57.7);out.push({geo:g,mat:shrub})}
-  // The upper end of the ramp joins the lower landing of the stair approach.
-  worldBox(8,1.1,3,-175.5,.55,59.55,concrete)
+  for(let x=-202;x<=-181;x+=2){const y=.08+(x+204)*1.02/25;const g=new THREE.IcosahedronGeometry(.35,1);g.scale(1,.7,1);g.translate(x,y+.22,58.85);out.push({geo:g,mat:shrub})}
   // Three flights each have a broad, level landing before the next flight.
   for(let flight=0;flight<3;flight++){
     const start=59-flight*8.1

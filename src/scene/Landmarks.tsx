@@ -780,7 +780,7 @@ export function Landmarks({ campus }: { campus: Campus }) {
         <FootprintCanopy key={b.id} poly={b.poly} />
       ))}
       {placed.lib && <LibraryDome at={centroid(placed.lib.poly)} y={placed.lib.h} />}
-      {campus.features.map((f, i) =>
+      {campus.features.filter((f) => !(f.kind === 'bench' && f.x >= -205 && f.x <= -177 && f.z >= 57 && f.z <= 63)).map((f, i) =>
         f.kind === 'bench' ? <Bench key={i} x={f.x} z={f.z} dir={f.dir} /> : f.kind === 'fountain' ? <Fountain key={i} x={f.x} z={f.z} /> : f.kind === 'shelter' ? <Shelter key={i} x={f.x} z={f.z} /> : null,
       )}
       {flags.map((f, i) => (
