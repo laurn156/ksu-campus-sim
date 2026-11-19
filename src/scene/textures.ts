@@ -58,6 +58,14 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
     g.fillStyle = '#b9bdb8'
     for (let x = 0; x < W; x += 17) g.fillRect(x, 0, 2, H)
   },
+  // Perforated reddish screen on the projecting Design 2 wings.
+  brickscreen: (g) => {
+    g.fillStyle = '#a65d45'; g.fillRect(0, 0, W, H)
+    for (let y = 3; y < H; y += 7) for (let x = (y / 7 | 0) % 2 ? 1 : 5; x < W; x += 9) {
+      g.fillStyle = '#633b32'; g.fillRect(x, y, 5, 3)
+      g.fillStyle = '#ca8268'; g.fillRect(x, y + 3, 5, 1)
+    }
+  },
   // The library's entrance has an uninterrupted brick facade.
   librarybrick: (g) => { brick(g, [150, 79, 66], 19) },
   // classic campus red brick with stone sill band (Student Center, Library, Howell/Norton, Wilder)

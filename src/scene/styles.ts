@@ -20,7 +20,7 @@ export const LOOKS: Record<string, Look> = {
   G: L('whiteband', 'flat'), // Engineering Lab
   H: L('whiteband', 'flat'), // Academic Building
   I1: L('whiteband', 'flat'),
-  I2: L('whiteband', 'flat'),
+  I2: L('mathglass', 'flat', { floors: 2 }),
   J: L('brickglass', 'flat'), // Atrium
   L: L('metal', 'flat'),
   L1: L('metal', 'flat'),

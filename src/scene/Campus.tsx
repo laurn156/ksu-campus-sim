@@ -780,11 +780,26 @@ function matchingLabElevation(b:Building){
   return out
 }
 
+/** Brick-screen ends of the projecting Design 2 wings, above the glazed base. */
+function designTwoDetails(b:Building){
+  const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const brick=new THREE.MeshStandardMaterial({map:facade('brickscreen'),roughness:.9,side:THREE.DoubleSide})
+  const trim=new THREE.MeshStandardMaterial({color:'#e5e4da',roughness:.8})
+  for(const i of [3,7,11,16]){
+    const a=b.poly[i],c=b.poly[i+1],len=Math.hypot(c[0]-a[0],c[1]-a[1]),angle=Math.atan2(-(c[1]-a[1]),c[0]-a[0]),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    const panel=wallsGeometry({...b,poly:[a,c]},3.8,b.h)
+    // A shallow offset keeps the screen visible over the glazed wall.
+    panel.translate(Math.sin(angle)*.12,0,Math.cos(angle)*.12);out.push({geo:panel,mat:brick})
+    const cap=new THREE.BoxGeometry(len+.15,.22,.38);cap.rotateY(angle);cap.translate(mx+Math.sin(angle)*.18,b.h-.05,mz+Math.cos(angle)*.18);out.push({geo:cap,mat:trim})
+  }
+  return out
+}
+
 /** Glass and brick annex facade, matching the attached science building. */
 function scienceAnnexDetails(){
   const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
   const pale=new THREE.MeshStandardMaterial({color:'#e1e2da',roughness:.8}),brick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.9})
-  for(const [x,z] of [[-268.3,-55],[-244,-55]]){const g=new THREE.BoxGeometry(2,4.3,.3);g.translate(x,5.45,z);out.push({geo:g,mat:brick})}
+  for(const [x,z] of [[-268.3,-55],[-244,-55]]){const g=new THREE.BoxGeometry(2,7.6,.3);g.translate(x,3.8,z);out.push({geo:g,mat:brick})}
   const band=new THREE.BoxGeometry(12,.28,.35);band.translate(-256,4.05,-61.1);out.push({geo:band,mat:pale})
   return out
 }
@@ -812,10 +827,15 @@ function Buildings({ campus }: { campus: Campus }) {
           { geo: flatGeometry(b.poly, b.h + .02, 8), mat: new THREE.MeshStandardMaterial({ map: roofTex, roughness: .9, side: THREE.DoubleSide }) },
         ], flat: true }
       }
+      if (b.id === '589139282') {
+        const wall = new THREE.MeshStandardMaterial({ map: facade('plain'), roughness: .85, side: THREE.DoubleSide })
+        const slab = new THREE.MeshStandardMaterial({ color: '#dadbd2', roughness: .85, side: THREE.DoubleSide })
+        return { b, parts: [{geo:wallsGeometry(b,3.1,b.h),mat:wall},{geo:flatGeometry(b.poly,3.1,8),mat:slab},{geo:flatGeometry(b.poly,b.h+.02,8),mat:slab}], flat: true }
+      }
       if (b.id === '1134398612') {
         const glazing = new THREE.MeshStandardMaterial({ map: facade('mathglass'), roughness: .35, side: THREE.DoubleSide })
         const roof = new THREE.MeshStandardMaterial({ map: roofTex, roughness: .9, side: THREE.DoubleSide })
-        return { b, parts: [{geo:wallsGeometry(b,3.3,b.h),mat:glazing},{geo:flatGeometry(b.poly,3.3,8),mat:roof},{geo:flatGeometry(b.poly,b.h+.02,8),mat:roof},...scienceAnnexDetails()], flat: true }
+        return { b, parts: [{geo:wallsGeometry(b),mat:glazing},{geo:flatGeometry(b.poly,b.h+.02,8),mat:roof},...scienceAnnexDetails()], flat: true }
       }
       if (b.id === '1504299650') {
         b.name = 'Hornet Hub'; b.short = 'Hornet Hub'; b.h = 5
@@ -847,6 +867,7 @@ function Buildings({ campus }: { campus: Campus }) {
       if (b.code === 'E') parts.push(...crawfordDetails(b))
       if (b.code === 'G') parts.push(...engineeringLabDetails(b))
       if (b.code === 'I1') parts.push(...matchingLabElevation(b))
+      if (b.code === 'I2') parts.push(...designTwoDetails(b))
       if (b.code === 'Q') parts.push(...engineeringCenterDetails(b))
       return { b, parts, flat: look.roof === 'flat' }
     })
