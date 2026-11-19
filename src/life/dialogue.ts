@@ -4,8 +4,7 @@ import { relation, level } from './simulation'
 
 /** Optional developer-supplied dialogue service. The model only returns text; game rules remain local. */
 export async function optionalDialogue(npc:StudentProfile, state:LifeState, action:SocialAction, text:string, playerName:string, outcome:string, signal:AbortSignal):Promise<string|null> {
-  const endpoint=import.meta.env.VITE_CAMPUS_DIALOGUE_ENDPOINT as string|undefined
-  if(!endpoint)return null
+  const endpoint='/api/campus-dialogue'
   try {
     const url=new URL(endpoint,window.location.origin)
     if(url.origin!==window.location.origin)return null
