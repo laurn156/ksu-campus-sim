@@ -916,6 +916,55 @@ function scienceAnnexDetails(){
   return out
 }
 
+/** Architecture: glazed studio wing, white finned entry and stepped forecourt. */
+function architectureParts(b: Building) {
+  const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const solid=(color:string,roughness=.85)=>new THREE.MeshStandardMaterial({color,roughness,side:THREE.DoubleSide})
+  const glass=new THREE.MeshStandardMaterial({map:facade('etcglass'),roughness:.35,metalness:.08,side:THREE.DoubleSide})
+  const white=solid('#e5e8e2'),dark=solid('#344b49'),stone=solid('#c6c8c2'),brick=solid('#b18c79')
+  // Continuous curtain wall over a recessed, darker ground floor; the tall entrance wall is white.
+  for(let i=0;i<b.poly.length;i++){
+    const a=b.poly[i],c=b.poly[(i+1)%b.poly.length],seg={...b,poly:[a,c]}
+    const facadeMat=i===11?white:glass
+    parts.push({geo:wallsGeometry(seg,0,3.25),mat:i===11?white:dark})
+    parts.push({geo:wallsGeometry(seg,3.25,b.h),mat:facadeMat})
+  }
+  parts.push({geo:flatGeometry(b.poly,b.h+.02,8),mat:white})
+  const onEdge=(index:number)=>{
+    const a=b.poly[index],c=b.poly[(index+1)%b.poly.length],dx=c[0]-a[0],dz=c[1]-a[1]
+    const len=Math.hypot(dx,dz), angle=-Math.atan2(dz,dx),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    const box=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>{
+      const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z);geo.rotateY(angle);geo.translate(mx,0,mz);parts.push({geo,mat})
+    }
+    return {len,box}
+  }
+  // Repeated horizontal projecting shades and a fine grid on the long studio facade.
+  const wing=onEdge(8)
+  for(const y of [3.35,7.1,10.9,14.7]) wing.box(wing.len,.17,1.15,0,y,.52,white)
+  for(let x=-wing.len/2+2;x<wing.len/2;x+=4.7)wing.box(.16,3.15,.35,x,1.6,.18,stone)
+  wing.box(wing.len,.35,.8,0,15.12,.33,white)
+  // Deep white fins frame the stacked studio windows on the entrance block.
+  const entry=onEdge(11)
+  for(let x=-entry.len/2+1;x<entry.len/2;x+=3.1){
+    entry.box(.48,14.5,1.15,x,7.3,.48,white)
+    for(const y of [4.8,8.4,12]){
+      entry.box(2.35,2.3,.12,x+1.3,y,.09,glass)
+      entry.box(2.55,.17,.9,x+1.3,y+1.25,.45,white)
+    }
+  }
+  // Broad stairs lead toward the recessed gap between the two wings.
+  for(let i=0;i<10;i++) entry.box(10,.16*(i+1),.8,-1,.08*(i+1),7.9-i*.78,stone)
+  entry.box(10,.2,1.2,-1,1.72,.65,stone)
+  // The shorter glazed wing has a brick-coloured plinth and roof terrace edge.
+  const shortWing=onEdge(16)
+  shortWing.box(shortWing.len,1.15,.2,0,.58,.08,brick)
+  shortWing.box(shortWing.len,.28,.55,0,b.h-.1,.25,white)
+  // Light upper service volume, set back from the principal glass roofline.
+  const volume=new THREE.BoxGeometry(16,3.5,10);volume.translate(9,16.95,202);parts.push({geo:volume,mat:white})
+  const cap=new THREE.BoxGeometry(16.4,.2,10.4);cap.translate(9,18.75,202);parts.push({geo:cap,mat:white})
+  return parts
+}
+
 /** W. Clair Harris Textile Center: tiled wings, brick base and raised roof spine. */
 function textileCenterParts(b: Building) {
   const parts: {geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
@@ -1363,6 +1412,7 @@ function Buildings({ campus }: { campus: Campus }) {
           ...academicDetails(b),
         ], flat: true }
       }
+      if (b.code === 'N') return { b, parts: architectureParts(b), flat: true }
       if (b.code === 'M') return { b, parts: textileCenterParts(b), flat: true }
       if (b.id === '517434198') return { b, parts: pumpHouseParts(b), flat: true }
       if (b.id === '1504299650') {
