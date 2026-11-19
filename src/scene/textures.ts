@@ -35,6 +35,24 @@ function win(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: nu
 }
 
 const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
+  // Mathematics: dark glazed ground floor behind slim pale frames.
+  mathglass: (g) => {
+    g.fillStyle = '#334c49'; g.fillRect(0, 0, W, H)
+    const reflection=g.createLinearGradient(0,0,W,H);reflection.addColorStop(0,'rgba(176,205,193,.25)');reflection.addColorStop(1,'rgba(22,40,36,.10)');g.fillStyle=reflection;g.fillRect(0,0,W,H)
+    g.fillStyle='#b4bcb3';for(let x=0;x<W;x+=32)g.fillRect(x,0,3,H)
+    for(const y of [3,74,146])g.fillRect(0,y,W,3)
+    g.fillStyle='#d6d7cd';g.fillRect(0,0,7,H)
+  },
+  // Recessed, repeated concrete openings in the upper screen.
+  mathscreen: (g) => {
+    g.fillStyle='#d4d4cb';g.fillRect(0,0,W,H)
+    for(let y=2;y<H;y+=38)for(let x=2;x<W;x+=32){
+      g.fillStyle='#a7aaa1';g.fillRect(x,y,27,34)
+      g.fillStyle='#515d58';g.fillRect(x+5,y+4,18,26)
+      g.fillStyle='#e4e4da';g.fillRect(x,y,4,34);g.fillRect(x,y,27,3)
+      g.fillStyle='#818a81';g.fillRect(x+22,y+3,5,30);g.fillRect(x+4,y+30,20,3)
+    }
+  },
   studentmetal: (g) => {
     g.fillStyle = '#e0e2dc'; g.fillRect(0, 0, W, H)
     g.fillStyle = '#b9bdb8'

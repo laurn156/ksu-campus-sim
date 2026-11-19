@@ -334,6 +334,28 @@ function stingersDetails(b: Building) {
   return pieces
 }
 
+/** Shallow concrete ribs give the Mathematics Building's upper screen real depth. */
+function mathematicsScreen(b:Building){
+  const concrete=new THREE.MeshStandardMaterial({color:'#d1d2c8',roughness:.9,side:THREE.DoubleSide})
+  const pieces:THREE.BufferGeometry[]=[]
+  for(let i=0;i<b.poly.length;i++){
+    const a=b.poly[i],c=b.poly[(i+1)%b.poly.length],dx=c[0]-a[0],dz=c[1]-a[1],len=Math.hypot(dx,dz)
+    if(len<9)continue
+    const angle=Math.atan2(-dz,dx),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    const box=(w:number,h:number,d:number,x:number,y:number,z:number)=>{const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z);geo.rotateY(angle);geo.translate(mx,0,mz);pieces.push(geo)}
+    // Ground-floor canopy / floor slab and regularly spaced supporting piers.
+    box(len,.22,.55,0,3.75,-.18)
+    for(let x=-len/2+1.6;x<len/2;x+=3.2)box(.18,3.7,.27,x,1.85,-.13)
+    // Slim vertical and horizontal concrete screen members over dark recesses.
+    const bays=Math.max(1,Math.round(len/0.8))
+    for(let j=0;j<=bays;j++)box(.09,3.65,.22,-len/2+j*len/bays,5.72,-.13)
+    for(let y=3.94;y<7.5;y+=.92)box(len,.1,.22,0,y,-.13)
+    box(len,.15,.4,0,7.53,-.15)
+  }
+  const merged=mergeGeometries(pieces)
+  return merged?[{geo:merged,mat:concrete}]:[]
+}
+
 function Buildings({ campus }: { campus: Campus }) {
   useEffect(() => () => { occluders.meshes.length = 0 }, [])
   const items = useMemo(() => {
@@ -361,6 +383,7 @@ function Buildings({ campus }: { campus: Campus }) {
       }
       if (b.code === 'A') parts.push(...studentCenterDetails())
       if (b.code === 'X') parts.push(...stingersDetails(b))
+      if (b.code === 'D') parts.push(...mathematicsScreen(b))
       return { b, parts, flat: look.roof === 'flat' }
     })
   }, [campus])
