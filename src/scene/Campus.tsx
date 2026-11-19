@@ -622,7 +622,7 @@ function libraryDetails(b:Building){
     const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
     out.push({geo:place(new THREE.PlaneGeometry(12,1.4),0,5.1,1.25),mat:new THREE.MeshStandardMaterial({map:tex,transparent:true,depthWrite:false,side:THREE.DoubleSide})})
     // Stone monument stands on the lawn to the entrance's right as viewed from the courtyard.
-    const signX=-len/2-12,signZ=21
+    const signX=len/2+11,signZ=13
     box(5.5,1.8,.45,signX,.9,signZ,concrete)
     box(3.0,1.1,.45,signX,2.05,signZ,concrete)
     const sign=document.createElement('canvas');sign.width=1024;sign.height=512
@@ -654,6 +654,19 @@ function Buildings({ campus }: { campus: Campus }) {
     }
     const roofTex = roofTexture()
     return campus.buildings.map((b) => {
+      // The curved rear wing is a separate mapped building: give its actual outer
+      // walls the glass treatment instead of covering only the wall behind it.
+      if (b.id === '589314485') {
+        const base = new THREE.MeshStandardMaterial({ color: '#a67762', roughness: .9, side: THREE.DoubleSide })
+        const glazing = new THREE.MeshStandardMaterial({ map: facade('mathglass'), color: '#adc4bb', roughness: .25, metalness: .15, side: THREE.DoubleSide })
+        const trim = new THREE.MeshStandardMaterial({ color: '#e4e5de', roughness: .7, side: THREE.DoubleSide })
+        return { b, parts: [
+          { geo: wallsGeometry(b, 0, .65), mat: base },
+          { geo: wallsGeometry(b, .65, b.h - .5), mat: glazing },
+          { geo: wallsGeometry(b, b.h - .5, b.h), mat: trim },
+          { geo: flatGeometry(b.poly, b.h + .02, 8), mat: new THREE.MeshStandardMaterial({ map: roofTex, roughness: .9, side: THREE.DoubleSide }) },
+        ], flat: true }
+      }
       if (b.id === '1504299650') {
         b.name = 'Hornet Hub'; b.short = 'Hornet Hub'; b.h = 5
         return { b, parts: hornetHubParts(b), flat: false }
