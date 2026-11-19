@@ -1027,35 +1027,35 @@ function academicDetails(){
   const brick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.9,side:THREE.DoubleSide})
   const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);out.push({geo:g,mat:m})}
   const bar=(a:THREE.Vector3,c:THREE.Vector3)=>{const v=c.clone().sub(a),g=new THREE.CylinderGeometry(.065,.065,v.length(),8);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize()));g.translate((a.x+c.x)/2,(a.y+c.y)/2,(a.z+c.z)/2);out.push({geo:g,mat:metal})}
-  // The entrance is at the south end of the Academic Building, where the
-  // low wing and the taller block meet, rather than midway along its side.
-  const frontZ=-59.7,doorX=-157.3
-  box(6.7,3.2,.16,doorX,1.6,frontZ,glass)
-  for(const dx of [-3.35,-2.25,-1.12,0,1.12,2.25,3.35])box(.09,3.25,.24,doorX+dx,1.62,frontZ-.15,stone)
-  for(const y of [.12,2.3,3.25])box(6.8,.09,.24,doorX,y,frontZ-.15,stone)
-  // Flat, shallow glass-and-metal grid fills the gap at the entry. The slim
-  // braces run in a regular grid instead of a freestanding triangular cage.
+  // East-facing long facade shown in the reference, just beyond its corner.
+  // The wall here lies at x=-140.3; all entrance geometry is outside that face.
+  const frontX=-140.12,doorZ=-16.5
+  box(.16,3.2,6.7,frontX,1.6,doorZ,glass)
+  for(const dz of [-3.35,-2.25,-1.12,0,1.12,2.25,3.35])box(.24,3.25,.09,frontX+.16,1.62,doorZ+dz,stone)
+  for(const y of [.12,2.3,3.25])box(.24,.09,6.8,frontX+.16,y,doorZ,stone)
+  // Shallow glass-and-metal grid projects from the indicated wall and has
+  // a regular frame with no detached triangular structure.
   const canopyGlass=new THREE.MeshStandardMaterial({color:'#b8c9c5',transparent:true,opacity:.38,roughness:.25,side:THREE.DoubleSide,depthWrite:false})
-  const roof=new THREE.PlaneGeometry(7.4,4.4);roof.rotateX(-Math.PI/2);roof.translate(doorX,4.35,-61.8);out.push({geo:roof,mat:canopyGlass})
-  for(const x of [-161,-159.15,-157.3,-155.45,-153.6])bar(new THREE.Vector3(x,4.42,-59.6),new THREE.Vector3(x,4.42,-64))
-  for(const z of [-59.6,-60.7,-61.8,-62.9,-64])bar(new THREE.Vector3(-161,4.42,z),new THREE.Vector3(-153.6,4.42,z))
-  for(const x of [-161,-153.6])bar(new THREE.Vector3(x,.05,-64),new THREE.Vector3(x,4.42,-64))
-  // The sign is on a dedicated brick panel slightly proud of the end wall.
-  box(9.2,1.4,.18,-147.7,5.35,frontZ-.16,brick)
+  const roof=new THREE.PlaneGeometry(5.2,7.2);roof.rotateX(-Math.PI/2);roof.translate(-137.5,4.35,doorZ);out.push({geo:roof,mat:canopyGlass})
+  for(const x of [-140.1,-138.8,-137.5,-136.2,-134.9])bar(new THREE.Vector3(x,4.42,doorZ-3.6),new THREE.Vector3(x,4.42,doorZ+3.6))
+  for(const dz of [-3.6,-1.8,0,1.8,3.6])bar(new THREE.Vector3(-140.1,4.42,doorZ+dz),new THREE.Vector3(-134.9,4.42,doorZ+dz))
+  for(const dz of [-3.6,3.6])bar(new THREE.Vector3(-134.9,.05,doorZ+dz),new THREE.Vector3(-134.9,4.42,doorZ+dz))
+  // Lettering sits on the visible outside of the same facade, beside the canopy.
+  box(.18,1.4,9.2,frontX+.08,5.35,-7.6,brick)
   const canvas=document.createElement('canvas');canvas.width=1536;canvas.height=192
   const ctx=canvas.getContext('2d')!;ctx.fillStyle='#9a5d49';ctx.fillRect(0,0,1536,192);ctx.fillStyle='#f2c629';ctx.fillRect(30,30,210,130);ctx.fillStyle='#212a24';ctx.font='bold 115px sans-serif';ctx.textAlign='center';ctx.fillText('830',135,136);ctx.fillStyle='#f3f0e8';ctx.textAlign='left';ctx.font='bold 94px sans-serif';ctx.fillText('ACADEMIC BUILDING',280,130)
   const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
-  const sign=new THREE.PlaneGeometry(9,1.32);sign.rotateY(Math.PI);sign.translate(-147.7,5.35,frontZ-.28)
+  const sign=new THREE.PlaneGeometry(9,1.32);sign.rotateY(Math.PI/2);sign.translate(frontX+.2,5.35,-7.6)
   out.push({geo:sign,mat:new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide})})
   const sub=document.createElement('canvas');sub.width=768;sub.height=256
   const sc=sub.getContext('2d')!;sc.fillStyle='#9a5d49';sc.fillRect(0,0,768,256);sc.fillStyle='#eee6d7';sc.textAlign='center';sc.font='bold 62px sans-serif';sc.fillText('BURRUSS AUDITORIUM',384,110);sc.fillText('COMPLEX',384,185)
   const st=new THREE.CanvasTexture(sub);st.colorSpace=THREE.SRGBColorSpace
-  const label=new THREE.PlaneGeometry(4.2,1.4);label.rotateY(Math.PI);label.translate(-147.7,2.8,frontZ-.24)
+  const label=new THREE.PlaneGeometry(4.2,1.4);label.rotateY(Math.PI/2);label.translate(frontX+.2,2.8,-7.6)
   out.push({geo:label,mat:new THREE.MeshStandardMaterial({map:st,side:THREE.DoubleSide})})
-  // Compact planted beds sit beside the approach, clear of the doors.
-  for(const x of [-166,-146]){
-    box(3,.08,3,x,.06,-65,soil)
-    for(const dx of [-.7,.7])for(const dz of [-.7,.7]){const g=new THREE.IcosahedronGeometry(.3,1);g.scale(1,.6,1);g.translate(x+dx,.25,-65+dz);out.push({geo:g,mat:plant})}
+  // Compact planted beds sit beside, not beneath, the entrance approach.
+  for(const z of [doorZ-7,doorZ+7]){
+    box(2.5,.08,3,-135.8,.06,z,soil)
+    for(const dx of [-.6,.6])for(const dz of [-.7,.7]){const g=new THREE.IcosahedronGeometry(.3,1);g.scale(1,.6,1);g.translate(-135.8+dx,.25,z+dz);out.push({geo:g,mat:plant})}
   }
   return out
 }
