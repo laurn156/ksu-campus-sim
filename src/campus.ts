@@ -44,6 +44,10 @@ export interface Campus {
 export async function loadCampus(): Promise<Campus> {
   const r = await fetch('/campus.json')
   const c: Campus = await r.json()
+  // The game terrain is flat: show the West Deck at the campus-side height,
+  // with the other levels below grade rather than four exposed stories.
+  const westDeck = c.buildings.find((b) => b.code === 'P60')
+  if (westDeck) { westDeck.h = 3.2; westDeck.levels = 1 }
   // Small unnamed structures in front of the Atrium are walk-under canopies, not buildings
   // (they look like buildings from the air). Pull them out so they get no walls and no collision.
   const J = c.buildings.find((b) => b.code === 'J')

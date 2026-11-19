@@ -1125,6 +1125,32 @@ function academicDetails(b:Building){
   return out
 }
 
+/** Campus-side West Deck: rooftop parking above one partly visible level. */
+function westDeckDetails(b:Building){
+  const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const curb=new THREE.MeshStandardMaterial({color:'#c8beb1',roughness:.9,side:THREE.DoubleSide})
+  const line=new THREE.MeshStandardMaterial({color:'#eeeae0',roughness:.95})
+  // Low perimeter parapet, with actual geometry rather than repeated floor textures.
+  out.push({geo:wallsGeometry(b,b.h,b.h+.65),mat:curb})
+  // Parking bay markings on the accessible top deck; omit markings outside its footprint.
+  const marks:THREE.BufferGeometry[]=[]
+  for(const z of [23,34,48,60])for(let x=-401;x<=-312;x+=3.2){
+    if(!pointInPoly(x,z-2,b.poly)||!pointInPoly(x,z+2,b.poly))continue
+    const g=new THREE.BoxGeometry(.09,.025,4);g.translate(x,b.h+.055,z);marks.push(g)
+  }
+  if(marks.length)out.push({geo:mergeGeometries(marks),mat:line})
+  // The low center divider echoes the sunken internal aisle visible from above.
+  const divider=new THREE.BoxGeometry(51,.6,.28);divider.translate(-356,b.h+.3,42);out.push({geo:divider,mat:curb})
+  // Yellow campus building-number marker on the south elevation.
+  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=128
+  const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f1c629';ctx.fillRect(0,0,256,128);ctx.fillStyle='#273027';ctx.textAlign='center';ctx.font='bold 86px sans-serif';ctx.fillText('810',128,94)
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace
+  const [a,c]=[b.poly[3],b.poly[2]],angle=Math.atan2(-(c[1]-a[1]),c[0]-a[0])
+  const sign=new THREE.PlaneGeometry(2.4,1.2);sign.rotateY(angle+Math.PI);sign.translate((a[0]+c[0])/2-Math.sin(angle)*.2,2.5,(a[1]+c[1])/2-Math.cos(angle)*.2)
+  out.push({geo:sign,mat:new THREE.MeshStandardMaterial({map:texture,side:THREE.DoubleSide})})
+  return out
+}
+
 function Buildings({ campus }: { campus: Campus }) {
   useEffect(() => () => { occluders.meshes.length = 0 }, [])
   const items = useMemo(() => {
@@ -1137,6 +1163,12 @@ function Buildings({ campus }: { campus: Campus }) {
     return campus.buildings.map((b) => {
       // The curved rear wing is a separate mapped building: give its actual outer
       // walls the glass treatment instead of covering only the wall behind it.
+      if (b.code === 'P60') {
+        // Keep the top surface and Props' rooftop cars at the same campus-side height.
+        b.h=3.2;b.levels=1
+        const roof=new THREE.MeshStandardMaterial({color:'#bdbbb4',roughness:.95,side:THREE.DoubleSide})
+        return { b, parts: [{geo:wallsGeometry(b),mat:getWall('westdeck')},{geo:flatGeometry(b.poly,b.h+.02),mat:roof},...westDeckDetails(b)], flat: true }
+      }
       if (b.id === '589314485') {
         const base = new THREE.MeshStandardMaterial({ color: '#a67762', roughness: .9, side: THREE.DoubleSide })
         const glazing = new THREE.MeshStandardMaterial({ map: facade('mathglass'), color: '#adc4bb', roughness: .25, metalness: .15, side: THREE.DoubleSide })

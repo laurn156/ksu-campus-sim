@@ -180,6 +180,15 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
     g.fillStyle = 'rgba(0,0,0,.09)'
     for (let x = 0; x < W; x += 8) g.fillRect(x, 0, 3, H)
   },
+  // West Deck: the roof edge and a partial opening to the level below.
+  westdeck: (g) => {
+    g.fillStyle='#afa59c';g.fillRect(0,0,W,H)
+    g.fillStyle='#d4c9bb';g.fillRect(0,0,W,42)
+    g.fillStyle='#535954';g.fillRect(0,43,W,59)
+    g.fillStyle='#bdb3a8';g.fillRect(0,101,W,9)
+    g.fillStyle='#c8beb2';g.fillRect(0,0,10,H);g.fillRect(W-10,0,10,H)
+    g.fillStyle='#a99f95';g.fillRect(0,H-28,W,28)
+  },
   // open parking deck: concrete spandrel + dark open floor
   deck: (g) => {
     // open-sided parking level: dim interior with car silhouettes, concrete spandrel band, columns
