@@ -7,6 +7,7 @@ import { Character } from '../characters/Character'
 import { player, type AvatarLook } from './Player'
 import './interiors.css'
 import { indoorState } from './indoorState'
+import { DetailedRoom } from './DetailedInteriors'
 
 type Kind = 'library'|'dorm'|'student'|'garage'|'greenhouse'|'recreation'|'lab'|'office'|'classroom'|'dining'
 function interiorKind(b: Building): Kind {
@@ -43,7 +44,7 @@ function Walker({look}: {look:AvatarLook}) {
  useFrame((_,raw)=>{const dt=Math.min(raw,.05),k=keys.current;let x=Number(k.has('d')||k.has('arrowright'))-Number(k.has('a')||k.has('arrowleft')),z=Number(k.has('s')||k.has('arrowdown'))-Number(k.has('w')||k.has('arrowup'));const len=Math.hypot(x,z);if(len){x/=len;z/=len;pos.current.x=THREE.MathUtils.clamp(pos.current.x+x*dt*(k.has('shift')?8:4.5),-9,9);pos.current.z=THREE.MathUtils.clamp(pos.current.z+z*dt*(k.has('shift')?8:4.5),-8.5,8.5);if(body.current)body.current.rotation.y=Math.atan2(x,z)}walk.current=THREE.MathUtils.lerp(walk.current,len?.8:0,dt*10);if(body.current)body.current.position.copy(pos.current);camera.position.lerp(new THREE.Vector3(pos.current.x+12,19,pos.current.z+17),Math.min(1,dt*5));camera.lookAt(pos.current.x,0,pos.current.z)})
  return <group ref={body}><Character {...look} walk={walk} scale={1.15}/></group>
 }
-function Room({building,look}:{building:Building;look:AvatarLook}) {const kind=interiorKind(building);return <><color attach="background" args={['#e8ece2']}/><ambientLight intensity={1.3}/><directionalLight position={[5,15,8]} intensity={2}/><Box p={[0,-.15,0]} s={[20,.3,20]} c={kind==='recreation'?'#d6bf9d':'#e3dfd1'}/><Box p={[0,2,-9.8]} s={[20,4,.4]} c="#eceadf"/><Box p={[-9.8,2,0]} s={[.4,4,20]} c="#e2e1d6"/><Box p={[9.8,2,0]} s={[.4,4,20]} c="#e2e1d6"/><Furnish kind={kind}/><Walker look={look}/></>}
+function Room({building,look}:{building:Building;look:AvatarLook}) {const kind=interiorKind(building);if(building.code==='A'||building.code==='D')return <DetailedRoom student={building.code==='A'} look={look}/>;return <><color attach="background" args={['#e8ece2']}/><ambientLight intensity={1.3}/><directionalLight position={[5,15,8]} intensity={2}/><Box p={[0,-.15,0]} s={[20,.3,20]} c={kind==='recreation'?'#d6bf9d':'#e3dfd1'}/><Box p={[0,2,-9.8]} s={[20,4,.4]} c="#eceadf"/><Box p={[-9.8,2,0]} s={[.4,4,20]} c="#e2e1d6"/><Box p={[9.8,2,0]} s={[.4,4,20]} c="#e2e1d6"/><Furnish kind={kind}/><Walker look={look}/></>}
 export function BuildingInteriors({campus,look}:{campus:Campus;look:AvatarLook}) {
  const [near,setNear]=useState<Building|null>(null),[inside,setInside]=useState<Building|null>(null)
  useEffect(()=>{const id=setInterval(()=>{if(indoorState.active||player.view||player.busRide){setNear(null);return}let best:Building|null=null,dist=10;for(const b of campus.buildings)for(let i=0,j=b.poly.length-1;i<b.poly.length;j=i++){const d=distToSeg(player.x,player.z,b.poly[j],b.poly[i]);if(d<dist){dist=d;best=b}}setNear(old=>old?.id===best?.id?old:best)},200);return()=>clearInterval(id)},[campus])

@@ -1,0 +1,4 @@
+Furniture Kit by Kenney (https://kenney.nl/assets/furniture-kit)
+License: Creative Commons CC0 1.0 Universal, https://creativecommons.org/publicdomain/zero/1.0/
+Models obtained as GLB from https://github.com/Hidencod/tge-assets/tree/main/packs/furniture-kit
+Attribution is not required; provided for provenance.
