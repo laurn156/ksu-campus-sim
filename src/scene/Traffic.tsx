@@ -2,7 +2,6 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { bbox, Collider, pointInPoly, type Campus, type Pt } from '../campus'
-import { Character } from '../characters/Character'
 
 type Route = Pt[]
 function positionAlong(path:Route, distance:number) {
@@ -33,6 +32,9 @@ function useTrafficRoutes(campus:Campus) {
       const [x,z]=path[Math.floor(path.length/2)]
       if(selected.every(p=>Math.hypot(x-p[Math.floor(p.length/2)][0],z-p[Math.floor(p.length/2)][1])>35))selected.push(path)
     }
+    // Shuffle the spatially separated routes so consecutive rider types aren't clustered.
+    let seed=7319
+    for(let i=selected.length-1;i>0;i--){seed=(seed*16807)%2147483647;const j=seed%(i+1);[selected[i],selected[j]]=[selected[j],selected[i]]}
     const pathsForParking=campus.paths.flatMap(p=>p.pts)
     const parkingRoutes:Route[]=[]
     for(const lot of campus.areas.filter(a=>a.kind==='parking' && a.a>400)) {
@@ -79,25 +81,41 @@ function Wheel({z,r=.34}:{z:number;r?:number}) {
   return <group position={[0,r,z]}><mesh rotation={[0,Math.PI/2,0]}><torusGeometry args={[r-.035,.035,8,20]}/><meshStandardMaterial color="#252829"/></mesh><Rod a={[-.09,0,0]} b={[.09,0,0]} color="#c5c5bc" radius={.025}/></group>
 }
 function Rider({kind,index}:{kind:'bike'|'scooter'|'skate';index:number}) {
-  const colors=['blue','orange','green','purple','yellow','slate'] as const
+  const colors=['#8ab1e8','#e9876b','#aecb91','#b9a5e0','#f2cc5f','#6f90c4'] as const
   return <group>
     {kind==='bike' && <group><Wheel z={-.65}/><Wheel z={.65}/><Rod a={[0,.34,-.65]} b={[0,.38,0]} color="#e2b529"/><Rod a={[0,.38,0]} b={[0,.34,.65]} color="#e2b529"/><Rod a={[0,.34,-.65]} b={[0,.85,-.18]} color="#e2b529"/><Rod a={[0,.85,-.18]} b={[0,.34,.65]} color="#e2b529"/><Rod a={[0,.34,.65]} b={[0,1.05,.55]}/><Rod a={[-.3,1.05,.55]} b={[.3,1.05,.55]}/><mesh position={[0,.86,-.18]}><boxGeometry args={[.27,.06,.3]}/><meshStandardMaterial color="#242424"/></mesh></group>}
     {kind==='scooter' && <group><Wheel z={-.47} r={.15}/><Wheel z={.5} r={.15}/><mesh position={[0,.19,0]}><boxGeometry args={[.26,.08,.95]}/><meshStandardMaterial color="#c4bdad"/></mesh><Rod a={[0,.2,.48]} b={[0,1.12,.43]}/><Rod a={[-.27,1.12,.43]} b={[.27,1.12,.43]}/></group>}
     {kind==='skate' && <group><mesh position={[0,.13,0]}><boxGeometry args={[.3,.08,.95]}/><meshStandardMaterial color="#b98145"/></mesh>{[-.33,.33].flatMap(z=>[-.14,.14].map(x=><mesh key={x+','+z} position={[x,.08,z]} rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[.07,.07,.06,10]}/><meshStandardMaterial color="#d5d4c8"/></mesh>))}</group>}
-    <group position={[0,kind==='bike'?.46:.18,kind==='bike'?-.13:0]} scale={.8}><Character color={colors[index%colors.length]} headwear={index%2?'cap':'none'} face="happy" top="tee" topColor="#eee9dd" bottom="pants" bottomColor="#55586a" shoes="sneakers"/></group>
+    <group position={[0,kind==='bike'?.46:.18,kind==='bike'?-.13:0]} scale={.8}><SimplePerson color={colors[index%colors.length]} walking={false}/></group>
   </group>
 }
 export function Traffic({campus}:{campus:Campus}) {
   const {roads,paths,parkingRoutes}=useTrafficRoutes(campus)
   const colors=['#dbded9','#314e67','#a13b35','#6d7371','#d1bd96']
   return <>
-    {Array.from({length:Math.min(5,roads.length*2)},(_,i)=>{const path=roads[i%roads.length];return <TrafficMover key={'car'+i} path={path} index={i} speed={8+i%3} kind="road"><Car color={colors[i%colors.length]}/></TrafficMover>})}
-    {parkingRoutes.map((path,i)=><TrafficMover key={'parking'+i} path={path} index={i} speed={1.2} kind="parking"><ParkingWalker index={i}/></TrafficMover>)}
-    {Array.from({length:Math.min(9,paths.length)},(_,i)=><TrafficMover key={'rider'+i} path={paths[i]} index={i} speed={i%3===0?3.5:2.4} kind="path"><Rider kind={(['bike','skate','scooter'] as const)[i%3]} index={i}/></TrafficMover>)}
+    {Array.from({length:Math.min(13,roads.length*2)},(_,i)=>{const path=roads[i%roads.length];return <TrafficMover key={'car'+i} path={path} index={i} speed={8+i%3} kind="road"><Car color={colors[i%colors.length]}/></TrafficMover>})}
+    {parkingRoutes.flatMap((path,i)=>[0,1,2].map(j=><TrafficMover key={'parking'+i+'-'+j} path={path} index={i*3+j} speed={1.05+j*.12} kind="parking"><ParkingWalker index={i*3+j}/></TrafficMover>))}
+    {Array.from({length:Math.min(30,paths.length)},(_,i)=><TrafficMover key={'rider'+i} path={paths[i]} index={i} speed={i%3===0?3.5:2.4} kind="path"><Rider kind={(['bike','skate','scooter'] as const)[i%3]} index={i}/></TrafficMover>)}
   </>
 }
-function ParkingWalker({index}:{index:number}) {
-  const walk=useRef(.7)
-  return <Character color={(['green','blue','orange','purple'] as const)[index%4]} headwear="none" face="happy" top="tee" topColor="#f0eee6" bottom="pants" bottomColor="#55586a" shoes="sneakers" walk={walk} scale={1.05}/>
+const personHead = new THREE.SphereGeometry(.29,12,10)
+const personBody = new THREE.CapsuleGeometry(.20,.16,4,10)
+const personLimb = new THREE.CapsuleGeometry(.075,.12,4,8)
+const shirtMaterial = new THREE.MeshStandardMaterial({color:'#eee9dd',roughness:.95})
+const pantsMaterial = new THREE.MeshStandardMaterial({color:'#55586a',roughness:.95})
+function SimplePerson({color,walking}:{color:string;walking:boolean}) {
+  const left=useRef<THREE.Mesh>(null),right=useRef<THREE.Mesh>(null)
+  const skin=useMemo(()=>new THREE.MeshStandardMaterial({color,roughness:.9}),[color])
+  useFrame(({clock})=>{if(walking && left.current && right.current){const swing=Math.sin(clock.elapsedTime*6)*.35;left.current.rotation.x=swing;right.current.rotation.x=-swing}})
+  return <group>
+    <mesh position={[0,1.12,0]} geometry={personHead} material={skin}/>
+    <mesh position={[0,.63,0]} geometry={personBody} material={shirtMaterial}/>
+    {[-1,1].map(side=><mesh key={side} position={[side*.25,.63,0]} rotation={[0,0,-side*.2]} geometry={personLimb} material={skin}/>)}
+    <mesh ref={left} position={[-.1,.2,0]} geometry={personLimb} material={pantsMaterial}/>
+    <mesh ref={right} position={[.1,.2,0]} geometry={personLimb} material={pantsMaterial}/>
+  </group>
 }
-
+function ParkingWalker({index}:{index:number}) {
+  const colors=['#aecb91','#8ab1e8','#e9876b','#b9a5e0']
+  return <SimplePerson color={colors[index%colors.length]} walking/>
+}
