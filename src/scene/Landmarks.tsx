@@ -8,7 +8,6 @@ import { centroid, Collider, distToSeg, pointInPoly, type Area, type Campus, typ
 
 const GOLD = '#FFC629'
 const INK = '#0B1315'
-const gold = new THREE.MeshStandardMaterial({ color: GOLD, roughness: 0.45, metalness: 0.15 })
 const ink = new THREE.MeshStandardMaterial({ color: INK, roughness: 0.6 })
 const steel = new THREE.MeshStandardMaterial({ color: '#dfe4e8', roughness: 0.3, metalness: 0.35 })
 const white = new THREE.MeshStandardMaterial({ color: '#f7f6f2', roughness: 0.6, side: THREE.DoubleSide })
@@ -160,45 +159,42 @@ function SlapTheRock({ at }: { at: Pt }) {
   )
 }
 
-/** The big gold K S U letters in front of Hornet Village. Letters are built from bars and arcs. */
+/** Freestanding block letters, with yellow faces and deep black sides. */
 function KsuLetters({ at, yaw }: { at: Pt; yaw: number }) {
-  const H = 1.6
-  const T = 0.32 // stroke
-  const bar = (x: number, y: number, h: number, rot = 0, key = '') => (
-    <mesh key={key} position={[x, y, 0]} rotation={[0, 0, rot]} material={gold} castShadow>
-      <capsuleGeometry args={[T / 2, h - T, 8, 20]} />
-    </mesh>
-  )
-  const arc = (x: number, y: number, r: number, start: number, len: number, key: string) => (
-    <mesh key={key} position={[x, y, 0]} rotation={[0, 0, start]} material={gold} castShadow>
-      <torusGeometry args={[r, T / 2, 20, 64, len]} />
-    </mesh>
-  )
+  const textures = useMemo(() => {
+    const make = (face: boolean) => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1536
+      canvas.height = 600
+      const g = canvas.getContext('2d')!
+      g.font = '900 530px Arial, sans-serif'
+      g.textAlign = 'center'
+      g.textBaseline = 'middle'
+      g.lineJoin = 'round'
+      g.lineWidth = 26
+      g.strokeStyle = INK
+      g.fillStyle = face ? GOLD : INK
+      g.strokeText('KSU', 768, 303, 1470)
+      g.fillText('KSU', 768, 303, 1470)
+      const texture = new THREE.CanvasTexture(canvas)
+      texture.colorSpace = THREE.SRGBColorSpace
+      texture.anisotropy = 8
+      return texture
+    }
+    return { face: make(true), side: make(false) }
+  }, [])
   return (
     <group position={[at[0], 0, at[1]]} rotation={[0, yaw, 0]}>
-      {/* plinth */}
-      <mesh position={[0, 0.2, 0]} material={ink} castShadow receiveShadow>
-        <boxGeometry args={[4.6, 0.4, 0.9]} />
+      <mesh position={[0, 0.1, 0]} material={ink} castShadow receiveShadow>
+        <boxGeometry args={[4.6, 0.2, 0.85]} />
       </mesh>
-      <group position={[0, 0.4, 0]}>
-        {/* K */}
-        <group position={[-1.5, 0, 0]}>
-          {bar(-0.35, H / 2, H, 0, 'k1')}
-          {bar(0.1, H * 0.72, H * 0.62, -0.75, 'k2')}
-          {bar(0.1, H * 0.28, H * 0.62, 0.75, 'k3')}
-        </group>
-        {/* S: two opposite arcs */}
-        <group position={[0, 0, 0]}>
-          {arc(0, H * 0.73, H * 0.24, Math.PI * 0.05, Math.PI * 1.45, 's1')}
-          {arc(0, H * 0.27, H * 0.24, Math.PI * 1.05, Math.PI * 1.45, 's2')}
-        </group>
-        {/* U */}
-        <group position={[1.45, 0, 0]}>
-          {bar(-0.38, H * 0.62, H * 0.76, 0, 'u1')}
-          {bar(0.38, H * 0.62, H * 0.76, 0, 'u2')}
-          {arc(0, H * 0.25, 0.38, Math.PI, Math.PI, 'u3')}
-        </group>
-      </group>
+      {/* Closely spaced silhouettes give the letters solid dark depth from oblique views. */}
+      {Array.from({ length: 25 }, (_, i) => (
+        <mesh key={i} position={[0, 1.08, -0.3 + i * 0.025]} castShadow>
+          <planeGeometry args={[4.6, 1.8]} />
+          <meshStandardMaterial map={i === 24 ? textures.face : textures.side} transparent alphaTest={0.5} side={THREE.DoubleSide} roughness={0.6} />
+        </mesh>
+      ))}
     </group>
   )
 }
