@@ -19,7 +19,9 @@ export interface AvatarLook {
   accessory: Accessory
   top: 'none' | 'tee' | 'hoodie' | 'ksu-tee' | 'ksu-hoodie' | 'jersey'
   topColor: string
-  bottom: 'none' | 'shorts' | 'skirt'
+  bottom: 'none' | 'shorts' | 'skirt' | 'pants'
+  shoes: 'none' | 'sneakers' | 'black'
+  bag: 'none' | 'black' | 'cream' | 'brown'
   backpack: boolean
 }
 

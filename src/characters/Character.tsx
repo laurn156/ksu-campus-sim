@@ -11,7 +11,7 @@ import { ACCENT, INK, OFFWHITE, PALETTE, shade, type PaletteName } from './palet
 
 export type Headwear = 'none' | 'headband' | 'cap' | 'bun' | 'headphones' | 'bucket' | 'beanie' | 'glasses'
 export type Face = 'dots' | 'happy' | 'surprised' | 'wink' | 'angry'
-export type Accessory = 'none' | 'glasses'
+export type Accessory = 'none' | 'glasses' | 'square' | 'sunglasses'
 
 export interface CharacterProps {
   color?: PaletteName
@@ -20,7 +20,9 @@ export interface CharacterProps {
   accessory?: Accessory
   top?: 'none' | 'tee' | 'hoodie' | 'ksu-tee' | 'ksu-hoodie' | 'jersey'
   topColor?: string
-  bottom?: 'none' | 'shorts' | 'skirt'
+  bottom?: 'none' | 'shorts' | 'skirt' | 'pants'
+  shoes?: 'none' | 'sneakers' | 'black'
+  bag?: 'none' | 'black' | 'cream' | 'brown'
   backpack?: boolean
   /** world-space point the right hand reaches toward (in this character's parent space) */
   reach?: React.MutableRefObject<THREE.Vector3 | null>
@@ -100,7 +102,7 @@ function Eyes({ face, rival }: { face: Face; rival: boolean }) {
       {eye(1)}
       {face === 'angry' &&
         ([-1, 1] as const).map((s) => (
-          <mesh key={s} position={onHead(s * 0.3, 0.2, 0.99)} rotation={[0, s * 0.3, s * 0.45]} material={ink}>
+          <mesh key={s} position={onHead(s * 0.3, 0.2, 0.99)} rotation={[0, s * 0.3, -s * 0.65]} material={ink}>
             <capsuleGeometry args={[0.011, 0.06, 4, 8]} />
           </mesh>
         ))}
@@ -109,7 +111,7 @@ function Eyes({ face, rival }: { face: Face; rival: boolean }) {
           <capsuleGeometry args={[0.01, 0.06, 4, 8]} />
         </mesh>
       )}
-      {(face === 'happy' || face === 'wink') && (
+      {(face === 'happy' || face === 'wink' || face === 'dots') && (
         <mesh position={onHead(0, -0.14, 0.99)} rotation={[0, 0, Math.PI]} material={ink}>
           <torusGeometry args={[0.04, 0.011, 8, 16, Math.PI]} />
         </mesh>
@@ -231,7 +233,7 @@ function HeadwearMesh({ kind, body, accent }: { kind: Headwear; body: string; ac
         </group>
       )
     case 'glasses':
-      return <Glasses />
+      return <Glasses style="glasses" />
     case 'headphones':
       return (
         <group position={[0, HEAD_Y, 0]}>
@@ -250,12 +252,13 @@ function HeadwearMesh({ kind, body, accent }: { kind: Headwear; body: string; ac
   }
 }
 
-function Glasses() {
+function Glasses({ style }: { style: Accessory }) {
   return (
     <group>
       {([-1, 1] as const).map((s) => (
         <mesh key={s} position={onHead(s * 0.3, 0.06, 1.02)} rotation={[0, s * 0.3, 0]} material={ink}>
-          <torusGeometry args={[0.075, 0.012, 8, 24]} />
+          <torusGeometry args={[0.075, 0.012, 8, style === 'square' ? 4 : 24]} />
+          {style === 'sunglasses' && <mesh position={[0,0,-0.006]}><circleGeometry args={[0.064,24]} /><meshBasicMaterial color="#25252b" /></mesh>}
         </mesh>
       ))}
       <mesh position={onHead(0, 0.08, 1.03)} rotation={[0, 0, Math.PI / 2]} material={ink}>
@@ -286,7 +289,7 @@ export function Character({
   headwear = 'headband',
   face = 'dots',
   accessory = 'none',
-  top = 'none', topColor = '#29292c', bottom = 'none', backpack = false,
+  top = 'none', topColor = '#29292c', bottom = 'none', backpack = false, shoes = 'none', bag = 'none',
   variant = 'normal',
   reach,
   swingAt,
@@ -375,28 +378,29 @@ export function Character({
         {/* legs */}
         {[-1, 1].map((s, i) => (
           <group key={s} ref={(g) => void (legs.current[i] = g)} position={[s * 0.115, 0.36, 0]}>
-            {bottom === 'shorts' && <mesh position={[0, -0.04, 0]}><capsuleGeometry args={[0.112, 0.11, 6, 12]} /><meshStandardMaterial color="#4e526b" roughness={0.9} /></mesh>}
+            {(bottom === 'shorts' || bottom === 'pants') && <mesh position={[0, bottom === 'pants' ? -0.12 : -0.04, 0]}><capsuleGeometry args={[0.117, bottom === 'pants' ? 0.25 : 0.11, 8, 16]} /><meshStandardMaterial color="#4e526b" roughness={0.9} /></mesh>}
+            {shoes !== 'none' && <group position={[0,-0.285,0.055]}><mesh scale={[1,0.7,1.3]}><sphereGeometry args={[0.12,20,14]} /><meshStandardMaterial color={shoes === 'black' ? '#282a2a' : '#f1eee6'} roughness={0.85}/></mesh><mesh position={[0,-0.055,0]} scale={[1,0.24,1.3]}><sphereGeometry args={[0.122,20,10]} /><meshStandardMaterial color="#e4ded1" /></mesh></group>}
             <mesh position={[0, -0.16, 0]} castShadow material={body}>
               <capsuleGeometry args={[0.105, 0.2, 8, 16]} />
             </mesh>
           </group>
         ))}
         {/* torso */}
-        <mesh position={[0, 0.56, 0]} scale={[1.05, 1, 0.86]} castShadow material={body}>
-          <capsuleGeometry args={[0.215, 0.2, 12, 24]} />
+        <mesh position={[0, 0.56, 0]} scale={[0.86, 1.12, 0.76]} castShadow material={body}>
+          <sphereGeometry args={[0.29, 32, 24]} />
         </mesh>
         {top !== 'none' && <group>
-          <mesh position={[0, 0.57, 0]} scale={[1.12, 1.03, 0.92]} castShadow><capsuleGeometry args={[0.225, 0.20, 8, 16]} /><meshStandardMaterial color={topColor} roughness={0.9} /></mesh>
+          <mesh position={[0, 0.57, 0]} scale={[0.94, 1.17, 0.82]} castShadow><sphereGeometry args={[0.285, 32, 24]} /><meshStandardMaterial color={topColor} roughness={0.9} /></mesh>
           {[-1,1].map(side => <mesh key={side} position={[side*0.245,0.66,0]} rotation={[0,0,-side*0.35]}><capsuleGeometry args={[0.095, top.includes('hoodie') ? 0.20 : 0.06, 6, 12]} /><meshStandardMaterial color={topColor} roughness={0.9} /></mesh>)}
-          {(top === 'ksu-tee' || top === 'ksu-hoodie' || top === 'jersey') && <mesh position={[0,0.62,0.215]}><planeGeometry args={[0.32,0.16]} /><meshBasicMaterial map={logo} transparent alphaTest={0.1} /></mesh>}
-          {top === 'jersey' && <mesh position={[0,0.49,0.214]}><planeGeometry args={[0.3,0.025]} /><meshBasicMaterial color="#ffc629" /></mesh>}
+          {(top === 'ksu-tee' || top === 'ksu-hoodie' || top === 'jersey') && <mesh position={[0,0.62,0.245]}><planeGeometry args={[0.32,0.16]} /><meshBasicMaterial map={logo} transparent alphaTest={0.1} /></mesh>}
+          {top === 'jersey' && <mesh position={[0,0.49,0.245]}><planeGeometry args={[0.3,0.025]} /><meshBasicMaterial color="#ffc629" /></mesh>}
         </group>}
         {top.includes('hoodie') && <group>
-          <mesh position={[0,0.49,0.215]}><boxGeometry args={[0.22,0.09,0.035]} /><meshStandardMaterial color={topColor} /></mesh>
-          {[-0.045,0.045].map(x => <mesh key={x} position={[x,0.73,0.22]}><boxGeometry args={[0.012,0.11,0.01]} /><meshBasicMaterial color="#e6dfcf" /></mesh>)}
+          <mesh position={[0,0.49,0.245]}><boxGeometry args={[0.22,0.09,0.035]} /><meshStandardMaterial color={topColor} /></mesh>
+          {[-0.045,0.045].map(x => <mesh key={x} position={[x,0.73,0.245]}><boxGeometry args={[0.012,0.11,0.01]} /><meshBasicMaterial color="#e6dfcf" /></mesh>)}
         </group>}
         {bottom === 'skirt' && <mesh position={[0, 0.36, 0]}><cylinderGeometry args={[0.2, 0.3, 0.21, 12]} /><meshStandardMaterial color="#706383" /></mesh>}
-        {backpack && <mesh position={[0, 0.58, -0.25]}><boxGeometry args={[0.36, 0.42, 0.2]} /><meshStandardMaterial color="#554a42" roughness={0.9} /></mesh>}
+        {(backpack || bag !== 'none') && <group position={[0,0.6,-0.27]}><mesh scale={[1,1.15,0.65]}><capsuleGeometry args={[0.17,0.15,8,16]} /><meshStandardMaterial color={bag === 'cream' ? '#e8dfca' : bag === 'black' ? '#282a2b' : '#805b45'} roughness={0.85} /></mesh><mesh position={[0,-0.08,-0.11]} scale={[1,0.6,0.45]}><capsuleGeometry args={[0.13,0.08,8,16]} /><meshStandardMaterial color={bag === 'cream' ? '#d7cbb7' : '#5d514b'} /></mesh></group>}
         <Arm side={-1} body={body} accent={top === 'none' ? body : accent} armRef={rArm} />
         <Arm side={1} body={body} accent={top === 'none' ? body : accent} armRef={lArm} />
         {/* head */}
@@ -405,7 +409,7 @@ export function Character({
         </mesh>
         <Eyes face={face} rival={variant === 'rival'} />
         <HeadwearMesh kind={headwear} body={bodyHex} accent={accentHex} />
-        {accessory === 'glasses' && <Glasses />}
+        {accessory !== 'none' && <Glasses style={accessory} />}
         {children}
       </group>
     </group>
