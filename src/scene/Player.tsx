@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { Character, type Headwear, type Face, type Accessory } from '../characters/Character'
 import type { PaletteName } from '../characters/palette'
-import { centroid, Collider, type Campus } from '../campus'
+import { centroid, Collider, westDeckGroundHeight, type Campus } from '../campus'
 import { occluders } from './Campus'
 import { busPositions } from './Buses'
 
@@ -196,18 +196,21 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     }
     player.moving = moving
     walk.current = THREE.MathUtils.lerp(walk.current, moving ? (k.has('shift') ? 1 : 0.75) : 0, Math.min(1, dt * 10))
+    const groundY = westDeckGroundHeight(campus, player.x, player.z)
     if (body.current) {
-      body.current.position.set(player.x, 0, player.z)
+      body.current.position.set(player.x, groundY, player.z)
       body.current.rotation.y = player.heading
     }
     // Sims-style camera: high three-quarter view that follows smoothly
     const pitch = player.pitch
+    const viewX=(player.view?.x ?? player.x)+pan.current.x,viewZ=(player.view?.z ?? player.z)+pan.current.y
+    const viewY=westDeckGroundHeight(campus,viewX,viewZ)
     const want = new THREE.Vector3(
       (player.view?.x ?? player.x) + pan.current.x + Math.sin(player.yaw) * Math.cos(pitch) * dist.current,
-      Math.sin(pitch) * dist.current,
+      viewY + Math.sin(pitch) * dist.current,
       (player.view?.z ?? player.z) + pan.current.y + Math.cos(player.yaw) * Math.cos(pitch) * dist.current,
     )
-    const focus = new THREE.Vector3((player.view?.x ?? player.x) + pan.current.x, 1.2, (player.view?.z ?? player.z) + pan.current.y)
+    const focus = new THREE.Vector3((player.view?.x ?? player.x) + pan.current.x, viewY + 1.2, (player.view?.z ?? player.z) + pan.current.y)
     if (snap.current) {
       camera.position.copy(want)
       cameraTarget.current.copy(focus)
@@ -224,7 +227,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     if (cut.current > 0.08) {
       cut.current = 0
       const from = camera.position.clone()
-      const to = new THREE.Vector3(player.x, 1.0, player.z)
+      const to = new THREE.Vector3(player.x, groundY + 1.0, player.z)
       ray.set(from, to.clone().sub(from).normalize())
       ray.far = from.distanceTo(to)
       const hit = new Set(ray.intersectObjects(occluders.meshes, false).map((h) => h.object.parent))

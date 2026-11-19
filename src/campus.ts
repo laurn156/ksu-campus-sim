@@ -62,6 +62,19 @@ export async function loadCampus(): Promise<Campus> {
   // with the other levels below grade rather than four exposed stories.
   const westDeck = c.buildings.find((b) => b.code === 'P60')
   if (westDeck) { westDeck.h = 3.2; westDeck.levels = 1 }
+  // Keep the parking surface and its cars outside the low-side deck excavation.
+  const lowerLot = c.areas.find((a) => a.name === 'P28 - Residential Only')
+  if (westDeck && lowerLot) {
+    const a=westDeck.poly[0],b=westDeck.poly[1],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz)
+    const dist=(p:Pt)=>((p[0]-a[0])*(-dz)+(p[1]-a[1])*dx)/len-18
+    const clipped:Pt[]=[]
+    for(let i=0;i<lowerLot.poly.length;i++){
+      const p=lowerLot.poly[i],q=lowerLot.poly[(i+1)%lowerLot.poly.length],dp=dist(p),dq=dist(q)
+      if(dp>=0)clipped.push(p)
+      if((dp>=0)!==(dq>=0)){const t=dp/(dp-dq);clipped.push([p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t])}
+    }
+    if(clipped.length>=3)lowerLot.poly=clipped
+  }
   // Small unnamed structures in front of the Atrium are walk-under canopies, not buildings
   // (they look like buildings from the air). Pull them out so they get no walls and no collision.
   const J = c.buildings.find((b) => b.code === 'J')
@@ -109,6 +122,17 @@ export function bbox(poly: Pt[]): [number, number, number, number] {
     a = Math.min(a, x); b = Math.min(b, z); c = Math.max(c, x); d = Math.max(d, z)
   }
   return [a, b, c, d]
+}
+
+/** Ground elevation on the exposed lower side of West Deck; elsewhere terrain is flat. */
+export function westDeckGroundHeight(campus: Campus, x: number, z: number): number {
+  const deck=campus.buildings.find((b)=>b.code==='P60')
+  if(!deck)return 0
+  const a=deck.poly[0],b=deck.poly[1],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz)
+  const along=((x-a[0])*dx+(z-a[1])*dz)/len
+  const d=((x-a[0])*(-dz)+(z-a[1])*dx)/len
+  if(along<0||along>len||d<0||d>=18)return 0
+  return d<=8?-11.4:-11.4*(18-d)/10
 }
 
 /** Collision against building footprints (with the player's radius). */

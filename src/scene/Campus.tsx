@@ -1015,26 +1015,32 @@ function innovationCenterParts(b:Building) {
     }
     return {length,box,label}
   }
-  // A two-storey glazed corner sits inside the perforated brick frame.
-  for(const i of [8,5]){
-    const e=edge(i),w=e.length-1
-    e.box(w,7.1,.16,0,4.3,.1,glass)
-    e.box(e.length,2.4,.28,0,10.1,.15,perforated)
-    for(const x of [-e.length/2+.45,e.length/2-.45])e.box(.9,b.h,.3,x,b.h/2,.16,perforated)
-    e.box(w,.65,.28,0,4.25,.24,dark)
-    for(let x=-w/2+.1;x<=w/2;x+=1.5)e.box(.1,7.2,.25,x,4.3,.25,dark)
-    for(const y of [.75,4.25,7.8])e.box(w,.1,.26,0,y,.25,frame)
+  // The entrance wraps the far-right corner, with brick between the next glass bay.
+  const corner=edge(7),sideCorner=edge(8)
+  const cornerWidth=corner.length-1
+  corner.box(cornerWidth,7.1,.16,0,4.3,.1,glass)
+  corner.box(corner.length,2.4,.28,0,10.1,.15,perforated)
+  for(const x of [-corner.length/2+.45,corner.length/2-.45])corner.box(.9,b.h,.3,x,b.h/2,.16,perforated)
+  corner.box(cornerWidth,.65,.28,0,4.25,.24,dark)
+  for(let x=-cornerWidth/2+.1;x<=cornerWidth/2;x+=1.5)corner.box(.1,7.2,.25,x,4.3,.25,dark)
+  for(const y of [.75,4.25,7.8])corner.box(cornerWidth,.1,.26,0,y,.25,frame)
+  // Corner glass, a substantial brick pier, then another large glazed bay.
+  for(const [center,width] of [[-sideCorner.length/2+7,12],[sideCorner.length/2-9,14]]){
+    sideCorner.box(width,7.1,.16,center,4.3,.1,glass)
+    for(let x=center-width/2;x<=center+width/2;x+=1.5)sideCorner.box(.1,7.2,.25,x,4.3,.25,dark)
+    for(const y of [.75,4.25,7.8])sideCorner.box(width,.1,.26,center,y,.25,frame)
   }
-  const front=edge(5)
-  front.box(4.4,3,.25,front.length*.18,1.55,.3,glass)
-  for(const x of [-2.15,-1.07,0,1.07,2.15])front.box(.1,3,.3,front.length*.18+x,1.55,.44,dark)
-  front.box(6,.18,2,front.length*.18,3.3,1,frame)
-  front.box(3.6,.12,2,front.length*.18,.06,1.3,stone)
+  sideCorner.box(sideCorner.length,2.4,.28,0,10.1,.15,perforated)
+  const front=corner,doorX=front.length*.31
+  front.box(4.4,3,.25,doorX,1.55,.3,glass)
+  for(const x of [-2.15,-1.07,0,1.07,2.15])front.box(.1,3,.3,doorX+x,1.55,.44,dark)
+  front.box(6,.18,2,doorX,3.3,1,frame)
+  front.box(3.6,.12,2,doorX,.06,1.3,stone)
   // Building name on a dark fascia above the main doors.
   const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=180
   const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f0f1eb';ctx.textAlign='center';ctx.font='bold 87px sans-serif';ctx.fillText('ROBIN AND DOUG SHORE INNOVATION CENTER',1024,120,2000)
   const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
-  front.box(15,.9,.12,0,4.25,.32,dark);front.label(tex,0,4.25,.41,14.5,.68)
+  front.box(13,.9,.12,front.length*.1,4.25,.32,dark);front.label(tex,front.length*.1,4.25,.41,12.5,.68)
   // Narrow vertically proportioned windows in the brick side and rear wings.
   for(const i of [13,12,11]){
     const e=edge(i)
@@ -1888,6 +1894,9 @@ function westDeckDetails(b:Building){
   const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
   const curb=new THREE.MeshStandardMaterial({color:'#c8beb1',roughness:.9,side:THREE.DoubleSide})
   const line=new THREE.MeshStandardMaterial({color:'#eeeae0',roughness:.95})
+  // Three lower levels are exposed along the low side of the sloping site.
+  const lower=new THREE.MeshStandardMaterial({map:facade('westdeck'),roughness:.9,side:THREE.DoubleSide})
+  out.push({geo:wallsGeometry({...b,poly:[b.poly[0],b.poly[1]]},-11.4,0),mat:lower})
   // Low perimeter parapet, with actual geometry rather than repeated floor textures.
   out.push({geo:wallsGeometry(b,b.h,b.h+.65),mat:curb})
   // Parking bay markings on the accessible top deck; omit markings outside its footprint.
@@ -2072,6 +2081,15 @@ function Ground({ campus, overlay = false }: { campus: Campus; overlay?: boolean
       else if (a.kind.startsWith('pitch:')) {
         const sport = a.kind.slice(6)
         if (a.name === 'Practice Green') add('practicegrass', flatGeometry(a.poly, 0.055))
+        else if (a.name === 'Field #1' || a.name === 'Field #3') {
+          add('fieldgrass',flatGeometry(a.poly,.055))
+          const first=a.name === 'Field #1',hx=first?-683:-681,hz=first?207:163
+          const ux=.707,uz=first?.707:-.707,rx=uz,rz=-ux
+          const p=(u:number,v:number):Pt=>[hx+rx*u+ux*v,hz+rz*u+uz*v]
+          const disk=(u:number,v:number,r:number)=>{const pts:Pt[]=[];for(let i=0;i<40;i++){const t=i*Math.PI/20;pts.push(p(u+r*Math.cos(t),v+r*Math.sin(t)))}return pts}
+          add('diamond',flatGeometry(disk(0,22,14),.065))
+          for(const [u,v] of [[-12,12],[0,24],[12,12],[0,0]])add('base',flatGeometry([p(u-.5,v),p(u,v-.5),p(u+.5,v),p(u,v+.5)],.075))
+        }
         else if (a.name === 'S. Walter Kelly Sr. Memorial Field') {
           add('fieldgrass',flatGeometry(a.poly,0.055))
           // Align the diamond with the field's centerline, with a V-shaped grass interior.
@@ -2108,13 +2126,35 @@ function Ground({ campus, overlay = false }: { campus: Campus; overlay?: boolean
     } as Record<string, THREE.Material>
   }, [])
   const [x0, z0, x1, z1] = campus.extent
+  const deckTerrain=useMemo(()=>{
+    const deck=campus.buildings.find((b)=>b.code==='P60')
+    if(!deck)return null
+    const a=deck.poly[0],c=deck.poly[1],dx=c[0]-a[0],dz=c[1]-a[1],len=Math.hypot(dx,dz),nx=-dz/len,nz=dx/len
+    const p=(v:Pt,d:number):Pt=>[v[0]+nx*d,v[1]+nz*d]
+    const a0=p(a,.02),c0=p(c,.02),a8=p(a,8),c8=p(c,8),a18=p(a,18),c18=p(c,18)
+    const width=(x1-x0)*1.5,height=(z1-z0)*1.5,cx=(x0+x1)/2,cz=(z0+z1)/2
+    const shape=new THREE.Shape();shape.moveTo(cx-width,-(cz-height));shape.lineTo(cx+width,-(cz-height));shape.lineTo(cx+width,-(cz+height));shape.lineTo(cx-width,-(cz+height));shape.closePath()
+    const hole=new THREE.Path();hole.moveTo(a0[0],-a0[1]);hole.lineTo(c0[0],-c0[1]);hole.lineTo(c18[0],-c18[1]);hole.lineTo(a18[0],-a18[1]);hole.closePath();shape.holes.push(hole)
+    const ground=new THREE.ShapeGeometry(shape);ground.rotateX(-Math.PI/2)
+    const floor=flatGeometry([a0,c0,c8,a8],-11.4)
+    const position=[a8[0],-11.4,a8[1],c8[0],-11.4,c8[1],c18[0],0,c18[1],a8[0],-11.4,a8[1],c18[0],0,c18[1],a18[0],0,a18[1]]
+    const slope=new THREE.BufferGeometry();slope.setAttribute('position',new THREE.Float32BufferAttribute(position,3));slope.computeVertexNormals()
+    const wallPos=[a0[0],0,a0[1],a8[0],-11.4,a8[1],a18[0],0,a18[1],c0[0],0,c0[1],c18[0],0,c18[1],c8[0],-11.4,c8[1]]
+    const sides=new THREE.BufferGeometry();sides.setAttribute('position',new THREE.Float32BufferAttribute(wallPos,3));sides.computeVertexNormals()
+    return {ground,floor,slope,sides}
+  },[campus,x0,z0,x1,z1])
   return (
     <group>
       {!overlay && (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(x0 + x1) / 2, 0, (z0 + z1) / 2]} receiveShadow>
-          <planeGeometry args={[(x1 - x0) * 3, (z1 - z0) * 3]} />
-          <meshStandardMaterial color="#9cc46e" roughness={1} />
-        </mesh>
+        <group>
+          {!deckTerrain && <mesh rotation={[-Math.PI/2,0,0]} position={[(x0+x1)/2,0,(z0+z1)/2]} receiveShadow><planeGeometry args={[(x1-x0)*3,(z1-z0)*3]}/><meshStandardMaterial color="#9cc46e" roughness={1}/></mesh>}
+          {deckTerrain && <>
+            <mesh geometry={deckTerrain.ground} receiveShadow><meshStandardMaterial color="#9cc46e" roughness={1} side={THREE.DoubleSide}/></mesh>
+            <mesh geometry={deckTerrain.floor} receiveShadow><meshStandardMaterial color="#777b75" roughness={1} side={THREE.DoubleSide}/></mesh>
+            <mesh geometry={deckTerrain.slope} receiveShadow><meshStandardMaterial color="#8ba46c" roughness={1} side={THREE.DoubleSide}/></mesh>
+            <mesh geometry={deckTerrain.sides} receiveShadow><meshStandardMaterial color="#aaa99a" roughness={1} side={THREE.DoubleSide}/></mesh>
+          </>}
+        </group>
       )}
       {Object.entries(g).map(([k, geo]) => (
         <mesh key={k} geometry={geo} material={mats[k]} receiveShadow />
@@ -2161,7 +2201,7 @@ function Trees({ campus }: { campus: Campus }) {
     if (campus.treesFromAerial) {
       // real tree positions detected in the aerial photo
       // keep roughly 1 in 4 detected canopy points: the woods still read as woods, the lawns stay open
-      for (const t of campus.trees) if (Math.hypot(t[0]+81.5,t[1]+75)>8.5 && !campus.areas.some((a) => a.name === 'S. Walter Kelly Sr. Memorial Field' && pointInPoly(t[0], t[1], a.poly)) && (rnd() < 0.12 || ((t[2] ?? 1) > 1.32 && rnd() < 0.22))) spots.push([t[0], t[1], (t[2] ?? 1) * 1.25])
+      for (const t of campus.trees) if (Math.hypot(t[0]+81.5,t[1]+75)>8.5 && !campus.areas.some((a) => (a.name === 'S. Walter Kelly Sr. Memorial Field' || a.name === 'Field #1' || a.name === 'Field #3') && pointInPoly(t[0], t[1], a.poly)) && (rnd() < 0.12 || ((t[2] ?? 1) > 1.32 && rnd() < 0.22))) spots.push([t[0], t[1], (t[2] ?? 1) * 1.25])
     } else for (const [x, z] of campus.trees) tryAdd(x, z, 1.2)
     // lines of trees along walkways (like the aerial view)
     if (!campus.treesFromAerial) for (const p of campus.paths) {
