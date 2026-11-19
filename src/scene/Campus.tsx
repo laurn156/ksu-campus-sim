@@ -916,6 +916,62 @@ function scienceAnnexDetails(){
   return out
 }
 
+/** K3 pump house: low brick walls, rooftop trim, owl mural and patio seating. */
+function pumpHouseParts(b: Building) {
+  const out: {geo: THREE.BufferGeometry; mat: THREE.MeshStandardMaterial}[] = []
+  const material = (color: string) => new THREE.MeshStandardMaterial({color, roughness: .9, side: THREE.DoubleSide})
+  const brick = new THREE.MeshStandardMaterial({map: facade('librarybrick'), roughness: .9, side: THREE.DoubleSide})
+  const trim = material('#d4d1c8'), roof = material('#a5a29a'), metal = material('#a4aaa5')
+  const dark = material('#242c2c'), pavement = material('#c6c1b5'), canopy = material('#242928')
+  const box = (w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial) => {
+    const geo = new THREE.BoxGeometry(w,h,d); geo.translate(x,y,z); out.push({geo,mat})
+  }
+  out.push({geo:wallsGeometry(b),mat:brick}, {geo:flatGeometry(b.poly,b.h+.02),mat:roof})
+  // A light coping runs around the flat, weathered roof.
+  for (let i=0;i<b.poly.length;i++) {
+    const a=b.poly[i], c=b.poly[(i+1)%b.poly.length]
+    const dx=c[0]-a[0], dz=c[1]-a[1], len=Math.hypot(dx,dz)
+    const geo=new THREE.BoxGeometry(len,.18,.22);geo.rotateY(-Math.atan2(dz,dx));geo.translate((a[0]+c[0])/2,b.h+.12,(a[1]+c[1])/2)
+    out.push({geo,mat:trim})
+  }
+  const vent=new THREE.CylinderGeometry(.23,.32,.65,8);vent.translate(-187,4.12,99.3);out.push({geo:vent,mat:metal})
+  for(const [x,z] of [[-189.9,97],[-184.4,102.3]]){const v=new THREE.CylinderGeometry(.09,.09,.22,8);v.translate(x,3.92,z);out.push({geo:v,mat:dark})}
+  // Service door and utility panels on the opposite wall.
+  box(.1,2.35,1.3,-191.67,1.18,100.2,metal)
+  box(.13,2.05,1.05,-191.75,1.18,100.2,dark)
+  box(.16,1.85,.9,-191.82,1.19,100.2,metal)
+  box(.15,.55,.65,-191.72,2.75,98.2,trim)
+  // The owl mural is painted directly on the east brick face.
+  const c=document.createElement('canvas');c.width=1024;c.height=512
+  const g=c.getContext('2d')!;g.clearRect(0,0,1024,512)
+  g.fillStyle='#eee9dc';g.strokeStyle='#1d2020';g.lineWidth=15;g.lineJoin='round'
+  g.beginPath();g.moveTo(205,75);g.lineTo(290,180);g.lineTo(510,130);g.lineTo(735,180);g.lineTo(820,75);g.lineTo(785,325);g.lineTo(650,410);g.lineTo(510,455);g.lineTo(370,410);g.lineTo(235,325);g.closePath();g.fill();g.stroke()
+  g.strokeStyle='#1d2020';g.lineWidth=23;g.beginPath();g.moveTo(276,205);g.lineTo(390,240);g.lineTo(510,190);g.lineTo(630,240);g.lineTo(745,205);g.moveTo(510,190);g.lineTo(510,350);g.stroke()
+  g.fillStyle='#1d2020';for(const x of [385,635]){g.beginPath();g.ellipse(x,275,38,28,0,0,Math.PI*2);g.fill()}
+  g.fillStyle='#c9a353';g.beginPath();g.moveTo(475,300);g.lineTo(545,300);g.lineTo(510,365);g.closePath();g.fill()
+  // Pale geometric accents on either side of the owl.
+  for(const x of [75,150,875,950]){g.fillStyle='#e7dac0';g.beginPath();g.moveTo(x,180);g.lineTo(x+35,220);g.lineTo(x,260);g.lineTo(x-35,220);g.closePath();g.fill()}
+  const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace
+  const mural=new THREE.PlaneGeometry(7.7,3.15);mural.rotateY(Math.PI/2);mural.translate(-182.28,2.02,99.86)
+  out.push({geo:mural,mat:new THREE.MeshStandardMaterial({map:tex,transparent:true,side:THREE.DoubleSide,roughness:.95})})
+  // Patio and two dark umbrellas beside the north end, clear of the doorway.
+  box(10.8,.08,5.2,-187,.04,92.9,pavement)
+  for(const x of [-189.2,-185]) {
+    const z=92.8
+    const table=new THREE.CylinderGeometry(.72,.72,.1,16);table.translate(x,.76,z);out.push({geo:table,mat:dark})
+    const pole=new THREE.CylinderGeometry(.045,.045,2.7,8);pole.translate(x,1.35,z);out.push({geo:pole,mat:metal})
+    const shade=new THREE.ConeGeometry(1.45,.45,8,1,true);shade.translate(x,2.68,z);out.push({geo:shade,mat:canopy})
+    for(let i=0;i<8;i++) {
+      const angle=i*Math.PI/4, rib=new THREE.BoxGeometry(.035,.035,1.45)
+      rib.rotateX(-.15);rib.translate(0,2.62,.7);rib.rotateY(angle);rib.translate(x,0,z);out.push({geo:rib,mat:trim})
+    }
+    for(const [dx,dz] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+      box(.5,.08,.5,x+dx,.43,z+dz,dark);box(.07,.43,.07,x+dx,.21,z+dz,metal)
+    }
+  }
+  return out
+}
+
 /** Lawrence V. Johnson Atrium Building: brick towers, entry, and side stairs. */
 function atriumDetails(b:Building){
   const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
@@ -1211,6 +1267,7 @@ function Buildings({ campus }: { campus: Campus }) {
           ...academicDetails(b),
         ], flat: true }
       }
+      if (b.id === '517434198') return { b, parts: pumpHouseParts(b), flat: true }
       if (b.id === '1504299650') {
         b.name = 'Hornet Hub'; b.short = 'Hornet Hub'; b.h = 5
         return { b, parts: hornetHubParts(b), flat: false }
