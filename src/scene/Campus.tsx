@@ -804,10 +804,10 @@ function designTwoDetails(b:Building){
   worldBox(.28,.16,3.1,-252.16,3.14,43,white)
   worldBox(.3,.5,12,-252.14,5.25,43,white)
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192
-  const ctx=canvas.getContext('2d')!;ctx.fillStyle='#4b5550';ctx.font='bold 120px sans-serif';ctx.textAlign='center';ctx.fillText('DESIGN II',512,142)
+  const ctx=canvas.getContext('2d')!;ctx.fillStyle='#e9e9e1';ctx.fillRect(0,0,1024,192);ctx.fillStyle='#343c39';ctx.font='bold 120px sans-serif';ctx.textAlign='center';ctx.fillText('DESIGN II',512,142)
   const text=new THREE.CanvasTexture(canvas);text.colorSpace=THREE.SRGBColorSpace
-  const label=new THREE.PlaneGeometry(7,1.4);label.rotateY(-Math.PI/2);label.translate(-252.32,5.75,43)
-  out.push({geo:label,mat:new THREE.MeshStandardMaterial({map:text,transparent:true,depthWrite:false,side:THREE.DoubleSide})})
+  const label=new THREE.PlaneGeometry(7,1.4);label.rotateY(-Math.PI/2);label.translate(-252.65,5.75,43)
+  out.push({geo:label,mat:new THREE.MeshStandardMaterial({map:text,side:THREE.DoubleSide})})
   // Roof terrace sits above the lower linking wing between the two buildings.
   worldBox(67,.18,3.3,-214,3.91,33.4,concrete)
   for(const x of [-243,-235,-227,-219,-211,-203,-195,-187]){
@@ -819,12 +819,33 @@ function designTwoDetails(b:Building){
     const stem=new THREE.CylinderGeometry(.06,.06,.75,8);stem.translate(x,4.34,33.4);out.push({geo:stem,mat:dark})
     for(const dx of [-1.1,1.1])worldBox(.55,.1,.55,x+dx,4.4,33.4,dark)
   }
-  // Side stairs rise gradually from the lower walkway to the terrace edge.
-  for(let i=0;i<19;i++){
-    const h=(i+1)*.2
-    worldBox(.65,h,3.1,-264+i*.65,h/2,33.35,concrete)
+  // Covered seating bays extend from the upper facade over part of the terrace.
+  for(const x of [-238,-220,-202]){
+    worldBox(6.4,.25,2.6,x,7.05,33.45,white)
+    for(const dx of [-3,3])worldBox(.18,3.1,.18,x+dx,5.5,32.25,white)
   }
-  worldBox(1.1,3.8,3.1,-251.65,1.9,33.35,concrete)
+  // Two flights turn at a landing instead of running directly into the building.
+  for(let i=0;i<10;i++){
+    const h=(i+1)*.2
+    worldBox(.66,h,2.6,-264+i*.65,h/2,39,concrete)
+  }
+  worldBox(3,2,3,-257.5,1,39,concrete)
+  for(let i=0;i<9;i++){
+    const h=2.2+i*.2
+    worldBox(2.6,h,.66,-257.5,h/2,37.3-i*.65,concrete)
+  }
+  worldBox(5.4,3.8,2.8,-254.8,1.9,32.2,concrete)
+  // Handrails follow both flights and turn around the landing.
+  const rail=(a:THREE.Vector3,c:THREE.Vector3)=>{const v=c.clone().sub(a),g=new THREE.CylinderGeometry(.055,.055,v.length(),8);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize()));g.translate((a.x+c.x)/2,(a.y+c.y)/2,(a.z+c.z)/2);out.push({geo:g,mat:dark})}
+  rail(new THREE.Vector3(-264,1,40.25),new THREE.Vector3(-258,2.85,40.25))
+  rail(new THREE.Vector3(-256.2,2.85,39),new THREE.Vector3(-256.2,4.65,32.2))
+  for(const [x,y,z] of [[-264,0,40.25],[-261,1,40.25],[-258,2,40.25],[-256.2,2,39],[-256.2,2.9,35.8],[-256.2,3.8,32.2]])rail(new THREE.Vector3(x,y,z),new THREE.Vector3(x,y+.85,z))
+  // The adjacent Design 1 end is a solid brick wall with a recessed entrance.
+  const endBrick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.9,side:THREE.DoubleSide})
+  worldBox(.18,7.35,8.7,-262.35,3.68,24,endBrick)
+  worldBox(.25,2.8,2.6,-262.5,1.4,24,glass)
+  for(const z of [22.7,24,25.3])worldBox(.28,2.85,.1,-262.65,1.43,z,white)
+  worldBox(.28,.14,2.7,-262.65,2.85,24,white)
   return out
 }
 
