@@ -44,15 +44,15 @@ export function talk(state:LifeState,id:StudentId,action:SocialAction,text='',pl
   if(action==='introduce')reply=prev.met?`We’ve met, ${playerName}! Good to see you again.`:`Hi, ${playerName}! I’m ${npc.name}. I study ${npc.major}. ${npc.background}`
   else if(action==='custom' && isMemoryQuestion(custom)){
     if(!prev.met)reply=`I don’t think we’ve met yet. I’m ${npc.name} — it’s nice to meet you!`
-    else if(prev.memories.length){const memory=prev.memories[prev.memories.length-1];reply=[`Of course, ${playerName}! I remember ${memory}.`,`Yes, ${playerName}! Last time, ${memory} came up.`,`I do, ${playerName}. I remember ${memory} from before.`][prev.interactions%3]}
-    else reply=[`Yes, ${playerName}, we’ve met! I’m still getting to know you.`,`I remember meeting you, ${playerName}. We haven’t talked about much yet.`,`Of course, ${playerName}! It’s good to see you again.`][prev.interactions%3]
+    else if(prev.memories.length){const memory=prev.memories[prev.memories.length-1];reply=[`Yeah, ${playerName}. I remember ${memory}.`,`Yeah, ${playerName}. We talked about ${memory}.`,`I do, ${playerName}. I remember ${memory} from before.`][prev.interactions%3]}
+    else reply=[`Yeah, ${playerName}, we’ve met. I’m still getting to know you.`,`I remember meeting you, ${playerName}. We haven’t talked about much yet.`,`Yeah, ${playerName}. Good to see you again.`][prev.interactions%3]
   }
   else if(!prev.met)reply=`Hi! I’m ${npc.name}. Before we make plans, what should I call you?`
   else if(invite&&!accepted)reply=action==='friend'?`I’d like to get to know you better first, ${playerName}.`:`Maybe another time, ${playerName}. Let’s chat a little more first.`
   else if(action==='know'||action==='interests'||action==='clubs')reply=`I’m into ${npc.likes.join(', ')}. ${npc.background}`
   else if(negative||rude)reply=npc.id==='marisol'?'Ouch. I can take a joke, but let’s not make it mean.': 'That didn’t feel great. Can we try a different conversation?'
-  else if(action==='joke'||action==='story')reply=npc.id==='marisol'?'That one’s going into my collection of campus stories!':npc.id==='devon'?'Okay, that was surprisingly funny.':'Ha! I needed that today.'
-  else if(action==='challenge')reply=npc.id==='nico'?'A challenge? You’re on! Let’s meet at the recreation center sometime.':'I’m not quite ready to compete, but I’d cheer you on.'
+  else if(action==='joke'||action==='story')reply=npc.id==='marisol'?'Okay, that one was pretty good.':npc.id==='devon'?'Okay, that was surprisingly funny.':'That was pretty good.'
+  else if(action==='challenge')reply=npc.id==='nico'?'Sure, I’m up for a challenge sometime.':'I’m not quite ready to compete, but I’d cheer you on.'
   else if(invite&&accepted)reply=action==='lunch'?'Lunch sounds good! Let’s take a break together.':action==='study'?'A study session sounds great. We can compare notes.':'I’d like that. Thanks for asking!'
   else if(action==='custom'&&topic)reply=`${topic[0].toUpperCase()+topic.slice(1)}? ${npc.likes.includes(topic)?'That’s one of my favorite things.':'That reminds me of something on campus.'} I’ll remember you brought it up.`
   else if(action==='custom')reply=`I hear you, ${playerName}. ${npc.id==='devon'?'Let me think about that.':npc.id==='marisol'?'That gives me an idea for a story.':'Tell me more when we meet again.'}`
