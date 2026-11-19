@@ -39,9 +39,22 @@ function Shuttle({ path, offset, texture }: { path: Pt[]; offset: number; textur
     for (let i = 1; i < path.length; i++) cumulative.push(cumulative[i-1] + Math.hypot(path[i][0]-path[i-1][0], path[i][1]-path[i-1][1]))
     return { cumulative, length: cumulative[cumulative.length-1] ?? 0 }
   }, [path])
-  useFrame(({ clock }) => {
+  const motion = useRef<{distance:number; wait:number; inStop:boolean} | null>(null)
+  const stopAt = useMemo(() => {
+    let best=0, distance=Infinity
+    path.forEach(([x,z],i)=>{const d=Math.hypot(x+90.6,z+311.24);if(d<distance){distance=d;best=i}})
+    return data.cumulative[best] ?? 0
+  },[path,data])
+  useFrame((_, dtRaw) => {
     if (!ref.current || data.length === 0) return
-    const cycle = (clock.elapsedTime * 8 + offset * data.length * 2) % (data.length * 2)
+    if (!motion.current) motion.current={distance:offset*data.length*2,wait:0,inStop:false}
+    const m=motion.current, dt=Math.min(dtRaw,0.05)
+    if (m.wait>0) m.wait=Math.max(0,m.wait-dt)
+    else m.distance=(m.distance+dt*8)%(data.length*2)
+    const cycle = m.distance
+    const atStop=Math.abs((cycle<data.length?cycle:2*data.length-cycle)-stopAt)<6
+    if(atStop && !m.inStop){m.wait=6;m.inStop=true}
+    if(!atStop)m.inStop=false
     const forward = cycle < data.length
     const d = forward ? cycle : 2 * data.length - cycle
     let i = 1; while (i < data.cumulative.length - 1 && data.cumulative[i] < d) i++

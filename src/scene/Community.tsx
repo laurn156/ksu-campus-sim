@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { Character } from '../characters/Character'
-import { Collider, type Campus } from '../campus'
+import { Collider, pointInPoly, type Campus } from '../campus'
 import { player, spawnPoint, type AvatarLook } from './Player'
 import type { Profile } from '../ui/Welcome'
 
@@ -27,7 +27,38 @@ export function CampusStudents({ campus }: {campus:Campus}) {
     return pts
   }, [campus])
   useEffect(() => () => {community.students=[]},[])
-  return <>{students.map(s => <group key={s.name} position={[s.x,0,s.z]} rotation={[0,Math.PI,0]}><Character color={s.color} headwear="none" face="happy" top="tee" topColor="#f4f0e6" bottom="shorts" shoes="sneakers" scale={1.15}/><Html position={[0,2,0]} center distanceFactor={18}><div className="student-label">{s.name}</div></Html></group>)}</>
+  return <><AmbientStudents campus={campus}/>{students.map(s => <group key={s.name} position={[s.x,0,s.z]} rotation={[0,Math.PI,0]}><Character color={s.color} headwear="none" face="happy" top="tee" topColor="#f4f0e6" bottom="shorts" shoes="sneakers" scale={1.15}/><Html position={[0,2,0]} center distanceFactor={18}><div className="student-label">{s.name}</div></Html></group>)}</>
+}
+
+
+/** A modest population walking short stretches of mapped sidewalks. */
+function AmbientStudents({campus}:{campus:Campus}) {
+  const walkers=useMemo(()=>{
+    const collider=new Collider(campus.buildings)
+    const candidates=campus.paths.flatMap(path=>path.pts.slice(1).map((b,i)=>({a:path.pts[i],b})))
+      .filter(({a,b})=>{const length=Math.hypot(b[0]-a[0],b[1]-a[1]);return length>8 && length<70 && pointInPoly((a[0]+b[0])/2,(a[1]+b[1])/2,campus.boundary) && !collider.blocked(a[0],a[1],1) && !collider.blocked(b[0],b[1],1) && !collider.blocked((a[0]+b[0])/2,(a[1]+b[1])/2,1)})
+    const chosen: typeof candidates=[]
+    for(const c of candidates) {
+      const x=(c.a[0]+c.b[0])/2,z=(c.a[1]+c.b[1])/2
+      if(chosen.every(p=>Math.hypot(x-(p.a[0]+p.b[0])/2,z-(p.a[1]+p.b[1])/2)>26)) chosen.push(c)
+      if(chosen.length>=20) break
+    }
+    return chosen
+  },[campus])
+  return <>{walkers.map((path,i)=><Walker key={i} path={path} index={i}/>)}</>
+}
+function Walker({path,index}:{path:{a:[number,number];b:[number,number]};index:number}) {
+  const ref=useRef<THREE.Group>(null), walk=useRef(0.7)
+  const colors=['blue','orange','green','purple','yellow','slate'] as const
+  useFrame(({clock})=>{
+    if(!ref.current) return
+    const length=Math.hypot(path.b[0]-path.a[0],path.b[1]-path.a[1])
+    const phase=(clock.elapsedTime*1.25/length+index*0.137)%2
+    const t=phase<1?phase:2-phase, sign=phase<1?1:-1
+    ref.current.position.set(path.a[0]+(path.b[0]-path.a[0])*t,0,path.a[1]+(path.b[1]-path.a[1])*t)
+    ref.current.rotation.y=Math.atan2((path.b[0]-path.a[0])*sign,(path.b[1]-path.a[1])*sign)
+  })
+  return <group ref={ref}><Character color={colors[index%colors.length]} face="happy" headwear={index%3===0?'cap':'none'} top={index%2===0?'tee':'hoodie'} topColor={index%2===0?'#eee9dd':'#333337'} bottom="pants" bottomColor="#55596a" shoes="sneakers" walk={walk} scale={1.05}/></group>
 }
 
 type Peer = { id:string; name:string; look:AvatarLook; x:number; z:number; heading:number; moving:boolean; time:number }

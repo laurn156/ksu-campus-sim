@@ -1,56 +1,65 @@
 import { useEffect, useMemo, useState } from 'react'
 import { distToSeg, type Campus } from '../campus'
 import { player } from '../scene/Player'
-import { community } from '../scene/Community'
 
-type TaskId = 'meet'|'study'|'meal'
+type TaskId = 'meet'|'study'|'meal'|'scrappy'|'bus'|'atrium'|'recreation'
 type Progress = { completed: TaskId[]; day:number }
-const tasks: {id:TaskId; label:string; detail:string; code?:string}[] = [
-  {id:'meet',label:'Meet a student',detail:'Find a student near the Student Center and press F to say hello.'},
-  {id:'study',label:'Study at the library',detail:'Go to C · Lawrence V. Johnson Library and start a study session.',code:'C'},
-  {id:'meal',label:'Grab a meal',detail:'Go to X · Stingers and take a meal break.',code:'X'},
+const allTasks: {id:TaskId; label:string; detail:string; code?:string; action?:'student'|'scrappy'|'bus'; verb?:string}[] = [
+  {id:'meet',label:'Meet a student',detail:'Find a student and press F to say hello.',action:'student'},
+  {id:'study',label:'Study at the library',detail:'Find C · Lawrence V. Johnson Library.',code:'C',verb:'Study'},
+  {id:'meal',label:'Grab a meal',detail:'Find X · Stingers.',code:'X',verb:'Eat'},
+  {id:'scrappy',label:'Say hello to Scrappy',detail:'Find Scrappy and press F to greet him.',action:'scrappy'},
+  {id:'bus',label:'Catch a Big Owl Bus',detail:'Meet a bus on its route and press F to board.',action:'bus'},
+  {id:'atrium',label:'Visit the Atrium',detail:'Find J · Atrium Building.',code:'J',verb:'Visit'},
+  {id:'recreation',label:'Visit the Rec Center',detail:'Find S1 · Recreation and Wellness Center.',code:'S1',verb:'Visit'},
 ]
+const days: TaskId[][] = [['meet','study','meal'],['scrappy','bus','atrium'],['recreation','meet','meal'],['bus','study','scrappy']]
 function storageKey(user:string) { return 'ksu-campus-day-v1:'+user.toLowerCase() }
 function load(user:string):Progress {
   try {
     const p=JSON.parse(localStorage.getItem(storageKey(user)) || 'null')
-    if (p && Number.isInteger(p.day) && p.day>0 && Array.isArray(p.completed)) return {day:p.day,completed:tasks.map(t=>t.id).filter(id=>p.completed.includes(id))}
+    if (p && Number.isInteger(p.day) && p.day>0 && Array.isArray(p.completed)) {
+      const ids=days[(p.day-1)%days.length]
+      return {day:p.day,completed:ids.filter(id=>p.completed.includes(id))}
+    }
   } catch { /* start fresh */ }
   return {day:1,completed:[]}
 }
 function nearBuilding(campus:Campus,code:string) {
   const b=campus.buildings.find(item=>item.code===code)
-  if (!b) return false
-  return b.poly.some((p,i)=>distToSeg(player.x,player.z,p,b.poly[(i+1)%b.poly.length])<24)
+  return !!b && b.poly.some((p,i)=>distToSeg(player.x,player.z,p,b.poly[(i+1)%b.poly.length])<18)
 }
 export function CampusDay({campus,username}:{campus:Campus;username:string}) {
   const [progress,setProgress]=useState<Progress>(()=>load(username))
   const [near,setNear]=useState<string[]>([])
+  const [blocked,setBlocked]=useState(false)
   const [open,setOpen]=useState(true)
   const [notice,setNotice]=useState('')
-  const found=useMemo(()=>tasks.filter(t=>t.code && campus.buildings.some(b=>b.code===t.code)),[campus])
+  const tasks=useMemo(()=>days[(progress.day-1)%days.length].map(id=>allTasks.find(t=>t.id===id)!),[progress.day])
   useEffect(()=>{try {localStorage.setItem(storageKey(username),JSON.stringify(progress))} catch { /* play without saving */ }},[username,progress])
   useEffect(()=>{
-    const interval=setInterval(()=>setNear(found.filter(t=>nearBuilding(campus,t.code!)).map(t=>t.id)),250)
-    const key=(e:KeyboardEvent)=>{
-      if(e.key.toLowerCase()!=='f'||e.repeat||e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement)return
-      if(community.students.some(s=>Math.hypot(s.x-player.x,s.z-player.z)<5)) setProgress(p=>p.completed.includes('meet')?p:{...p,completed:[...p.completed,'meet']})
+    const interval=setInterval(()=>{setNear(tasks.filter(t=>t.code && nearBuilding(campus,t.code)).map(t=>t.id));setBlocked(!!player.travelOrigin)},250)
+    const action=(event:Event)=>{
+      const detail=(event as CustomEvent<{kind:string;allowed:boolean}>).detail
+      if(!detail?.allowed){setNotice('Walk away from your fast-travel arrival point before completing activities.');return}
+      const task=tasks.find(t=>t.action===detail.kind)
+      if(task){setProgress(p=>p.completed.includes(task.id)?p:{...p,completed:[...p.completed,task.id]});setNotice('Nice! You discovered an activity.')}
     }
-    addEventListener('keydown',key)
-    return()=>{clearInterval(interval);removeEventListener('keydown',key)}
-  },[campus,found])
+    addEventListener('campus-action',action)
+    return()=>{clearInterval(interval);removeEventListener('campus-action',action)}
+  },[campus,tasks])
   const complete=(id:TaskId)=>{
-    if(!near.includes(id)) return
+    if(!near.includes(id) || player.travelOrigin) return
     setProgress(p=>p.completed.includes(id)?p:{...p,completed:[...p.completed,id]})
-    setNotice(id==='study'?'Study session complete!':'Meal break complete!')
+    setNotice('Nice! You completed an activity.')
   }
-  const done=progress.completed.length===tasks.length
   return <section className="day-panel" aria-label="Campus Life activities">
-    <button className="day-toggle" onClick={()=>setOpen(v=>!v)} aria-expanded={open}>☀ Day {progress.day} <span>{progress.completed.length}/{tasks.length} activities {open?'−':'+'}</span></button>
-    {open && <div className="day-content"><p>Make the most of your campus day.</p>{tasks.map(t=>{
-      const finished=progress.completed.includes(t.id), available=near.includes(t.id)
-      return <div className={'day-task '+(finished?'done':'')} key={t.id}><div><b>{finished?'✓':'○'} {t.label}</b><small>{t.detail}</small></div>{t.code && !finished && <button disabled={!available} onClick={()=>complete(t.id)}>{available ? t.id==='study'?'Study':'Eat' : 'Go there'}</button>}</div>
-    })}{notice && <div className="day-notice" role="status">{notice}</div>}{done && <div className="day-finished"><b>Day complete! ✨</b><span>You explored, studied, and met someone new.</span><button onClick={()=>{setProgress({day:progress.day+1,completed:[]});setNotice('')}}>Start next day</button></div>}</div>}
+    <button className="day-toggle" onClick={()=>setOpen(v=>!v)} aria-expanded={open}>☀ Day {progress.day} <span>{progress.completed.length}/{tasks.length} ideas {open?'−':'+'}</span></button>
+    {open && <div className="day-content"><p>Optional ideas for your day. Explore at your own pace.</p>{blocked && <div className="day-warning">Exploring after fast travel: walk beyond the arrival area to unlock activity credit.</div>}{tasks.map(t=>{
+      const finished=progress.completed.includes(t.id), available=near.includes(t.id) && !blocked
+      return <div className={'day-task '+(finished?'done':'')} key={t.id}><div><b>{finished?'✓':'○'} {t.label}</b><small>{t.detail}</small></div>{t.code && !finished && <button disabled={!available} onClick={()=>complete(t.id)}>{available ? t.verb : 'Explore'}</button>}</div>
+    })}{notice && <div className="day-notice" role="status">{notice}</div>}
+    <div className="day-finished"><span>{progress.completed.length===tasks.length?'You explored all of today’s ideas!':'No need to finish everything.'}</span><button onClick={()=>{setProgress({day:progress.day+1,completed:[]});setNotice('')}}>Start next day</button></div></div>}
   </section>
 }
 

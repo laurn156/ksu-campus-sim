@@ -5,9 +5,10 @@ import { Character, type Headwear, type Face, type Accessory } from '../characte
 import type { PaletteName } from '../characters/palette'
 import { centroid, Collider, type Campus } from '../campus'
 import { occluders } from './Campus'
+import { busPositions } from './Buses'
 
 /** Shared, mutable player state (read by the HUD / minimap without re-rendering React every frame). */
-export const player = { x: 0, z: 0, heading: 0, yaw: 0.6, pitch: 1.0, moving: false, tp: null as null | { x: number; z: number; yaw: number } }
+export const player = { x: 0, z: 0, heading: 0, yaw: 0.6, pitch: 1.0, moving: false, tp: null as null | { x: number; z: number; yaw: number }, travelOrigin: null as null | { x: number; z: number }, busRide: null as null | { index: number; until: number }, rides: 0 }
 
 const WALK = 5 // m/s (a brisk, game-paced walk)
 const RUN = 9.5
@@ -147,12 +148,20 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     if (player.tp) {
       // teleport (from the "Go to" menu): jump there and snap the camera
       pan.current.set(0, 0)
+      player.travelOrigin = { x: player.tp.x, z: player.tp.z }
+      player.busRide = null
       player.x = player.tp.x
       player.z = player.tp.z
       player.yaw = player.tp.yaw
       player.heading = player.tp.yaw + Math.PI
       player.tp = null
       snap.current = true
+    }
+    if (player.travelOrigin && Math.hypot(player.x-player.travelOrigin.x,player.z-player.travelOrigin.z)>80) player.travelOrigin = null
+    if (player.busRide) {
+      const bus = busPositions[player.busRide.index]
+      if (!bus || performance.now()>player.busRide.until) player.busRide=null
+      else { player.x=bus.x; player.z=bus.z; snap.current=true }
     }
     if (k.has('q')) player.yaw += dt * 1.6
     if (k.has('e')) player.yaw -= dt * 1.6
@@ -164,7 +173,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     if (k.has('s') || k.has('arrowdown')) dir.sub(fwd)
     if (k.has('d') || k.has('arrowright')) dir.add(right)
     if (k.has('a') || k.has('arrowleft')) dir.sub(right)
-    const moving = dir.lengthSq() > 0.0001
+    const moving = !player.busRide && dir.lengthSq() > 0.0001
     if (moving) {
       pan.current.set(0, 0)
       dir.normalize()

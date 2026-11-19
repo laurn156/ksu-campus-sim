@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Collider, distToSeg, isCampusBuilding, type Campus } from '../campus'
+import { centroid, Collider, distToSeg, isCampusBuilding, type Campus } from '../campus'
 import { approach, player } from '../scene/Player'
 import { landmarkSpots } from '../scene/Landmarks'
 import { scrappy } from '../scene/Scrappy'
@@ -123,24 +123,45 @@ function GoTo({ campus }: { campus: Campus }) {
   )
 }
 
+function CampusMap({campus,onClose}:{campus:Campus;onClose:()=>void}) {
+  const [x0,z0,x1,z1]=campus.extent
+  const locations=campus.buildings.filter(b=>['A','C','J','S1','X'].includes(b.code))
+  return <div className="map-shade" role="dialog" aria-modal="true" aria-label="Campus map"><div className="map-sheet"><header><div><b>Campus map</b><small>North is up · your position is the blue dot</small></div><button onClick={onClose}>Close ✕</button></header>
+    <svg viewBox={x0+' '+z0+' '+(x1-x0)+' '+(z1-z0)} role="img" aria-label="Marietta campus map">
+      <polygon points={campus.boundary.map(p=>p.join(',')).join(' ')} fill="#dae5d0" stroke="#9caf92" strokeWidth="4"/>
+      {campus.paths.map((p,i)=><polyline key={i} points={p.pts.map(pt=>pt.join(',')).join(' ')} fill="none" stroke="#b8b8a9" strokeWidth="3"/>)}
+      {campus.buildings.map(b=><polygon key={b.id} points={b.poly.map(p=>p.join(',')).join(' ')} fill="#b99173"/>)}
+      {locations.map(b=>{const [x,z]=centroid(b.poly);return <g key={b.id}><circle cx={x} cy={z} r="13" fill="#202e25"/><text x={x} y={z+5} textAnchor="middle" fontSize="17" fontWeight="bold" fill="#fff">{b.code}</text></g>})}
+      {busPositions.filter(Boolean).map((b,i)=><circle key={i} cx={b.x} cy={b.z} r="8" fill="#e5ad19" stroke="#242424" strokeWidth="3"/>)}
+      <circle cx={scrappy.x} cy={scrappy.z} r="9" fill="#151515" stroke="#e5ad19" strokeWidth="4"/>
+      <circle cx={player.x} cy={player.z} r="13" fill="#397ac0" stroke="white" strokeWidth="5"/>
+    </svg><div className="map-legend">{locations.map(b=><span key={b.id}><b>{b.code}</b> {b.short||b.name}</span>)}</div><p>Blue: you · gold: buses · black and gold: Scrappy. Moving markers update when you reopen the map. The map does not move your character.</p></div></div>
+}
+
 export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit: () => void; mode: Mode; onModes: () => void }) {
   const near = useNearby(campus)
-  const [student,setStudent] = useState<(typeof community.students)[number] | null>(null)
+  const [nearby,setNearby] = useState<{kind:'student'|'scrappy'|'bus';name:string;line:string;index?:number}|null>(null)
   const [message,setMessage] = useState('')
+  const [mapOpen,setMapOpen] = useState(false)
   useEffect(() => {
     if (mode !== 'life') return
-    const interval = setInterval(() => {
-      const next = community.students.find(s => Math.hypot(s.x-player.x,s.z-player.z)<5) ?? null
-      setStudent(old => old?.name===next?.name ? old : next)
-      if (!next) setMessage('')
-    },200)
-    const key = (e:KeyboardEvent) => {
-      if (e.key.toLowerCase() !== 'f' || e.repeat || e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return
-      const next = community.students.find(s => Math.hypot(s.x-player.x,s.z-player.z)<5)
-      if (next) setMessage(next.line)
+    const closest = () => {
+      const candidates: {kind:'student'|'scrappy'|'bus';name:string;line:string;distance:number;index?:number}[] = []
+      for(const s of community.students) candidates.push({kind:'student',name:s.name,line:s.line,distance:Math.hypot(s.x-player.x,s.z-player.z)})
+      candidates.push({kind:'scrappy',name:'Scrappy',line:'Hooty Hoo! Thanks for stopping by!',distance:Math.hypot(scrappy.x-player.x,scrappy.z-player.z)})
+      busPositions.forEach((b,i)=>{if(b)candidates.push({kind:'bus',name:'Big Owl Bus',line:'On board! Enjoy the ride.',distance:Math.hypot(b.x-player.x,b.z-player.z),index:i})})
+      return candidates.filter(c=>c.distance<(c.kind==='bus'?7:5)).sort((a,b)=>a.distance-b.distance)[0] ?? null
+    }
+    const interval=setInterval(()=>{const next=closest();setNearby(old=>old?.name===next?.name?old:next);if(!next && !player.busRide)setMessage('')},200)
+    const key=(e:KeyboardEvent)=>{
+      if(e.key.toLowerCase()!=='f'||e.repeat||e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement||player.busRide)return
+      const next=closest(); if(!next)return
+      if(next.kind==='bus' && next.index!==undefined) {player.busRide={index:next.index,until:performance.now()+10000};player.rides++}
+      setMessage(next.line)
+      window.dispatchEvent(new CustomEvent('campus-action',{detail:{kind:next.kind,allowed:!player.travelOrigin}}))
     }
     window.addEventListener('keydown',key)
-    return () => {clearInterval(interval);window.removeEventListener('keydown',key)}
+    return()=>{clearInterval(interval);window.removeEventListener('keydown',key)}
   },[mode])
   return (
     <>
@@ -150,8 +171,10 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
       <GoTo campus={campus} />
       <button className="edit-character" onClick={onEdit}>✦ Edit character</button>
       <button className="mode-return" onClick={onModes}>← Choose mode</button>
+      <button className="map-open" onClick={()=>setMapOpen(true)}>▧ Campus map</button>
+      {mapOpen && <CampusMap campus={campus} onClose={()=>setMapOpen(false)}/>}
       {mode === 'connect' && <div className="mode-hint">KSU Connect · same-browser tabs demo</div>}
-      {mode === 'life' && student && <div className="conversation"><b>{student.name}</b><span>{message || 'Press F to say hello'}</span>{message && <button onClick={() => setMessage('')}>Close</button>}</div>}
+      {mode === 'life' && nearby && <div className="conversation"><b>{nearby.name}</b><span>{message || (nearby.kind === 'bus' ? 'Press F to board for a short ride' : 'Press F to say hello')}</span>{message && <button onClick={() => setMessage('')}>Close</button>}</div>}
       {near && (
         <div className="nearcard" key={near.name}>
           <div className="kicker">You're at</div>
