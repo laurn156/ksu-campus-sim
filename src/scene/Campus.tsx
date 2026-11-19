@@ -925,9 +925,9 @@ function civilBuildingsParts(b: Building) {
   const roof=b.code==='O'?new THREE.MeshStandardMaterial({map:facade('metal'),color:'#d5d8d3',roughness:.9,side:THREE.DoubleSide}):material(b.code==='L1'?'#8c928b':'#e4e5dc')
   const brick=new THREE.MeshStandardMaterial({map:facade('textilebrick'),roughness:.95,side:THREE.DoubleSide})
   const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);parts.push({geo:g,mat:m})}
-  const lowerHeight=b.code==='L'?3.05:b.code==='L1'?1.2:.35
+  const lowerHeight=b.code==='L'?3.05:b.code==='L1'?1.2:2.15
   const redBrick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.95,side:THREE.DoubleSide})
-  parts.push({geo:wallsGeometry(b,0,lowerHeight),mat:b.code==='L'?redBrick:b.code==='L1'?brick:concrete})
+  parts.push({geo:wallsGeometry(b,0,lowerHeight),mat:b.code==='L'||b.code==='O'?redBrick:brick})
   parts.push({geo:wallsGeometry(b,lowerHeight,b.h),mat:siding},{geo:flatGeometry(b.poly,b.h+.03,4),mat:roof})
   let area=0;for(let i=0;i<b.poly.length;i++){const a=b.poly[i],c=b.poly[(i+1)%b.poly.length];area+=a[0]*c[1]-c[0]*a[1]}
   const edge=(index:number)=>{
@@ -936,7 +936,8 @@ function civilBuildingsParts(b: Building) {
     const panel=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>{
       const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z*sign);g.rotateY(angle);g.translate(mx,0,mz);parts.push({geo:g,mat})
     }
-    return {length,panel}
+    const place=(g:THREE.BufferGeometry,x:number,y:number,z:number)=>{g.translate(x,y,z*sign);g.rotateY(angle);g.translate(mx,0,mz);return g}
+    return {length,panel,place}
   }
   // Keep trim and openings attached to the building's mapped edges.
   if(b.code==='L') {
@@ -974,9 +975,31 @@ function civilBuildingsParts(b: Building) {
     rear.panel(1.25,2.2,.16,rear.length*.4,1.1,.12,door)
     // Multiple small ventilators on the broad low roof.
     const [x0,z0,x1,z1]=bbox(b.poly)
-    for(let x=x0+3;x<x1-2;x+=7)for(let z=z0+3;z<z1-2;z+=7)if(pointInPoly(x,z,b.poly)){
-      box(.85,.55,.85,x,b.h+.3,z,frame);box(.95,.1,.95,x,b.h+.62,z,concrete)
+    let vents=0
+    for(let x=x0+3;x<x1-2;x+=9)for(let z=z0+3;z<z1-2;z+=9)if(vents<8&&pointInPoly(x,z,b.poly)){
+      box(.85,.55,.85,x,b.h+.3,z,frame);box(.95,.1,.95,x,b.h+.62,z,concrete);vents++
     }
+    // The end entrance opens toward the front approach as well.
+    const approach=edge(0)
+    approach.panel(2.2,2.55,.16,0,1.28,.12,frame)
+    approach.panel(1.85,2.3,.2,0,1.2,.24,dark)
+    approach.panel(.09,2.3,.24,0,1.2,.36,frame)
+    // Competition concrete canoe displayed on a freestanding steel truss.
+    const canoe=material('#5c4535'),truss=material('#4c5752'),gold=material('#e2bb53')
+    const support=edge(9),u=-11,v=8
+    const hull=new THREE.Shape();hull.moveTo(-5.7,.58);hull.quadraticCurveTo(-4.5,-.35,-3.2,-.35);hull.lineTo(3.2,-.35);hull.quadraticCurveTo(4.5,-.35,5.7,.58);hull.closePath()
+    const hullGeo=new THREE.ExtrudeGeometry(hull,{depth:.65,bevelEnabled:false});parts.push({geo:support.place(hullGeo,u,1.45,v),mat:canoe})
+    for(const z of [v-.45,v+1.1]) {
+      support.panel(11.8,.08,.08,u,.8,z,truss);support.panel(9.5,.08,.08,u,2.85,z,truss)
+      for(const x of [-4.4,-2.2,0,2.2,4.4])support.panel(.08,2.1,.08,u+x,1.83,z,truss)
+    }
+    for(const x of [-4,4])support.panel(.15,.8,.15,u+x,.4,v+.3,truss)
+    const banner=document.createElement('canvas');banner.width=1024;banner.height=128
+    const bc=banner.getContext('2d')!;bc.fillStyle='#e3c25c';bc.textAlign='center';bc.font='bold 70px serif';bc.fillText('KENNESAW STATE UNIVERSITY',512,88)
+    const bt=new THREE.CanvasTexture(banner);bt.colorSpace=THREE.SRGBColorSpace
+    const textMat=new THREE.MeshStandardMaterial({map:bt,transparent:true,alphaTest:.1,depthWrite:false,side:THREE.DoubleSide})
+    support.panel(7,.42,.025,u,1.45,v+.68,textMat)
+    support.panel(1.8,.06,.08,u,2.92,v+.3,gold)
   } else if(b.code==='O') {
     // The short end faces the service court and has two broad workshop doors.
     const front=edge(0)
@@ -986,9 +1009,22 @@ function civilBuildingsParts(b: Building) {
       for(const y of [.55,1.1,1.65,2.2,2.75])front.panel(3.9,.035,.2,x,y,.22,frame)
     }
     front.panel(1.15,2.2,.15,0,1.1,.13,dark)
-    const side=edge(2);side.panel(1.35,2.25,.15,-side.length*.3,1.13,.12,door)
-    side.panel(2.2,1.05,.12,side.length*.2,2.2,.12,dark)
+    // Continue the brick and ribbed upper cladding around both long elevations.
+    for(const index of [2,4]) {
+      const side=edge(index)
+      side.panel(1.5,2.3,.16,-side.length*.32,1.15,.13,frame)
+      side.panel(1.22,2.1,.18,-side.length*.32,1.15,.24,door)
+      for(const t of [-.12,.1,.32]) {
+        side.panel(2.5,1.3,.14,side.length*t,2.15,.1,frame)
+        side.panel(2.28,1.08,.16,side.length*t,2.15,.2,dark)
+        side.panel(.07,1.08,.2,side.length*t,2.15,.31,frame)
+      }
+    }
   } else {
+    const entry=edge(0)
+    entry.panel(1.5,2.4,.16,0,1.2,.12,frame)
+    entry.panel(1.22,2.15,.2,0,1.15,.24,door)
+    entry.panel(.09,.42,.22,.42,1.2,.36,dark)
     const front=edge(1)
     front.panel(1.4,2.25,.15,-front.length*.22,1.13,.12,door)
     front.panel(2.3,1.2,.14,front.length*.2,2.15,.12,dark)
