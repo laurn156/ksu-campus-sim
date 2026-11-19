@@ -566,18 +566,25 @@ function hornetHubParts(b:Building){
     fn(box,length,plane)
   }
   // The north edge faces the ETC. Each bay is kept clear for future team logos.
-  wall(b.poly[3],b.poly[2],(box,len,plane)=>{
-    const spacing=(len-3.4)/6
+  wall(b.poly[3],b.poly[2],(box,len)=>{
+    const spacing=len/6
     for(let i=0;i<6;i++){
-      const x=-len/2+3.4+spacing*(i+.5),w=spacing-.45
+      const x=-len/2+spacing*(i+.5),w=spacing-.65
       box(w,3.3,.16,x,1.65,.11,garage)
       for(let y=.55;y<3.3;y+=.55)box(w,.045,.05,x,y,.22,trim)
       for(const dx of [-w/2,w/2])box(.1,3.45,.2,x+dx,1.72,.15,metal)
     }
-    const entrance=-len/2+1.65
-    box(2,2.8,.16,entrance,1.4,.14,glass)
-    for(const dx of [-1,0,1])box(.1,2.85,.2,entrance+dx,1.43,.25,trim)
-    box(2,.12,.2,entrance,2.84,.25,trim)
+  })
+  // The long east facade faces the same viewing direction as the ETC entrance.
+  wall(b.poly[2],b.poly[1],(box,len,plane)=>{
+    const entrance=0
+    box(2.2,2.8,.16,entrance,1.4,.14,glass)
+    for(const dx of [-1.1,0,1.1])box(.1,2.85,.2,entrance+dx,1.43,.25,trim)
+    box(2.2,.12,.2,entrance,2.84,.25,trim)
+    for(const x of [-len*.32,-len*.18,len*.3]){
+      box(2.4,1,.16,x,1.85,.14,glass)
+      box(2.5,.09,.2,x,1.32,.25,trim)
+    }
     const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=160
     const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f2f2ed';ctx.font='bold 100px sans-serif';ctx.textAlign='center';ctx.fillText('HORNET HUB',512,112)
     const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace

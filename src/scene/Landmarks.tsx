@@ -544,12 +544,6 @@ function Court({ area }: { area: Area }) {
 
 /** Math-to-library courtyard, laid out against the long Math facade. */
 function MathCourtyard() {
-  const labels = useMemo(() => {
-    const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512
-    const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f7c72e';ctx.fillRect(0,0,512,512)
-    ctx.fillStyle='#18211d';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 160px sans-serif';ctx.fillText('KSU',256,260)
-    const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture
-  },[])
   const groundLabel = useMemo(() => {
     const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512
     const ctx=canvas.getContext('2d')!;ctx.fillStyle='#e6d9c4';ctx.fillRect(0,0,512,512)
@@ -570,7 +564,7 @@ function MathCourtyard() {
       <mesh position={[0,.75,0]}><cylinderGeometry args={[1.1,1.1,.12,20]}/><meshStandardMaterial color="#eee8d8"/></mesh>
       <mesh position={[0,.38,0]}><cylinderGeometry args={[.09,.09,.75,8]}/><meshStandardMaterial color="#60655f"/></mesh>
       <mesh position={[0,1.6,0]}><cylinderGeometry args={[.045,.045,3.2,8]}/><meshStandardMaterial color="#60655f"/></mesh>
-      <mesh position={[0,3.05,0]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[2.2,32]}/><meshBasicMaterial map={labels} side={THREE.DoubleSide}/></mesh>
+      <mesh position={[0,3.36,0]} castShadow><coneGeometry args={[2.2,.62,12,1,true]}/><meshStandardMaterial color="#f7c72e" roughness={.85} side={THREE.DoubleSide}/></mesh>
       {[0,1,2,3].map((i)=><group key={i} position={[Math.cos(i*Math.PI/2)*1.65,0,Math.sin(i*Math.PI/2)*1.65]}>
         <mesh position={[0,.45,0]}><boxGeometry args={[.65,.1,.65]}/><meshStandardMaterial color="#7b8077"/></mesh>
         <mesh position={[0,.22,0]}><cylinderGeometry args={[.06,.06,.44,6]}/><meshStandardMaterial color="#60655f"/></mesh>
