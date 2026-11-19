@@ -102,8 +102,8 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
       const dx = e.clientX - drag.current.x, dy = e.clientY - drag.current.y
       if (drag.current.pan) {
         const scale = dist.current * 0.0018
-        pan.current.x += (-Math.cos(player.yaw)*dx + Math.sin(player.yaw)*dy) * scale
-        pan.current.y += (Math.sin(player.yaw)*dx + Math.cos(player.yaw)*dy) * scale
+        pan.current.x += (-Math.cos(player.yaw)*dx - Math.sin(player.yaw)*dy) * scale
+        pan.current.y += (Math.sin(player.yaw)*dx - Math.cos(player.yaw)*dy) * scale
       } else {
         player.yaw -= dx * 0.008
         player.pitch = THREE.MathUtils.clamp(player.pitch + dy * 0.005, 0.3, 1.45)
