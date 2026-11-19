@@ -65,7 +65,8 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   const cut = useRef(0)
   const snap = useRef(false)
   const ray = useMemo(() => new THREE.Raycaster(), [])
-  const drag = useRef<{ x: number; y: number } | null>(null)
+  const drag = useRef<{ x: number; y: number; pan: boolean } | null>(null)
+  const pan = useRef(new THREE.Vector2())
   const { camera, gl } = useThree()
 
   useEffect(() => {
@@ -91,12 +92,19 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     const wheel = (e: WheelEvent) => (dist.current = THREE.MathUtils.clamp(dist.current * (1 + Math.sign(e.deltaY) * 0.1), 8, 140))
     const pdown = (e: PointerEvent) => {
       // left or right drag looks around (no click-to-walk)
-      if (e.button === 0 || e.button === 2) drag.current = { x: e.clientX, y: e.clientY }
+      if (e.button <= 2) { e.preventDefault(); drag.current = { x: e.clientX, y: e.clientY, pan: e.button === 1 || e.shiftKey } }
     }
     const pmove = (e: PointerEvent) => {
       if (!drag.current) return
-      player.yaw -= (e.clientX - drag.current.x) * 0.008
-      player.pitch = THREE.MathUtils.clamp(player.pitch + (e.clientY - drag.current.y) * 0.005, 0.3, 1.45)
+      const dx = e.clientX - drag.current.x, dy = e.clientY - drag.current.y
+      if (drag.current.pan) {
+        const scale = dist.current * 0.0028
+        pan.current.x += (-Math.cos(player.yaw)*dx + Math.sin(player.yaw)*dy) * scale
+        pan.current.y += (Math.sin(player.yaw)*dx + Math.cos(player.yaw)*dy) * scale
+      } else {
+        player.yaw -= dx * 0.008
+        player.pitch = THREE.MathUtils.clamp(player.pitch + dy * 0.005, 0.3, 1.45)
+      }
       drag.current.x = e.clientX
       drag.current.y = e.clientY
     }
@@ -125,6 +133,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     const k = keys.current
     if (player.tp) {
       // teleport (from the "Go to" menu): jump there and snap the camera
+      pan.current.set(0, 0)
       player.x = player.tp.x
       player.z = player.tp.z
       player.yaw = player.tp.yaw
@@ -144,6 +153,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     if (k.has('a') || k.has('arrowleft')) dir.sub(right)
     const moving = dir.lengthSq() > 0.0001
     if (moving) {
+      pan.current.set(0, 0)
       dir.normalize()
       const speed = k.has('shift') ? RUN : WALK
       const nx = player.x + dir.x * speed * dt
@@ -168,15 +178,15 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     // Sims-style camera: high three-quarter view that follows smoothly
     const pitch = player.pitch
     const want = new THREE.Vector3(
-      player.x + Math.sin(player.yaw) * Math.cos(pitch) * dist.current,
+      player.x + pan.current.x + Math.sin(player.yaw) * Math.cos(pitch) * dist.current,
       Math.sin(pitch) * dist.current,
-      player.z + Math.cos(player.yaw) * Math.cos(pitch) * dist.current,
+      player.z + pan.current.y + Math.cos(player.yaw) * Math.cos(pitch) * dist.current,
     )
     if (snap.current) {
       camera.position.copy(want)
       snap.current = false
     } else camera.position.lerp(want, Math.min(1, dt * 6))
-    camera.lookAt(player.x, 1.2, player.z)
+    camera.lookAt(player.x + pan.current.x, 1.2, player.z + pan.current.y)
     // cutaway: buildings between the camera and the player fade out
     cut.current += dt
     if (cut.current > 0.08) {

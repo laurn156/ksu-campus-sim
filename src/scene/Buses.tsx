@@ -3,6 +3,8 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { Campus, Pt } from '../campus'
 
+export const busPositions: { x: number; z: number }[] = []
+
 // An illustrative campus shuttle, not a live route or a timetable.
 function busTexture() {
   const c = document.createElement('canvas'); c.width = 1024; c.height = 256
@@ -50,6 +52,7 @@ function Shuttle({ path, offset, texture }: { path: Pt[]; offset: number; textur
     const dir = forward ? 1 : -1
     ref.current.position.set(a[0]+(b[0]-a[0])*t + dz*1.6*dir, 0, a[1]+(b[1]-a[1])*t - dx*1.6*dir)
     ref.current.rotation.y = Math.atan2(dx*dir, dz*dir)
+    busPositions[Math.round(offset * 4)] = { x: ref.current.position.x, z: ref.current.position.z }
   })
   return <group ref={ref}>
     <mesh position={[0,1.8,0]} castShadow><boxGeometry args={[2.5,2.8,10.5]} /><meshStandardMaterial color="#171919" roughness={0.55} /></mesh>

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { distToSeg, isCampusBuilding, type Campus } from '../campus'
+import { Collider, distToSeg, isCampusBuilding, type Campus } from '../campus'
 import { approach, player } from '../scene/Player'
 import { landmarkSpots } from '../scene/Landmarks'
+import { scrappy } from '../scene/Scrappy'
+import { busPositions } from '../scene/Buses'
 
 /** Closest campus building to the player (within ~30 m of its walls). */
 function useNearby(campus: Campus) {
@@ -85,7 +87,19 @@ function GoTo({ campus }: { campus: Campus }) {
       .map((b) => ({ label: `${b.code ? b.code + ' · ' : ''}${b.short || b.name}`, go: () => approach(campus, b.poly) }))
       .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))
     const lm = landmarkSpots(campus).map((l) => ({ label: `★ ${l.name}`, go: () => ({ x: l.at[0] + 6, z: l.at[1] + 6, yaw: Math.PI / 4 }) }))
-    return [...lm, ...bs]
+    const collider = new Collider(campus.buildings)
+    const near = (x: number, z: number) => {
+      for (let r = 6; r <= 25; r += 3) for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+        const px = x + Math.sin(a) * r, pz = z + Math.cos(a) * r
+        if (!collider.blocked(px, pz, 1)) return { x: px, z: pz, yaw: a }
+      }
+      return { x, z: z + 12, yaw: 0 }
+    }
+    const moving = [
+      { label: '★ Big Owl Bus', go: () => { const b = busPositions.filter(Boolean).reduce((best, p) => Math.hypot(p.x-player.x,p.z-player.z) < Math.hypot(best.x-player.x,best.z-player.z) ? p : best, busPositions.find(Boolean) ?? { x: -90, z: -311 }); return near(b.x, b.z) } },
+      { label: '★ Scrappy the Owl', go: () => near(scrappy.x, scrappy.z) },
+    ]
+    return [...moving, ...lm, ...bs]
   }, [campus])
   return (
     <select
@@ -125,7 +139,7 @@ export function Hud({ campus }: { campus: Campus }) {
       )}
       <Minimap campus={campus} />
       <div className="controls">
-        <b>WASD</b> walk · <b>Shift</b> run · <b>drag</b> look around · <b>Q/E</b> turn · <b>wheel</b> zoom · <b>M</b> mute
+        <b>WASD</b> walk · <b>Shift</b> run · <b>drag</b> look · <b>middle drag / Shift+drag</b> pan · <b>WASD</b> recenter · <b>Q/E</b> turn · <b>wheel</b> zoom · <b>M</b> mute
       </div>
       <div className="osm">{campus.attribution} · Aerial imagery: USDA NAIP (public domain)</div>
     </>

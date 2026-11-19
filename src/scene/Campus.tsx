@@ -6,6 +6,7 @@ import { facade, parkingTexture, roofTexture, stepsTexture } from './textures'
 import { lookFor } from './styles'
 import { Props } from './Props'
 import { Buses } from './Buses'
+import { Scrappy } from './Scrappy'
 import { Landmarks } from './Landmarks'
 
 let aerialTex: THREE.Texture | null = null
@@ -483,6 +484,7 @@ export function CampusScene({ campus, ground = 'drawn' }: { campus: Campus; grou
       <Landmarks campus={campus} />
       <Props campus={campus} cars={ground !== 'photo'} roofUnits />
       <Buses campus={campus} />
+      <Scrappy campus={campus} />
       <Trees campus={campus} />
     </group>
   )
