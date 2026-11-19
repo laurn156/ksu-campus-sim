@@ -1027,8 +1027,7 @@ function academicDetails(){
   const brick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.9,side:THREE.DoubleSide})
   const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);out.push({geo:g,mat:m})}
   const bar=(a:THREE.Vector3,c:THREE.Vector3)=>{const v=c.clone().sub(a),g=new THREE.CylinderGeometry(.065,.065,v.length(),8);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize()));g.translate((a.x+c.x)/2,(a.y+c.y)/2,(a.z+c.z)/2);out.push({geo:g,mat:metal})}
-  // East-facing long facade shown in the reference, just beyond its corner.
-  // The wall here lies at x=-140.3; all entrance geometry is outside that face.
+  // Build the entrance in local coordinates, then place it on the front-facing west facade.
   const frontX=-140.12,doorZ=-16.5
   box(.16,3.2,6.7,frontX,1.6,doorZ,glass)
   for(const dz of [-3.35,-2.25,-1.12,0,1.12,2.25,3.35])box(.24,3.25,.09,frontX+.16,1.62,doorZ+dz,stone)
@@ -1057,6 +1056,13 @@ function academicDetails(){
     box(2.5,.08,3,-135.8,.06,z,soil)
     for(const dx of [-.6,.6])for(const dz of [-.7,.7]){const g=new THREE.IcosahedronGeometry(.3,1);g.scale(1,.6,1);g.translate(-135.8+dx,.25,z+dz);out.push({geo:g,mat:plant})}
   }
+  // Reflect the full entrance to the opposite face of the building. Flip the
+  // lettering UVs as well so it reads normally when viewed from the front.
+  for(const textPlane of [sign,label]){
+    const uv=textPlane.getAttribute('uv')
+    for(let i=0;i<uv.count;i++)uv.setX(i,1-uv.getX(i))
+  }
+  for(const part of out){part.geo.scale(-1,1,1);part.geo.translate(-304.8,0,0)}
   return out
 }
 
