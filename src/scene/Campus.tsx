@@ -1046,6 +1046,14 @@ function innovationCenterParts(b:Building) {
   middle.box(mw,7.1,.16,0,4.3,.1,glass)
   for(let x=-mw/2+.1;x<=mw/2;x+=1.5)middle.box(.1,7.2,.25,x,4.3,.25,dark)
   for(const y of [.75,4.25,7.8])middle.box(mw,.1,.26,0,y,.25,frame)
+  // Glazed bays break up the long brick elevation facing the adjacent walk.
+  const longSide=edge(8)
+  for(const center of [-longSide.length*.29,0,longSide.length*.29]){
+    const width=longSide.length*.22
+    longSide.box(width,7.1,.16,center,4.3,.1,glass)
+    for(let x=center-width/2;x<=center+width/2;x+=1.5)longSide.box(.1,7.2,.25,x,4.3,.25,dark)
+    for(const y of [.75,4.25,7.8])longSide.box(width,.1,.26,center,y,.25,frame)
+  }
   // Narrow vertically proportioned windows in the brick side and rear wings.
   for(const i of [13,12,11]){
     const e=edge(i)
