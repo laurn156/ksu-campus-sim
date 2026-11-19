@@ -182,14 +182,20 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
   },
   // Howell and Norton: pale concrete bays, narrow horizontal windows, and brick piers.
   residencehall: (g) => {
-    g.fillStyle='#e3e3dc';g.fillRect(0,0,W,H)
-    g.fillStyle='#c1907b';g.fillRect(0,0,11,H)
-    g.fillStyle='#f1f0e9';g.fillRect(11,0,8,H);g.fillRect(W-8,0,8,H)
-    g.fillStyle='#b9c8c4';g.fillRect(22,32,98,27)
-    g.fillStyle='#506968';g.fillRect(24,34,94,18)
-    g.fillStyle='rgba(239,246,236,.38)';g.fillRect(24,34,94,7)
-    g.fillStyle='#d9dfd9';for(let x=43;x<118;x+=20)g.fillRect(x,33,3,22)
-    g.fillStyle='#cecec5';g.fillRect(19,63,W-27,5);g.fillRect(19,H-5,W-27,5)
+    g.fillStyle='#e5ddc9';g.fillRect(0,0,W,H)
+    g.fillStyle='#a8755e';g.fillRect(0,0,11,H)
+    g.fillStyle='#f1eddf';g.fillRect(11,0,9,H);g.fillRect(W-8,0,8,H)
+    g.fillStyle='#d4c8a9';g.fillRect(20,22,100,75)
+    g.fillStyle='#546b68';g.fillRect(23,25,94,60)
+    g.fillStyle='rgba(212,233,220,.24)';g.fillRect(23,25,94,24)
+    g.fillStyle='#cdd6ce';for(let x=43;x<117;x+=20)g.fillRect(x,25,3,60)
+    g.fillRect(23,54,94,3)
+    g.fillStyle='#f1eddf';g.fillRect(19,88,W-27,8);g.fillRect(19,H-5,W-27,5)
+  },
+  residenceblocks: (g) => {
+    g.fillStyle='#dbc798';g.fillRect(0,0,W,H)
+    g.fillStyle='#a3926b';for(let y=2;y<H;y+=25)for(let x=(y/25)%2?5:0;x<W;x+=13)g.fillRect(x+2,y+2,7,19)
+    g.fillStyle='rgba(255,255,240,.32)';for(let x=0;x<W;x+=13)g.fillRect(x,0,2,H)
   },
   // Small pale square ceramic tiles on the Textile Center's curved and flat walls.
   textiletile: (g) => {

@@ -923,7 +923,9 @@ function residenceHallParts(b:Building) {
   const facadeMat=new THREE.MeshStandardMaterial({map:facade('residencehall'),roughness:.9,side:THREE.DoubleSide})
   const glass=new THREE.MeshStandardMaterial({map:facade('etcglass'),roughness:.4,side:THREE.DoubleSide})
   const screen=new THREE.MeshStandardMaterial({map:facade('mathscreen'),roughness:.9,side:THREE.DoubleSide})
-  const white=solid('#e8e8df'),brick=solid('#c48f79'),paving=solid('#d5d1c4'),metal=solid('#a8b3ac')
+  const blocks=new THREE.MeshStandardMaterial({map:facade('residenceblocks'),roughness:.9,side:THREE.DoubleSide})
+  const redBrick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.95,side:THREE.DoubleSide})
+  const white=solid('#eee7d4'),brick=solid('#af795f'),paving=solid('#d5d1c4'),metal=solid('#a8b3ac')
   const roof=new THREE.MeshStandardMaterial({map:roofTexture(),color:'#f1f0ea',roughness:.95,side:THREE.DoubleSide})
   parts.push({geo:wallsGeometry(b),mat:facadeMat},{geo:flatGeometry(b.poly,b.h+.02,8),mat:roof})
   let area=0;for(let i=0;i<b.poly.length;i++){const a=b.poly[i],c=b.poly[(i+1)%b.poly.length];area+=a[0]*c[1]-c[0]*a[1]}
@@ -933,7 +935,14 @@ function residenceHallParts(b:Building) {
     const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{
       const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z*sign);geo.rotateY(angle);geo.translate(mx,0,mz);parts.push({geo,mat:m})
     }
-    return {length,box}
+    const label=(text:string,x:number,y:number,z:number,w:number,h:number,color='#f7f4e9')=>{
+      const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256
+      const ctx=canvas.getContext('2d')!;ctx.fillStyle=color;ctx.font='bold 125px sans-serif';ctx.textAlign='center';ctx.fillText(text,512,165,990)
+      const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
+      const geo=new THREE.PlaneGeometry(w,h);if(sign<0)geo.rotateY(Math.PI);geo.translate(x,y,z*sign);geo.rotateY(angle);geo.translate(mx,0,mz)
+      parts.push({geo,mat:new THREE.MeshStandardMaterial({map:tex,transparent:true,alphaTest:.1,depthWrite:false,side:THREE.DoubleSide})})
+    }
+    return {length,box,label}
   }
   const entry=(e:ReturnType<typeof edge>,x:number)=>{
     e.box(3.7,3.1,.2,x,1.55,.1,white);e.box(3.35,2.85,.22,x,1.43,.24,glass)
@@ -942,21 +951,47 @@ function residenceHallParts(b:Building) {
     e.box(4.25,.2,1.5,x,3.15,.75,white)
   }
   if(b.code==='R2') {
-    // Norton faces the central lawn: low entrance pavilions and a central brick marker.
-    const front=edge(2)
-    for(const x of [-front.length*.36,0,front.length*.36]) {
-      front.box(5.1,3.3,2.3,x,1.65,1.12,white)
-      front.box(4.35,2.7,.2,x,1.35,2.32,glass)
-      for(const dx of [-2.1,-1.05,0,1.05,2.1])front.box(.09,2.7,.23,x+dx,1.35,2.44,white)
-      front.box(5.35,.18,2.5,x,3.35,1.15,white)
-    }
-    front.box(2.7,11.7,.12,front.length*.35,9.2,.1,brick)
+    // The lawn-facing entrance has cream breeze-block screens and a brick name panel.
+    const front=edge(2),center=front.length*.13
+    front.box(4.2,11.8,.14,center,9.25,.08,redBrick)
+    front.label('NORTON HALL',center,9.0,.25,3.7,.65)
+    front.box(13,3.35,2.1,center,1.68,1.02,white)
+    for(const x of [center-4.25,center+4.25])front.box(3.45,3.1,.15,x,1.55,2.13,blocks)
+    front.box(3.8,3.0,.16,center,1.5,2.14,glass)
+    for(const x of [-1.85,-.93,0,.93,1.85])front.box(.1,3.05,.22,center+x,1.53,2.26,white)
+    for(const y of [.12,1.5,2.95])front.box(3.8,.1,.22,center,y,2.26,white)
+    front.box(13.4,.22,2.5,center,3.42,1.12,white)
+    front.box(1.9,.48,.12,center,2.45,2.31,white)
+    front.label('POLICE',center,2.45,2.4,1.6,.3,'#26332f')
+    for(const x of [-front.length*.36,front.length*.36]) if(Math.abs(x-center)>8)entry(front,x)
     const rear=edge(11)
     rear.box(7.2,b.h-.6,.14,rear.length*.33,b.h/2,.1,screen)
     entry(rear,rear.length*.3)
   } else {
     // Howell's courtyard elevations have the same pale piers and narrow window bands.
     for(const i of [0,2,4]){const e=edge(i);e.box(e.length,.16,.25,0,b.h-.1,.12,white)}
+    // Courtyard entry matches the cream screened porch and central Howell Hall lettering.
+    const courtyard=edge(2)
+    courtyard.box(12.5,3.3,1.9,0,1.65,.95,white)
+    for(const x of [-4.2,4.2])courtyard.box(3.6,3.05,.15,x,1.53,1.94,blocks)
+    courtyard.box(3.5,2.85,.18,0,1.43,1.95,glass)
+    for(const x of [-1.7,-.85,0,.85,1.7])courtyard.box(.1,2.85,.22,x,1.43,2.07,white)
+    courtyard.box(12.8,.22,2.2,0,3.4,1.02,white)
+    courtyard.box(4.4,.9,.16,0,7.75,.12,white)
+    courtyard.label('HOWELL HALL',0,7.78,.25,3.9,.5,'#202d29')
+    for(let i=0;i<4;i++)courtyard.box(4.8,.14*(i+1),.55,0,.07*(i+1),4-i*.55,paving)
+    // Brick end wall with narrow stacked windows and the 634 address.
+    const end=edge(5)
+    end.box(end.length,b.h,.12,0,b.h/2,.08,redBrick)
+    end.box(2.15,b.h-.8,.16,0,b.h/2,.18,white)
+    for(const y of [5.1,8.8,12.5]){
+      end.box(1.8,2.25,.18,0,y,.3,glass)
+      end.box(2.1,.13,.7,0,y+1.2,.55,white)
+    }
+    end.box(1.55,2.45,.2,0,1.23,.32,glass)
+    end.label('HOWELL RESIDENCE HALL',-2.1,3.7,.28,3.5,.45)
+    end.box(1.3,.65,.12,-2.1,2.95,.25,solid('#eecb35'))
+    end.label('634',-2.1,2.95,.35,1.05,.48,'#18221d')
     // A full-height glazed stair tower faces the parking-side entry.
     const tower=edge(12)
     tower.box(tower.length,b.h,.18,0,b.h/2,.1,white)
