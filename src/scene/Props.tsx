@@ -42,10 +42,10 @@ export function Props({ campus, cars: showCars = true, roofUnits = true }: { cam
   const built = useMemo(() => {
     seed = 777
     // --- parapets + rooftop AC units
-    const parapet = mergeGeometries(campus.buildings.filter((b) => b.h > 4 && b.kind !== 'greenhouse' && b.id !== '1504299650' && b.id !== '589314482').map(parapetGeometry))
+    const parapet = mergeGeometries(campus.buildings.filter((b) => b.h > 4 && b.kind !== 'greenhouse' && b.id !== '1504299650' && b.id !== '589314482' && b.code !== 'H').map(parapetGeometry))
     const acSpots: [number, number, number, number][] = []
     for (const b of campus.buildings) {
-      if (b.h < 6 || b.kind === 'greenhouse' || b.id === '1504299650' || b.id === '589314482') continue
+      if (b.h < 6 || b.kind === 'greenhouse' || b.id === '1504299650' || b.id === '589314482' || b.code === 'H') continue
       const [x0, z0, x1, z1] = bbox(b.poly)
       const n = Math.min(6, Math.floor(((x1 - x0) * (z1 - z0)) / 500) + 1)
       for (let k = 0, tries = 0; k < n && tries < 40; tries++) {

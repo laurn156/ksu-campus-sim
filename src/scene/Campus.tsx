@@ -1020,7 +1020,7 @@ function atriumDetails(b:Building){
 }
 
 /** Academic Building entrance: brick facade, glazed doors and a light truss canopy. */
-function academicDetails(){
+function academicDetails(b:Building){
   const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
   const material=(color:string,roughness=.8)=>new THREE.MeshStandardMaterial({color,roughness,side:THREE.DoubleSide})
   const stone=material('#d9dbd1'),glass=material('#506a66',.32),metal=material('#d8ddd5',.45),soil=material('#826c59'),plant=material('#789354')
@@ -1080,12 +1080,34 @@ function academicDetails(){
     box(.18,1.4,1.25,-139.98,y,z,glass)
     box(.22,1.45,.07,-139.86,y,z,stone)
   }
+  // Continue the sparse-window brick design around the shorter angled end.
+  for(let i=5;i<=13;i++){
+    const a=b.poly[i],c=b.poly[i+1],len=Math.hypot(c[0]-a[0],c[1]-a[1]);if(len<3)continue
+    const angle=Math.atan2(-(c[1]-a[1]),c[0]-a[0])
+    const wall=wallsGeometry({...b,poly:[a,c]},0,7.6)
+    wall.translate(Math.sin(angle)*.1,0,Math.cos(angle)*.1);out.push({geo:wall,mat:brick})
+    if(i===10)continue // leave the UITS door and its sign clear
+    for(const y of [1.8,5.5]){
+      const panel=new THREE.BoxGeometry(Math.min(1.1,len*.35),1.35,.13)
+      panel.rotateY(angle);panel.translate((a[0]+c[0])/2+Math.sin(angle)*.2,y,(a[1]+c[1])/2+Math.cos(angle)*.2);out.push({geo:panel,mat:glass})
+    }
+  }
+  // A brick upper section projects beyond the front wall, supported by columns.
+  // Its underside is open at ground level so the approach remains passable.
+  box(2.8,1.35,22,-164.7,6.92,-33.5,brick)
+  box(2.95,.17,22.2,-164.7,7.63,-33.5,stone)
+  for(const z of [-42.5,-32,-22.8])box(.38,6.2,.38,-165.78,3.1,z,stone)
   // A short paved approach connects to the small door around the rear corner.
   box(7,.1,3,-131.9,.07,-49.5,stone)
   box(3,.1,9,-128.9,.07,-53.5,stone)
-  box(.18,2.75,2.2,-134.88,1.38,-49.5,glass)
-  for(const dz of [-1.1,0,1.1])box(.22,2.8,.08,-134.74,1.4,-49.5+dz,stone)
-  box(.22,.1,2.3,-134.74,2.8,-49.5,stone)
+  box(.18,2.75,2.2,-135.15,1.38,-49.5,glass)
+  for(const dz of [-1.1,0,1.1])box(.22,2.8,.08,-135.03,1.4,-49.5+dz,stone)
+  box(.22,.1,2.3,-135.03,2.8,-49.5,stone)
+  const uits=document.createElement('canvas');uits.width=512;uits.height=160
+  const uc=uits.getContext('2d')!;uc.fillStyle='#9a5d49';uc.fillRect(0,0,512,160);uc.fillStyle='#f5f1e8';uc.textAlign='center';uc.font='bold 112px sans-serif';uc.fillText('UITS',256,122)
+  const ut=new THREE.CanvasTexture(uits);ut.colorSpace=THREE.SRGBColorSpace
+  const us=new THREE.PlaneGeometry(2.4,.75);us.rotateY(Math.PI/2);us.translate(-134.98,3.35,-49.5)
+  out.push({geo:us,mat:new THREE.MeshStandardMaterial({map:ut,side:THREE.DoubleSide})})
   return out
 }
 
@@ -1122,6 +1144,27 @@ function Buildings({ campus }: { campus: Campus }) {
         const roof = new THREE.MeshStandardMaterial({ map: roofTex, roughness: .9, side: THREE.DoubleSide })
         return { b, parts: [{geo:wallsGeometry(b),mat:glazing},{geo:flatGeometry(b.poly,b.h+.02,8),mat:roof},...scienceAnnexDetails()], flat: true }
       }
+      if (b.code === 'H') {
+        // The southern wing is lower than the main block. Split the mapped
+        // footprint at the transition so both roofs and walls have real heights.
+        const clip=(poly:Pt[],low:boolean):Pt[]=>{
+          const result:Pt[]=[];const cut=-22
+          for(let i=0;i<poly.length;i++){
+            const a=poly[i],c=poly[(i+1)%poly.length],aIn=low?a[1]<=cut:a[1]>=cut,cIn=low?c[1]<=cut:c[1]>=cut
+            if(aIn)result.push(a)
+            if(aIn!==cIn){const t=(cut-a[1])/(c[1]-a[1]);result.push([a[0]+(c[0]-a[0])*t,cut])}
+          }
+          return result
+        }
+        const lower=clip(b.poly,true),upper=clip(b.poly,false)
+        const highBuilding={...b,poly:upper,h:11.4},lowBuilding={...b,poly:lower,h:7.6}
+        const roof=new THREE.MeshStandardMaterial({map:roofTex,roughness:.95,side:THREE.DoubleSide})
+        return { b, parts: [
+          {geo:wallsGeometry(highBuilding),mat:getWall('academicbrick')},{geo:flatGeometry(upper,11.42,8),mat:roof},
+          {geo:wallsGeometry(lowBuilding),mat:getWall('librarybrick')},{geo:flatGeometry(lower,7.62,8),mat:roof},
+          ...academicDetails(b),
+        ], flat: true }
+      }
       if (b.id === '1504299650') {
         b.name = 'Hornet Hub'; b.short = 'Hornet Hub'; b.h = 5
         return { b, parts: hornetHubParts(b), flat: false }
@@ -1151,7 +1194,6 @@ function Buildings({ campus }: { campus: Campus }) {
       if (b.code === 'C') parts.push(...libraryDetails(b))
       if (b.code === 'E') parts.push(...crawfordDetails(b))
       if (b.code === 'G') parts.push(...engineeringLabDetails(b))
-      if (b.code === 'H') parts.push(...academicDetails())
       if (b.code === 'J') parts.push(...atriumDetails(b))
       if (b.code === 'I1') parts.push(...matchingLabElevation(b))
       if (b.code === 'I2') parts.push(...designTwoDetails(b))
