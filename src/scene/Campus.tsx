@@ -752,10 +752,31 @@ function engineeringLabDetails(b:Building){
     box(len,.2,.3,0,3.8,.3,pale)
   })
   // Enclosed glazed connector bridges the gap to the adjacent Science Lab Annex.
-  const connector=new THREE.BoxGeometry(7.5,5.8,10.8);connector.translate(-252.3,2.9,-39.3)
+  const connector=new THREE.BoxGeometry(7.5,3.8,10.8);connector.translate(-252.3,5.1,-39.3)
   out.push({geo:connector,mat:glass})
-  for(const x of [-256,-252.3,-248.6]){const post=new THREE.BoxGeometry(.16,5.8,.18);post.translate(x,2.9,-44.65);out.push({geo:post,mat:pale})}
-  const roof=new THREE.BoxGeometry(8,.25,11);roof.translate(-252.3,5.9,-39.3);out.push({geo:roof,mat:pale})
+  for(const x of [-256,-252.3,-248.6]){const post=new THREE.BoxGeometry(.16,3.8,.18);post.translate(x,5.1,-44.65);out.push({geo:post,mat:pale})}
+  const roof=new THREE.BoxGeometry(8,.25,11);roof.translate(-252.3,7.1,-39.3);out.push({geo:roof,mat:pale})
+  return out
+}
+
+/** The neighboring Design 1 block repeats the Engineering Lab rear elevation. */
+function matchingLabElevation(b:Building){
+  const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const pale=new THREE.MeshStandardMaterial({color:'#e0e1d8',roughness:.75}),glass=new THREE.MeshStandardMaterial({color:'#557573',roughness:.35}),brick=new THREE.MeshStandardMaterial({color:'#a57864',roughness:.8})
+  for(let i=0;i<b.poly.length;i++){
+    const a=b.poly[i],c=b.poly[(i+1)%b.poly.length],len=Math.hypot(c[0]-a[0],c[1]-a[1]);if(len<40)continue
+    const angle=Math.atan2(-(c[1]-a[1]),c[0]-a[0]),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    // Determine which side faces away from the building centroid.
+    const center=b.poly.reduce((v,p)=>[v[0]+p[0]/b.poly.length,v[1]+p[1]/b.poly.length],[0,0])
+    const side=((mx-center[0])*Math.sin(angle)+(mz-center[1])*Math.cos(angle))>=0?1:-1
+    const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z*side);g.rotateY(angle);g.translate(mx,0,mz);out.push({geo:g,mat:m})}
+    box(len,7.45,.16,0,3.72,.15,pale)
+    for(let x=-len/2+2;x<len/2-1;x+=4.1)for(const y of [1.9,5.65]){
+      box(3.2,1.75,.2,x,y+.25,.26,glass);box(3.2,.55,.2,x,y-1.05,.26,brick)
+      for(const dx of [-1.6,0,1.6])box(.08,1.75,.24,x+dx,y+.25,.38,pale)
+    }
+    box(len,.2,.3,0,3.8,.3,pale)
+  }
   return out
 }
 
@@ -763,8 +784,8 @@ function engineeringLabDetails(b:Building){
 function scienceAnnexDetails(){
   const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
   const pale=new THREE.MeshStandardMaterial({color:'#e1e2da',roughness:.8}),brick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.9})
-  for(const [x,z] of [[-268.3,-55],[-244,-55]]){const g=new THREE.BoxGeometry(2,7.6,.3);g.translate(x,3.8,z);out.push({geo:g,mat:brick})}
-  const band=new THREE.BoxGeometry(12,.28,.35);band.translate(-256,4,-61.1);out.push({geo:band,mat:pale})
+  for(const [x,z] of [[-268.3,-55],[-244,-55]]){const g=new THREE.BoxGeometry(2,4.3,.3);g.translate(x,5.45,z);out.push({geo:g,mat:brick})}
+  const band=new THREE.BoxGeometry(12,.28,.35);band.translate(-256,4.05,-61.1);out.push({geo:band,mat:pale})
   return out
 }
 
@@ -794,7 +815,7 @@ function Buildings({ campus }: { campus: Campus }) {
       if (b.id === '1134398612') {
         const glazing = new THREE.MeshStandardMaterial({ map: facade('mathglass'), roughness: .35, side: THREE.DoubleSide })
         const roof = new THREE.MeshStandardMaterial({ map: roofTex, roughness: .9, side: THREE.DoubleSide })
-        return { b, parts: [{geo:wallsGeometry(b),mat:glazing},{geo:flatGeometry(b.poly,b.h+.02,8),mat:roof},...scienceAnnexDetails()], flat: true }
+        return { b, parts: [{geo:wallsGeometry(b,3.3,b.h),mat:glazing},{geo:flatGeometry(b.poly,3.3,8),mat:roof},{geo:flatGeometry(b.poly,b.h+.02,8),mat:roof},...scienceAnnexDetails()], flat: true }
       }
       if (b.id === '1504299650') {
         b.name = 'Hornet Hub'; b.short = 'Hornet Hub'; b.h = 5
@@ -825,6 +846,7 @@ function Buildings({ campus }: { campus: Campus }) {
       if (b.code === 'C') parts.push(...libraryDetails(b))
       if (b.code === 'E') parts.push(...crawfordDetails(b))
       if (b.code === 'G') parts.push(...engineeringLabDetails(b))
+      if (b.code === 'I1') parts.push(...matchingLabElevation(b))
       if (b.code === 'Q') parts.push(...engineeringCenterDetails(b))
       return { b, parts, flat: look.roof === 'flat' }
     })

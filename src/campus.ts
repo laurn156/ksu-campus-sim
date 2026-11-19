@@ -97,7 +97,8 @@ export function bbox(poly: Pt[]): [number, number, number, number] {
 export class Collider {
   private items: { poly: Pt[]; bb: [number, number, number, number] }[]
   constructor(buildings: Building[]) {
-    this.items = buildings.map((b) => ({ poly: b.poly, bb: bbox(b.poly) }))
+    // The elevated Science Lab Annex leaves its ground level open to pedestrians.
+    this.items = buildings.filter((b) => b.id !== '1134398612').map((b) => ({ poly: b.poly, bb: bbox(b.poly) }))
   }
   blocked(x: number, z: number, r = 0.45): boolean {
     for (const it of this.items) {
