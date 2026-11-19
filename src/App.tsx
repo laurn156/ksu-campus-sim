@@ -8,7 +8,8 @@ import { Player, Sun } from './scene/Player'
 import { Hud } from './ui/Hud'
 import { Entry, ModeSelect, type Mode } from './ui/GameFlow'
 import { CampusStudents, LocalPlayers } from './scene/Community'
-import { CampusDay } from './ui/CampusDay'
+import { useLife } from './life/useLife'
+import { LifeUI } from './life/LifeUI'
 import { Welcome, DEFAULT_PROFILE, type Profile } from './ui/Welcome'
 import './ui/ui.css'
 
@@ -59,13 +60,24 @@ export default function App() {
   if (screen === 'create') return <Welcome screen="create" profile={profile} hasSaved={false} onChange={setProfile} onCreate={()=>{}} onPlay={saveCharacter} onBack={()=>setScreen(username && accounts[username] ? 'modes' : 'entry')}/>
   if (screen === 'modes') return <ModeSelect name={username} onSelect={m=>{setMode(m);setScreen('play')}} onEdit={()=>setScreen('create')} onLogout={()=>setScreen('entry')}/>
   if (!campus) return <div className="loading">Loading campus…</div>
+  if (mode === 'life') return <LifeSession campus={campus} username={username} profile={profile} onEdit={()=>setScreen('create')} onModes={()=>setScreen('modes')} />
   return <>
     <Canvas shadows="percentage" camera={{ position: [0, 40, 40], fov: 45, near: 0.5, far: 3000 }} dpr={[1, 2]}>
       <color attach="background" args={['#cfe3f0']} /><fog attach="fog" args={['#cfe3f0', 180, 900]} />
       <hemisphereLight args={['#e8f3ff', '#8aa86a', 1.1]} /><Sun /><CampusScene campus={campus} /><Labels campus={campus} /><Player campus={campus} look={profile.look} />
-      {mode==='life' ? <CampusStudents campus={campus}/> : <LocalPlayers profile={{...profile,name:profile.name || username}}/>}
+      <LocalPlayers profile={{...profile,name:profile.name || username}}/>
     </Canvas>
     <Hud campus={campus} onEdit={() => setScreen('create')} mode={mode} onModes={()=>setScreen('modes')} />
-    {mode === 'life' && <CampusDay campus={campus} username={username} />}
+  </>
+}
+
+function LifeSession({campus,username,profile,onEdit,onModes}:{campus:Campus;username:string;profile:Profile;onEdit:()=>void;onModes:()=>void}) {
+  const life=useLife(username,profile.name||username)
+  return <>
+    <Canvas shadows="percentage" camera={{position:[0,40,40],fov:45,near:.5,far:3000}} dpr={[1,2]}>
+      <color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/>
+      <hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={profile.look}/><CampusStudents campus={campus} minute={life.state.minute}/>
+    </Canvas>
+    <Hud campus={campus} onEdit={onEdit} mode="life" onModes={onModes}/><LifeUI campus={campus} life={life} playerName={profile.name||username} onEdit={onEdit}/>
   </>
 }

@@ -49,7 +49,7 @@ function makeShortsLogo() {
 
 // Build a walkable network from mapped paths. Connecting nearby endpoints allows
 // the mascot to choose distant destinations without walking through buildings.
-function makePathNetwork(campus: Campus, collider: Collider) {
+export function makePathNetwork(campus: Campus, collider: Collider) {
   const nodes: Pt[] = [], edges: number[][] = []
   const clear = (a: Pt, b: Pt) => {
     const n = Math.ceil(Math.hypot(b[0]-a[0], b[1]-a[1]) / 1.5)

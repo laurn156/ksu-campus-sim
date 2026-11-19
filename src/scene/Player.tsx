@@ -8,7 +8,7 @@ import { occluders } from './Campus'
 import { busPositions } from './Buses'
 
 /** Shared, mutable player state (read by the HUD / minimap without re-rendering React every frame). */
-export const player = { x: 0, z: 0, heading: 0, yaw: 0.6, pitch: 1.0, moving: false, tp: null as null | { x: number; z: number; yaw: number }, travelOrigin: null as null | { x: number; z: number }, view: null as null | { x:number; z:number; yaw:number }, viewChanged: false, busRide: null as null | { index: number; until: number }, rides: 0 }
+export const player = { x: 0, z: 0, heading: 0, yaw: 0.6, pitch: 1.0, moving: false, tp: null as null | { x: number; z: number; yaw: number }, travelOrigin: null as null | { x: number; z: number }, view: null as null | { x:number; z:number; yaw:number }, viewChanged: false, busRide: null as null | { index: number; until: number }, rides: 0, speedMultiplier: 1 }
 
 const WALK = 5 // m/s (a brisk, game-paced walk)
 const RUN = 9.5
@@ -180,7 +180,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     if (moving) {
       pan.current.set(0, 0)
       dir.normalize()
-      const speed = k.has('shift') ? RUN : WALK
+      const speed = (k.has('shift') ? RUN : WALK) * player.speedMultiplier
       const nx = player.x + dir.x * speed * dt
       const nz = player.z + dir.y * speed * dt
       // move, or slide along the wall if blocked

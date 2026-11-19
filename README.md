@@ -50,3 +50,13 @@ python3 scripts/stylize_aerial.py public/aerial.jpg public/ground.jpg
 Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, available under the
 Open Database License (ODbL). Aerial imagery: USDA National Agriculture Imagery Program (NAIP), public domain,
 via the USGS National Map. Not an official Kennesaw State University product.
+
+### Campus Life prototype
+
+Choose Campus Life after signing in with a **demo profile**. Walk up to a named student and press **F** (or click their name nearby) to talk. The phone contains relationships, the clock and schedule, a list of locations, and a journal. Walk to a listed building or bench for nearby activities. Needs, academic and involvement points, relationships, a few conversation memories and social story stages are saved in this browser for each demo username. The clock advances one in-game minute per real second; activities advance it further. These are local demo saves, not accounts or cloud saves.
+
+The named students use scripted schedules and lightweight, rule-based conversations by default. Their multi-day stories, invitations and the rotating events are early prototypes. The recreation action is not a playable minigame, and multiplayer across devices is not implemented. Custom messages have limited local topic recognition when AI is unavailable.
+
+For optional generated dialogue **in local development only**, set `OPENAI_API_KEY` in the server environment and start Vite with `VITE_CAMPUS_DIALOGUE_ENDPOINT=/api/campus-dialogue`. The key remains on the development server; player messages and relevant character context are sent to OpenAI when enabled. API usage may incur charges. `OPENAI_MODEL` can select a model; it defaults to `gpt-4.1-mini`. The local endpoint is not a production backend; a deployment needs its own authenticated server and safeguards. Replies fall back to local rules if the service is unavailable. Game effects are calculated locally rather than accepted from model output.
+
+Run the simulation checks with `node --experimental-strip-types scripts/test-life.mjs` on a Node version that supports type stripping. Also run `npm run build` and `npm run lint`.

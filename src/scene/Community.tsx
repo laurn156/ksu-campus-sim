@@ -7,30 +7,45 @@ import { studentFace, studentVariant, studentJersey } from './studentFace'
 import { Collider, pointInPoly, type Campus } from '../campus'
 import { player, spawnPoint, type AvatarLook } from './Player'
 import type { Profile } from '../ui/Welcome'
+import { STUDENTS, scheduleFor, type StudentProfile, type StudentId } from '../life/students'
+import { makePathNetwork } from './Scrappy'
+import { centroid } from '../campus'
 
-type Student = { name:string; x:number; z:number; color:'purple'|'green'|'orange'; line:string }
-export const community: { students:Student[] } = { students:[] }
-export function CampusStudents({ campus }: {campus:Campus}) {
-  const students = useMemo(() => {
-    const [x,z] = spawnPoint(campus)
-    const collider = new Collider(campus.buildings)
-    const info = [
-      {name:'Maya', color:'purple' as const, line:'Hey! Have you explored the Student Center yet?'},
-      {name:'Jordan', color:'green' as const, line:'Welcome to Marietta! The globe is one of my favorite spots.'},
-      {name:'Alex', color:'orange' as const, line:'I’m heading across campus. See you around!'},
-    ]
-    const pts:Student[] = []
-    for (let r=7; r<40 && pts.length<info.length; r+=4) for (let i=0;i<12 && pts.length<info.length;i++) {
-      const a=i*Math.PI/6, sx=x+Math.sin(a)*r, sz=z+Math.cos(a)*r
-      if (!collider.blocked(sx,sz,1.5) && pts.every(p=>Math.hypot(p.x-sx,p.z-sz)>5)) pts.push({...info[pts.length],x:sx,z:sz})
-    }
-    community.students = pts
-    return pts
-  }, [campus])
-  useEffect(() => () => {community.students=[]},[])
-  return <><AmbientStudents campus={campus}/>{students.map(s => <group key={s.name} position={[s.x,0,s.z]} rotation={[0,Math.PI,0]}><Character color={s.color} headwear="none" face="happy" top="tee" topColor="#f4f0e6" bottom="shorts" shoes="sneakers" scale={1.15}/><Html position={[0,2,0]} center distanceFactor={18}><div className="student-label">{s.name}</div></Html></group>)}</>
+export const community: { students:{id:StudentId;name:string;x:number;z:number;line:string}[] } = { students:[] }
+export function CampusStudents({ campus, minute }: {campus:Campus;minute:number}) {
+  const collider=useMemo(()=>new Collider(campus.buildings),[campus])
+  const network=useMemo(()=>makePathNetwork(campus,collider),[campus,collider])
+  const [x,z]=useMemo(()=>spawnPoint(campus),[campus])
+  useEffect(()=>()=>{community.students=[]},[])
+  return <><AmbientStudents campus={campus}/>{STUDENTS.map((s,i)=><LifeStudent key={s.id} profile={s} campus={campus} minute={minute} index={i} network={network} start={[x,z]}/>)}</>
 }
-
+function LifeStudent({profile,campus,minute,index,network,start}:{profile:StudentProfile;campus:Campus;minute:number;index:number;network:ReturnType<typeof makePathNetwork>;start:[number,number]}) {
+  const ref=useRef<THREE.Group>(null),walk=useRef(0), position=useRef<[number,number]>([start[0]+Math.sin(index*1.26)*3.5,start[1]+Math.cos(index*1.26)*3.5]), wait=useRef(index===0?14:4)
+  const route=useRef<number[]>([]), lastDestination=useRef(''), scheduled=scheduleFor(profile,minute)
+  useEffect(()=>{
+    if(!network.largest.length || lastDestination.current===scheduled.code)return
+    lastDestination.current=scheduled.code
+    const target=campus.buildings.find(b=>b.code===scheduled.code);if(!target)return
+    const [tx,tz]=centroid(target.poly),[x,z]=position.current
+    const nearest=(px:number,pz:number)=>network.largest.reduce((best,i)=>Math.hypot(network.nodes[i][0]-px,network.nodes[i][1]-pz)<Math.hypot(network.nodes[best][0]-px,network.nodes[best][1]-pz)?i:best,network.largest[0])
+    const from=nearest(x,z),to=nearest(tx,tz),queue=[from],parent=new Int32Array(network.nodes.length).fill(-1);parent[from]=from
+    for(let q=0;q<queue.length&&parent[to]<0;q++)for(const n of network.edges[queue[q]])if(parent[n]<0){parent[n]=queue[q];queue.push(n)}
+    const path:number[]=[];if(parent[to]>=0){let n=to;while(n!==from){path.unshift(n);n=parent[n]}path.unshift(from)}route.current=path
+  },[scheduled.code,network,campus])
+  useFrame((_,raw)=>{
+    const dt=Math.min(raw,.05); wait.current=Math.max(0,wait.current-dt)
+    const next=wait.current>0?undefined:route.current[0]
+    if(next!==undefined){const [tx,tz]=network.nodes[next],dx=tx-position.current[0],dz=tz-position.current[1],d=Math.hypot(dx,dz)
+      if(d<.15)route.current.shift()
+      else {const step=Math.min(d,dt*1.8);position.current[0]+=dx/d*step;position.current[1]+=dz/d*step;if(ref.current)ref.current.rotation.y=Math.atan2(dx,dz)}
+    }
+    walk.current=THREE.MathUtils.lerp(walk.current,next!==undefined?.7:0,Math.min(1,dt*6))
+    if(ref.current)ref.current.position.set(position.current[0],0,position.current[1])
+    const entry=community.students.find(s=>s.id===profile.id)
+    if(entry){entry.x=position.current[0];entry.z=position.current[1]}else community.students.push({id:profile.id,name:profile.name,x:position.current[0],z:position.current[1],line:'Hello!'})
+  })
+  return <group ref={ref} position={[...position.current.slice(0,1),0,position.current[1]] as [number,number,number]}><Character color={profile.color} headwear={index%2?'cap':'none'} face="happy" top="tee" topColor="#f4f0e6" bottom="shorts" shoes="sneakers" walk={walk} scale={1.15}/><Html position={[0,2,0]} center distanceFactor={18}><button className="student-label" onClick={event=>{event.stopPropagation();window.dispatchEvent(new CustomEvent('open-student',{detail:profile.id}))}}>{profile.name}</button></Html></group>
+}
 
 /** Background walkers are instanced, keeping draw calls low even on a large campus. */
 function AmbientStudents({campus}:{campus:Campus}) {
