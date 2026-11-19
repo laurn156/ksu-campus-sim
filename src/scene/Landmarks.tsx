@@ -40,73 +40,97 @@ function clear(collider: Collider, x: number, z: number, r = 3, campus?: Campus)
   return [x, z]
 }
 
-/** Handprints all over a yellow rock (slapping it is the tradition). Equirectangular texture. */
-function handprintTexture(): THREE.CanvasTexture {
+/** The real rock: glossy black paint covered in handprints (mostly yellow, some white and colourful),
+ *  with "SLAP / ROCK" painted big in white on the front. Equirectangular texture for a sphere. */
+function rockTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas')
-  c.width = 1024
-  c.height = 512
+  c.width = 2048
+  c.height = 1024
   const g = c.getContext('2d')!
-  g.fillStyle = '#F5C518'
+  g.fillStyle = '#16181b'
   g.fillRect(0, 0, c.width, c.height)
-  // painted-over texture: soft blotches of slightly different yellows
   let seed = 9
   const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
-  for (let i = 0; i < 260; i++) {
-    g.fillStyle = `rgba(${230 + r() * 25},${180 + r() * 40},${10 + r() * 30},0.35)`
+  // old layers of paint peeking through (charcoal / slate patches)
+  for (let i = 0; i < 200; i++) {
+    const v = 26 + r() * 30
+    g.fillStyle = `rgba(${v},${v + 3},${v + 8},0.5)`
     g.beginPath()
-    g.ellipse(r() * c.width, r() * c.height, 8 + r() * 40, 6 + r() * 25, r() * 3, 0, Math.PI * 2)
+    g.ellipse(r() * c.width, r() * c.height, 20 + r() * 80, 12 + r() * 40, r() * 3, 0, Math.PI * 2)
     g.fill()
   }
   const hand = (x: number, y: number, s: number, rot: number, col: string) => {
     g.save()
     g.translate(x, y)
     g.rotate(rot)
-    g.scale(s, s)
+    g.scale(s / 1.75, s) // pre-squeeze: the rock is stretched 1.75x wide
     g.fillStyle = col
     g.beginPath()
-    g.ellipse(0, 10, 15, 18, 0, 0, Math.PI * 2) // palm
+    g.ellipse(0, 10, 15, 17, 0, 0, Math.PI * 2)
     g.fill()
-    const fingers: [number, number, number, number][] = [[-12, -14, 4.5, 11], [-4, -19, 4.5, 13], [4, -19, 4.5, 13], [11.5, -14, 4.2, 11], [-19, 6, 4.5, 10]]
-    for (const [fx, fy, rx, ry] of fingers) {
+    const fingers: [number, number, number, number, number][] = [[-12, -13, 4.3, 11, -0.25], [-4, -18, 4.3, 13, -0.08], [4, -18, 4.3, 13, 0.08], [11.5, -13, 4, 11, 0.25], [-19, 7, 4.3, 10, -0.9]]
+    for (const [fx, fy, rx, ry, a] of fingers) {
       g.beginPath()
-      g.ellipse(fx, fy, rx, ry, fx < -15 ? -0.9 : fx * 0.02, 0, Math.PI * 2)
+      g.ellipse(fx, fy, rx, ry, a, 0, Math.PI * 2)
       g.fill()
     }
     g.restore()
   }
-  const cols = ['#111111', '#0B1315', '#1d1d1d', '#7a1f1f', '#ffffff', '#1f3a6b']
-  for (let i = 0; i < 110; i++) {
-    const y = 150 + r() * 250 // keep off the poles (top/bottom of the texture)
-    hand(r() * c.width, y, 0.45 + r() * 0.35, (r() - 0.5) * 1.6, cols[Math.floor(r() * (r() < 0.75 ? 3 : cols.length))])
+  const yellows = ['#FFC629', '#F5D33B', '#E8B516', '#FFE066']
+  const others = ['#ffffff', '#ffffff', '#7fd0ff', '#ff7ab6', '#7be07b', '#ff9a3c', '#b9a5ff']
+  for (let i = 0; i < 800; i++) {
+    const col = r() < 0.72 ? yellows[Math.floor(r() * yellows.length)] : others[Math.floor(r() * others.length)]
+    hand(r() * c.width, 240 + r() * 600, 0.75 + r() * 0.3, (r() - 0.5) * 1.2, col)
   }
+  // "SLAP / ROCK" in chunky white paint on the front (u ~ 0.25 faces +z)
+  g.save()
+  g.translate(c.width * 0.25, 0)
+  g.scale(1 / 1.75 * 1.6, 1)
+  g.fillStyle = 'rgba(255,255,255,.93)'
+  g.strokeStyle = 'rgba(255,255,255,.6)'
+  g.lineWidth = 10
+  g.font = '900 150px Impact, "Arial Black", sans-serif'
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  for (const [txt, y] of [['SLAP', 410], ['ROCK', 570]] as const) {
+    g.strokeText(txt, 0, y)
+    g.fillText(txt, 0, y)
+  }
+  g.restore()
   const t = new THREE.CanvasTexture(c)
   t.colorSpace = THREE.SRGBColorSpace
   t.anisotropy = 8
   return t
 }
 
-/** "Slap the Rock": a big smooth yellow boulder covered in handprints, on the lawn by Crawford Lab. */
+/** "Slap the Rock": a big, low, lumpy boulder in glossy black paint with handprints, on a mulch bed. */
 function SlapTheRock({ at }: { at: Pt }) {
   const geo = useMemo(() => {
-    const g = new THREE.SphereGeometry(1, 64, 40)
+    const g = new THREE.SphereGeometry(1, 96, 56)
     const p = g.getAttribute('position')
     const v = new THREE.Vector3()
     for (let i = 0; i < p.count; i++) {
       v.fromBufferAttribute(p, i)
-      // gentle low-frequency lumps (a boulder, not rubble), flattened bottom
-      const n = 1 + 0.12 * Math.sin(v.x * 2.1 + 1) * Math.cos(v.z * 1.7) + 0.08 * Math.sin(v.y * 2.6 + v.x * 1.3) + 0.05 * Math.cos(v.z * 3.3 - v.y)
+      // irregular lumps at a few scales (a real boulder, not an egg), flattened bottom
+      const n = 1 + 0.14 * Math.sin(v.x * 1.8 + 0.7) * Math.cos(v.z * 1.5 + 0.3) + 0.09 * Math.sin(v.y * 2.4 + v.x * 1.6)
+        + 0.05 * Math.cos(v.z * 4.1 - v.y * 2.2) + 0.03 * Math.sin(v.x * 7 + v.z * 5)
       v.multiplyScalar(n)
-      // wide and low with a flattish top and bottom, like a real boulder
-      v.set(v.x * 1.75, Math.max(Math.min(v.y, 0.8), -0.5) * 1.15, v.z * 1.5)
+      const y = v.y < 0 ? Math.max(v.y, -0.45) : v.y * (v.x > 0 ? 0.85 : 1) // sloping top, higher on one end
+      v.set(v.x * 1.75, y * 1.05, v.z * 1.35)
       p.setXYZ(i, v.x, v.y, v.z)
     }
     g.computeVertexNormals()
     return g
   }, [])
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({ map: handprintTexture(), roughness: 0.55 }), [])
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ map: rockTexture(), roughness: 0.22, metalness: 0.05 }), [])
   return (
-    <group position={[at[0], 0.65, at[1]]} rotation={[0, 0.6, 0]}>
-      <mesh geometry={geo} material={mat} castShadow receiveShadow />
+    <group position={[at[0], 0, at[1]]} rotation={[0, 0.6, 0]}>
+      {/* mulch / dirt bed */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]} scale={[1.45, 1, 1]} receiveShadow>
+        <circleGeometry args={[2.9, 40]} />
+        <meshStandardMaterial color="#6e5440" roughness={1} />
+      </mesh>
+      <mesh geometry={geo} material={mat} position={[0, 0.6, 0]} scale={1.4} castShadow receiveShadow />
     </group>
   )
 }
