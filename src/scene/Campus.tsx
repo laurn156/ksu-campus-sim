@@ -916,6 +916,68 @@ function scienceAnnexDetails(){
   return out
 }
 
+/** Civil engineering buildings and the student competition workshop. */
+function civilBuildingsParts(b: Building) {
+  const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const material=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.9,side:THREE.DoubleSide})
+  const siding=new THREE.MeshStandardMaterial({map:facade('metal'),color:b.code==='L'?'#e3e4dc':'#d0d5d0',roughness:.9,side:THREE.DoubleSide})
+  const concrete=material('#d0d3cd'),dark=material('#455653'),frame=material('#bbc6c0'),door=material('#a5adaa')
+  const roof=b.code==='O'?new THREE.MeshStandardMaterial({map:facade('metal'),color:'#d5d8d3',roughness:.9,side:THREE.DoubleSide}):material(b.code==='L1'?'#8c928b':'#e4e5dc')
+  const brick=new THREE.MeshStandardMaterial({map:facade('textilebrick'),roughness:.95,side:THREE.DoubleSide})
+  const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);parts.push({geo:g,mat:m})}
+  parts.push({geo:wallsGeometry(b,0,b.code==='L1'?1.2:.35),mat:b.code==='L1'?brick:concrete})
+  parts.push({geo:wallsGeometry(b,b.code==='L1'?1.2:.35,b.h),mat:siding},{geo:flatGeometry(b.poly,b.h+.03,4),mat:roof})
+  let area=0;for(let i=0;i<b.poly.length;i++){const a=b.poly[i],c=b.poly[(i+1)%b.poly.length];area+=a[0]*c[1]-c[0]*a[1]}
+  const edge=(index:number)=>{
+    const a=b.poly[index],c=b.poly[(index+1)%b.poly.length],dx=c[0]-a[0],dz=c[1]-a[1],length=Math.hypot(dx,dz)
+    const angle=-Math.atan2(dz,dx),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2,sign=area>0?-1:1
+    const panel=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>{
+      const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z*sign);g.rotateY(angle);g.translate(mx,0,mz);parts.push({geo:g,mat})
+    }
+    return {length,panel}
+  }
+  // Keep trim and openings attached to the building's mapped edges.
+  if(b.code==='L') {
+    const front=edge(9)
+    front.panel(front.length,.2,.45,0,b.h-.15,.2,frame)
+    for(const x of [-front.length*.36,-front.length*.18,0]){
+      front.panel(3.1,1.45,.14,x,1.8,.1,dark)
+      front.panel(3.3,.1,.2,x,2.58,.18,frame)
+      front.panel(.08,1.45,.2,x,1.8,.19,frame)
+    }
+    front.panel(1.5,2.4,.16,front.length*.26,1.2,.12,door)
+    front.panel(1.1,2.1,.2,front.length*.26,1.15,.23,dark)
+    front.panel(3.2,1.3,.14,front.length*.4,1.7,.1,dark)
+    // Multiple small ventilators on the broad low roof.
+    const [x0,z0,x1,z1]=bbox(b.poly)
+    for(let x=x0+3;x<x1-2;x+=7)for(let z=z0+3;z<z1-2;z+=7)if(pointInPoly(x,z,b.poly)){
+      box(.85,.55,.85,x,b.h+.3,z,frame);box(.95,.1,.95,x,b.h+.62,z,concrete)
+    }
+  } else if(b.code==='O') {
+    // The short end faces the service court and has two broad workshop doors.
+    const front=edge(0)
+    for(const x of [-front.length*.25,front.length*.25]){
+      front.panel(4.1,3,.16,x,1.5,.12,door)
+      front.panel(4.3,.13,.22,x,3.08,.19,frame)
+      for(const y of [.55,1.1,1.65,2.2,2.75])front.panel(3.9,.035,.2,x,y,.22,frame)
+    }
+    front.panel(1.15,2.2,.15,0,1.1,.13,dark)
+    const side=edge(2);side.panel(1.35,2.25,.15,-side.length*.3,1.13,.12,door)
+    side.panel(2.2,1.05,.12,side.length*.2,2.2,.12,dark)
+  } else {
+    const front=edge(1)
+    front.panel(1.4,2.25,.15,-front.length*.22,1.13,.12,door)
+    front.panel(2.3,1.2,.14,front.length*.2,2.15,.12,dark)
+    // Small low utility annex beside the main flat-roofed volume.
+    const side=edge(2)
+    side.panel(side.length*.72,2.45,2.1,0,1.23,1.05,concrete)
+    side.panel(side.length*.76,.2,2.3,0,2.56,1.1,frame)
+    side.panel(1.2,2,.12,side.length*.12,1.02,2.16,door)
+    side.panel(2,1.1,.12,-side.length*.18,1.55,2.16,dark)
+  }
+  return parts
+}
+
 /** Gymnasium: brick upper walls, pale base, glazed entrance and service sides. */
 function gymnasiumParts(b:Building) {
   const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
@@ -1529,6 +1591,7 @@ function Buildings({ campus }: { campus: Campus }) {
           ...academicDetails(b),
         ], flat: true }
       }
+      if (b.code === 'L' || b.code === 'L1' || b.code === 'O') return { b, parts: civilBuildingsParts(b), flat: true }
       if (b.code === 'S2') return { b, parts: gymnasiumParts(b), flat: true }
       if (b.code === 'N') return { b, parts: architectureParts(b), flat: true }
       if (b.code === 'M') return { b, parts: textileCenterParts(b), flat: true }

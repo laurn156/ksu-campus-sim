@@ -47,6 +47,8 @@ export async function loadCampus(): Promise<Campus> {
   // Remove a narrow mapping spur that projected past the Textile Center's north wall.
   const textile = c.buildings.find((b) => b.code === 'M')
   if (textile && textile.poly.length === 30) textile.poly = textile.poly.filter((_, i) => i < 2 || i > 4)
+  // The soils lab and competition workshop are low, single-storey buildings.
+  for (const b of c.buildings) if (b.code === 'L1' || b.code === 'O') { b.h = b.code === 'O' ? 4.5 : 3.8; b.levels = 1 }
   // The game terrain is flat: show the West Deck at the campus-side height,
   // with the other levels below grade rather than four exposed stories.
   const westDeck = c.buildings.find((b) => b.code === 'P60')
