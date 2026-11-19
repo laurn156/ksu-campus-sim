@@ -1019,6 +1019,48 @@ function atriumDetails(b:Building){
   return out
 }
 
+/** Academic Building entrance: brick facade, glazed doors and a light truss canopy. */
+function academicDetails(){
+  const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const material=(color:string,roughness=.8)=>new THREE.MeshStandardMaterial({color,roughness,side:THREE.DoubleSide})
+  const stone=material('#d9dbd1'),glass=material('#506a66',.32),metal=material('#d8ddd5',.45),soil=material('#826c59'),plant=material('#789354')
+  const brick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.9,side:THREE.DoubleSide})
+  const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);out.push({geo:g,mat:m})}
+  const bar=(a:THREE.Vector3,c:THREE.Vector3)=>{const v=c.clone().sub(a),g=new THREE.CylinderGeometry(.065,.065,v.length(),8);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize()));g.translate((a.x+c.x)/2,(a.y+c.y)/2,(a.z+c.z)/2);out.push({geo:g,mat:metal})}
+  // Entrance is on the west-facing courtyard side, near the lower wing.
+  const wallX=-163.25,entryZ=-39
+  box(.3,4.2,9.4,wallX,2.1,entryZ,brick)
+  box(.18,3.2,6.7,wallX-.2,1.6,entryZ,glass)
+  for(const dz of [-3.35,-2.25,-1.12,0,1.12,2.25,3.35])box(.24,3.25,.09,wallX-.34,1.62,entryZ+dz,stone)
+  for(const y of [.12,2.3,3.25])box(.24,.09,6.8,wallX-.34,y,entryZ,stone)
+  // Open, lightweight canopy frame with cross-bracing rather than a solid awning.
+  for(const x of [-163.5,-167,-170.5]){
+    bar(new THREE.Vector3(x,4.55,entryZ-4.4),new THREE.Vector3(x,4.55,entryZ+4.4))
+    bar(new THREE.Vector3(x,4.55,entryZ-4.4),new THREE.Vector3(x,3.8,entryZ))
+    bar(new THREE.Vector3(x,3.8,entryZ),new THREE.Vector3(x,4.55,entryZ+4.4))
+  }
+  for(const dz of [-4.4,-2.2,0,2.2,4.4])bar(new THREE.Vector3(-163.5,4.55,entryZ+dz),new THREE.Vector3(-170.5,4.55,entryZ+dz))
+  for(const z of [entryZ-4.4,entryZ+4.4])bar(new THREE.Vector3(-170.5,.05,z),new THREE.Vector3(-170.5,4.55,z))
+  // Brick sign panel carries both the 830 number and building name.
+  box(.16,1.3,11.2,wallX-.2,5.35,entryZ-9.6,brick)
+  const canvas=document.createElement('canvas');canvas.width=1536;canvas.height=192
+  const ctx=canvas.getContext('2d')!;ctx.fillStyle='#9a5d49';ctx.fillRect(0,0,1536,192);ctx.fillStyle='#f2c629';ctx.fillRect(30,30,210,130);ctx.fillStyle='#212a24';ctx.font='bold 115px sans-serif';ctx.textAlign='center';ctx.fillText('830',135,136);ctx.fillStyle='#f3f0e8';ctx.textAlign='left';ctx.font='bold 94px sans-serif';ctx.fillText('ACADEMIC BUILDING',280,130)
+  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
+  const sign=new THREE.PlaneGeometry(10.9,1.25);sign.rotateY(-Math.PI/2);sign.translate(wallX-.3,5.35,entryZ-9.6)
+  out.push({geo:sign,mat:new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide})})
+  const sub=document.createElement('canvas');sub.width=768;sub.height=256
+  const sc=sub.getContext('2d')!;sc.fillStyle='#eee6d7';sc.textAlign='center';sc.font='bold 62px sans-serif';sc.fillText('BURRUSS AUDITORIUM',384,110);sc.fillText('COMPLEX',384,185)
+  const st=new THREE.CanvasTexture(sub);st.colorSpace=THREE.SRGBColorSpace
+  const label=new THREE.PlaneGeometry(5,1.6);label.rotateY(-Math.PI/2);label.translate(wallX-.28,2.8,entryZ-9.6)
+  out.push({geo:label,mat:new THREE.MeshStandardMaterial({map:st,transparent:true,depthWrite:false,side:THREE.DoubleSide})})
+  // Two planted beds border the paved approach seen from above.
+  for(const z of [entryZ-10,entryZ+10]){
+    box(3,.08,7,-171,.06,z,soil)
+    for(const x of [-172,-170.5])for(const dz of [-2,0,2]){const g=new THREE.IcosahedronGeometry(.35,1);g.scale(1,.6,1);g.translate(x,.25,z+dz);out.push({geo:g,mat:plant})}
+  }
+  return out
+}
+
 function Buildings({ campus }: { campus: Campus }) {
   useEffect(() => () => { occluders.meshes.length = 0 }, [])
   const items = useMemo(() => {
@@ -1081,6 +1123,7 @@ function Buildings({ campus }: { campus: Campus }) {
       if (b.code === 'C') parts.push(...libraryDetails(b))
       if (b.code === 'E') parts.push(...crawfordDetails(b))
       if (b.code === 'G') parts.push(...engineeringLabDetails(b))
+      if (b.code === 'H') parts.push(...academicDetails())
       if (b.code === 'J') parts.push(...atriumDetails(b))
       if (b.code === 'I1') parts.push(...matchingLabElevation(b))
       if (b.code === 'I2') parts.push(...designTwoDetails(b))

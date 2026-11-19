@@ -149,6 +149,14 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
     g.fillStyle='#bdcbc7';for(let x=0;x<W;x+=32)g.fillRect(x,0,2,H);for(let y=0;y<H;y+=38)g.fillRect(0,y,W,2)
   },
   etcbrick: (g) => { brick(g,[120,76,60],13) },
+  // Academic Building: broad brick walls and narrow horizontal window strips.
+  academicbrick: (g) => {
+    brick(g, [151, 84, 66], 47)
+    g.fillStyle='#d0b7a5';g.fillRect(0,H-5,W,5)
+    g.fillStyle='#344c4a';g.fillRect(0,42,W,24)
+    g.fillStyle='#87948b';for(let x=0;x<W;x+=32)g.fillRect(x,42,2,24)
+    g.fillStyle='#b8b6a6';g.fillRect(0,40,W,2);g.fillRect(0,66,W,2)
+  },
   // Atrium: warm red brick, pale horizontal bands, and wide dark windows.
   atriumbrick: (g) => {
     brick(g, [166, 96, 74], 29)
