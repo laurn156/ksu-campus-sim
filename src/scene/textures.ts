@@ -119,12 +119,24 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
   },
   // open parking deck: concrete spandrel + dark open floor
   deck: (g) => {
-    g.fillStyle = '#c4c1ba'
+    // open-sided parking level: dim interior with car silhouettes, concrete spandrel band, columns
+    g.fillStyle = '#5c5f63'
     g.fillRect(0, 0, W, H)
-    g.fillStyle = '#3e4246'
-    g.fillRect(0, 50, W, 90)
-    g.fillStyle = '#c4c1ba'
-    g.fillRect(60, 50, 8, 90)
+    g.fillStyle = '#7a7d80'
+    g.fillRect(0, 0, W, 22) // ceiling underside
+    const cars = ['#c9ccd0', '#2a2c30', '#8c2a2a', '#3a5a8c', '#e8e8e8']
+    for (let i = 0; i < 3; i++) {
+      g.fillStyle = cars[(i * 2 + 1) % cars.length]
+      g.fillRect(8 + i * 40, 66, 32, 16)
+      g.fillRect(14 + i * 40, 56, 20, 12)
+    }
+    g.fillStyle = '#d8d4cb' // spandrel
+    g.fillRect(0, 86, W, H - 86)
+    g.fillStyle = 'rgba(0,0,0,.08)'
+    g.fillRect(0, 86, W, 4)
+    g.fillStyle = '#cfcbc2' // columns
+    g.fillRect(0, 0, 10, H)
+    g.fillRect(W - 10, 0, 10, H)
   },
   plain: (g) => {
     g.fillStyle = '#d8ccb6'

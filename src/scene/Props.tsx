@@ -58,7 +58,16 @@ export function Props({ campus, cars: showCars = true, roofUnits = true }: { cam
       }
     }
     // --- parked cars, lined up along each lot's long axis
-    const cars: [number, number, number][] = []
+    const cars: [number, number, number, number?][] = []
+    // the parking deck's open top level gets parked cars too
+    const deck = campus.buildings.find((b) => b.code === 'P60')
+    if (deck) {
+      const [dx0, dz0, dx1, dz1] = bbox(deck.poly)
+      const ang = longestEdgeAngle(deck.poly)
+      for (let x = dx0; x < dx1; x += 3.2)
+        for (let z = dz0; z < dz1; z += 3.2)
+          if (rnd() < 0.5 && pointInPoly(x, z, deck.poly)) cars.push([x, z, ang + (rnd() < 0.5 ? 0 : Math.PI), deck.h + 0.05])
+    }
     // on-campus lots first (the cap would otherwise go to big off-campus lots)
     const lots = campus.areas
       .filter((a) => a.kind === 'parking' && a.a >= 200)
@@ -124,8 +133,8 @@ export function Props({ campus, cars: showCars = true, roofUnits = true }: { cam
     const carGeo = mergeGeometries([body, cabin])
     const car = new THREE.InstancedMesh(carGeo, new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0.2 }), cars.length)
     const paints = ['#e9e9ea', '#1d1f22', '#8c9196', '#b22d2d', '#2c4f8a', '#c8b48a', '#3f6b4c', '#FFC629'].map((c) => new THREE.Color(c))
-    cars.forEach(([x, z, r], i) => {
-      car.setMatrixAt(i, m.compose(new THREE.Vector3(x, 0, z), q.setFromAxisAngle(Y, r), new THREE.Vector3(1, 1, 1)))
+    cars.forEach(([x, z, r, y = 0], i) => {
+      car.setMatrixAt(i, m.compose(new THREE.Vector3(x, y, z), q.setFromAxisAngle(Y, r), new THREE.Vector3(1, 1, 1)))
       car.setColorAt(i, paints[Math.floor(rnd() * (rnd() < 0.05 ? paints.length : paints.length - 1))])
     })
     car.castShadow = true

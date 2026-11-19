@@ -389,7 +389,7 @@ function Trees({ campus }: { campus: Campus }) {
 
 export type GroundStyle = 'illustrated' | 'photo' | 'drawn'
 
-export function CampusScene({ campus, ground = 'illustrated' }: { campus: Campus; ground?: GroundStyle }) {
+export function CampusScene({ campus, ground = 'drawn' }: { campus: Campus; ground?: GroundStyle }) {
   return (
     <group>
       {ground === 'drawn' ? (

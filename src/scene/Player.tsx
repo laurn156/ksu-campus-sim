@@ -71,7 +71,8 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   useEffect(() => {
     // dev: window.__tp(x, z, yaw?, dist?) teleports the player (for screenshots / debugging)
     if (import.meta.env.DEV)
-      (window as any).__tp = (x: number, z: number, yaw?: number, d?: number) => {
+      (window as any).__tp = (x: number, z: number, yaw?: number, d?: number, pitch?: number) => {
+        if (pitch !== undefined) player.pitch = pitch
         player.x = x
         player.z = z
         if (yaw !== undefined) player.yaw = yaw

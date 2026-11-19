@@ -40,26 +40,73 @@ function clear(collider: Collider, x: number, z: number, r = 3, campus?: Campus)
   return [x, z]
 }
 
-/** "Slap the Rock": the gold boulder on the lawn by Crawford Lab. */
+/** Handprints all over a yellow rock (slapping it is the tradition). Equirectangular texture. */
+function handprintTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas')
+  c.width = 1024
+  c.height = 512
+  const g = c.getContext('2d')!
+  g.fillStyle = '#F5C518'
+  g.fillRect(0, 0, c.width, c.height)
+  // painted-over texture: soft blotches of slightly different yellows
+  let seed = 9
+  const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
+  for (let i = 0; i < 260; i++) {
+    g.fillStyle = `rgba(${230 + r() * 25},${180 + r() * 40},${10 + r() * 30},0.35)`
+    g.beginPath()
+    g.ellipse(r() * c.width, r() * c.height, 8 + r() * 40, 6 + r() * 25, r() * 3, 0, Math.PI * 2)
+    g.fill()
+  }
+  const hand = (x: number, y: number, s: number, rot: number, col: string) => {
+    g.save()
+    g.translate(x, y)
+    g.rotate(rot)
+    g.scale(s, s)
+    g.fillStyle = col
+    g.beginPath()
+    g.ellipse(0, 10, 15, 18, 0, 0, Math.PI * 2) // palm
+    g.fill()
+    const fingers: [number, number, number, number][] = [[-12, -14, 4.5, 11], [-4, -19, 4.5, 13], [4, -19, 4.5, 13], [11.5, -14, 4.2, 11], [-19, 6, 4.5, 10]]
+    for (const [fx, fy, rx, ry] of fingers) {
+      g.beginPath()
+      g.ellipse(fx, fy, rx, ry, fx < -15 ? -0.9 : fx * 0.02, 0, Math.PI * 2)
+      g.fill()
+    }
+    g.restore()
+  }
+  const cols = ['#111111', '#0B1315', '#1d1d1d', '#7a1f1f', '#ffffff', '#1f3a6b']
+  for (let i = 0; i < 110; i++) {
+    const y = 150 + r() * 250 // keep off the poles (top/bottom of the texture)
+    hand(r() * c.width, y, 0.45 + r() * 0.35, (r() - 0.5) * 1.6, cols[Math.floor(r() * (r() < 0.75 ? 3 : cols.length))])
+  }
+  const t = new THREE.CanvasTexture(c)
+  t.colorSpace = THREE.SRGBColorSpace
+  t.anisotropy = 8
+  return t
+}
+
+/** "Slap the Rock": a big smooth yellow boulder covered in handprints, on the lawn by Crawford Lab. */
 function SlapTheRock({ at }: { at: Pt }) {
   const geo = useMemo(() => {
-    const g = new THREE.DodecahedronGeometry(1.1, 1)
+    const g = new THREE.SphereGeometry(1, 64, 40)
     const p = g.getAttribute('position')
+    const v = new THREE.Vector3()
     for (let i = 0; i < p.count; i++) {
-      const n = 1 + Math.sin(i * 12.9898) * 0.08
-      p.setXYZ(i, p.getX(i) * 1.35 * n, p.getY(i) * 0.85 * n, p.getZ(i) * n)
+      v.fromBufferAttribute(p, i)
+      // gentle low-frequency lumps (a boulder, not rubble), flattened bottom
+      const n = 1 + 0.12 * Math.sin(v.x * 2.1 + 1) * Math.cos(v.z * 1.7) + 0.08 * Math.sin(v.y * 2.6 + v.x * 1.3) + 0.05 * Math.cos(v.z * 3.3 - v.y)
+      v.multiplyScalar(n)
+      // wide and low with a flattish top and bottom, like a real boulder
+      v.set(v.x * 1.75, Math.max(Math.min(v.y, 0.8), -0.5) * 1.15, v.z * 1.5)
+      p.setXYZ(i, v.x, v.y, v.z)
     }
     g.computeVertexNormals()
     return g
   }, [])
-  const label = useMemo(() => textTexture('SLAP THE ROCK', { bg: GOLD, fg: INK, w: 512, h: 96 }), [])
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ map: handprintTexture(), roughness: 0.55 }), [])
   return (
-    <group position={[at[0], 0.8, at[1]]} rotation={[0, 0.6, 0]}>
-      <mesh geometry={geo} material={gold} castShadow receiveShadow />
-      <mesh position={[0, 0.25, 1.02]} rotation={[-0.15, 0, 0]}>
-        <planeGeometry args={[1.8, 0.34]} />
-        <meshBasicMaterial map={label} transparent />
-      </mesh>
+    <group position={[at[0], 0.65, at[1]]} rotation={[0, 0.6, 0]}>
+      <mesh geometry={geo} material={mat} castShadow receiveShadow />
     </group>
   )
 }
@@ -68,15 +115,14 @@ function SlapTheRock({ at }: { at: Pt }) {
 function KsuLetters({ at, yaw }: { at: Pt; yaw: number }) {
   const H = 1.6
   const T = 0.32 // stroke
-  const D = 0.35 // depth
   const bar = (x: number, y: number, h: number, rot = 0, key = '') => (
     <mesh key={key} position={[x, y, 0]} rotation={[0, 0, rot]} material={gold} castShadow>
-      <boxGeometry args={[T, h, D]} />
+      <capsuleGeometry args={[T / 2, h - T, 8, 20]} />
     </mesh>
   )
   const arc = (x: number, y: number, r: number, start: number, len: number, key: string) => (
     <mesh key={key} position={[x, y, 0]} rotation={[0, 0, start]} material={gold} castShadow>
-      <torusGeometry args={[r, T / 2, 8, 20, len]} />
+      <torusGeometry args={[r, T / 2, 20, 64, len]} />
     </mesh>
   )
   return (
@@ -108,26 +154,110 @@ function KsuLetters({ at, yaw }: { at: Pt; yaw: number }) {
   )
 }
 
-/** The Globe sculpture on its round plaza by the Student Center. */
+/** Rough continents, as [lon, lat] polygons (degrees). Enough to read as Earth on the sculpture. */
+const CONTINENTS: [number, number][][] = [
+  [[-168, 66], [-140, 70], [-95, 72], [-80, 63], [-60, 55], [-66, 45], [-75, 35], [-81, 25], [-97, 26], [-105, 20], [-87, 15], [-78, 8], [-90, 15], [-110, 23], [-117, 32], [-125, 40], [-124, 48], [-135, 58], [-152, 60], [-166, 60]],
+  [[-78, 10], [-60, 10], [-50, 0], [-35, -6], [-40, -22], [-48, -28], [-58, -38], [-65, -55], [-72, -50], [-72, -30], [-71, -18], [-80, -5]],
+  [[-17, 21], [-5, 36], [10, 37], [32, 31], [43, 12], [51, 11], [40, -15], [32, -28], [20, -35], [13, -22], [9, -1], [-5, 5], [-17, 14]],
+  [[-10, 36], [-9, 43], [0, 49], [5, 60], [15, 68], [30, 70], [60, 70], [90, 76], [140, 72], [175, 66], [160, 58], [140, 50], [130, 40], [122, 30], [108, 18], [100, 8], [80, 8], [72, 20], [57, 25], [48, 30], [36, 36], [26, 40], [12, 44]],
+  [[114, -22], [122, -18], [136, -12], [145, -15], [153, -27], [150, -37], [140, -38], [130, -32], [116, -34]],
+  [[-50, 60], [-30, 68], [-22, 76], [-40, 83], [-60, 80], [-70, 76]],
+]
+
+function globeTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas')
+  c.width = 2048
+  c.height = 1024
+  const g = c.getContext('2d')!
+  g.clearRect(0, 0, c.width, c.height)
+  const X = (lon: number) => ((lon + 180) / 360) * c.width
+  const Y = (lat: number) => ((90 - lat) / 180) * c.height
+  // land: brushed steel plates
+  g.fillStyle = '#dfe3e6'
+  for (const poly of CONTINENTS) {
+    g.beginPath()
+    poly.forEach(([lo, la], i) => (i ? g.lineTo(X(lo), Y(la)) : g.moveTo(X(lo), Y(la))))
+    g.closePath()
+    g.fill()
+  }
+  // the open wire grid (latitude / longitude bars)
+  g.strokeStyle = '#eef1f3'
+  g.lineWidth = 7
+  for (let lat = -75; lat <= 75; lat += 15) {
+    g.beginPath()
+    g.moveTo(0, Y(lat))
+    g.lineTo(c.width, Y(lat))
+    g.stroke()
+  }
+  for (let lon = -180; lon < 180; lon += 15) {
+    g.beginPath()
+    g.moveTo(X(lon), Y(84))
+    g.lineTo(X(lon), Y(-84))
+    g.stroke()
+  }
+  const t = new THREE.CanvasTexture(c)
+  t.colorSpace = THREE.SRGBColorSpace
+  t.anisotropy = 8
+  return t
+}
+
+/** The Globe sculpture: open wire globe with steel continents in a tilted meridian ring, on a stone
+ *  pedestal in a round brick-edged planter (mulch + shrubs), in its circular plaza. */
 function GlobePlaza({ at }: { at: Pt }) {
+  const mats = useMemo(() => {
+    const tex = globeTexture()
+    return {
+      globe: new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.35, side: THREE.DoubleSide, metalness: 0.75, roughness: 0.3 }),
+      ring: new THREE.MeshStandardMaterial({ color: '#e9edf0', metalness: 0.8, roughness: 0.25 }),
+      stone: new THREE.MeshStandardMaterial({ color: '#4b4744', roughness: 0.8 }),
+      brick: new THREE.MeshStandardMaterial({ color: '#a44a35', roughness: 0.9 }),
+      mulch: new THREE.MeshStandardMaterial({ color: '#4a2f22', roughness: 1 }),
+      shrub: new THREE.MeshStandardMaterial({ color: '#3f6e35', roughness: 0.9, flatShading: true }),
+    }
+  }, [])
+  const R = 1.9
   return (
     <group position={[at[0], 0, at[1]]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.09, 0]} receiveShadow>
-        <circleGeometry args={[15, 48]} />
+        <circleGeometry args={[15, 64]} />
         <meshStandardMaterial color="#d9d2c4" roughness={0.95} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
-        <ringGeometry args={[6, 6.6, 48]} />
-        <meshStandardMaterial color="#b9ad99" roughness={0.95} />
+      {/* round planter: brick curb, mulch, shrubs */}
+      <mesh position={[0, 0.25, 0]} material={mats.brick} castShadow receiveShadow>
+        <cylinderGeometry args={[4.6, 4.6, 0.4, 64, 1, true]} />
       </mesh>
-      <mesh position={[0, 0.5, 0]} material={concrete} castShadow>
-        <cylinderGeometry args={[1.4, 1.6, 1, 24]} />
+      <mesh position={[0, 0.45, 0]} rotation={[-Math.PI / 2, 0, 0]} material={mats.brick}>
+        <ringGeometry args={[4.3, 4.65, 64]} />
       </mesh>
-      <mesh position={[0, 2.6, 0]} material={steel} castShadow>
-        <sphereGeometry args={[1.6, 32, 24]} />
+      <mesh position={[0, 0.3, 0]} rotation={[-Math.PI / 2, 0, 0]} material={mats.mulch} receiveShadow>
+        <circleGeometry args={[4.4, 64]} />
       </mesh>
-      <mesh position={[0, 2.6, 0]} rotation={[0.4, 0, 0.3]} material={steel}>
-        <torusGeometry args={[2, 0.07, 8, 48]} />
+      {Array.from({ length: 9 }, (_, i) => {
+        const a = (i / 9) * Math.PI * 2
+        return (
+          <mesh key={i} position={[Math.cos(a) * 2.4, 0.6, Math.sin(a) * 2.4]} scale={[1, 0.7, 1]} material={mats.shrub} castShadow>
+            <icosahedronGeometry args={[0.55, 1]} />
+          </mesh>
+        )
+      })}
+      {/* pedestal */}
+      <mesh position={[0, 0.9, 0]} material={mats.stone} castShadow>
+        <boxGeometry args={[1.5, 1.2, 1.5]} />
+      </mesh>
+      {/* tilted assembly: globe + meridian ring + base arm */}
+      <group position={[0, 1.5 + R + 0.25, 0]} rotation={[0, 0.5, 0.41]}>
+        <mesh material={mats.globe} castShadow>
+          <sphereGeometry args={[R, 96, 48]} />
+        </mesh>
+        <mesh material={mats.ring} castShadow rotation={[0, Math.PI / 2, 0]}>
+          <torusGeometry args={[R + 0.18, 0.09, 12, 96, Math.PI * 1.3]} />
+        </mesh>
+        <mesh position={[0, R + 0.18, 0]} material={mats.ring}>
+          <sphereGeometry args={[0.13, 16, 12]} />
+        </mesh>
+      </group>
+      <mesh position={[0.35, 1.8, 0]} rotation={[0, 0, 0.41]} material={mats.ring} castShadow>
+        <cylinderGeometry args={[0.12, 0.18, 0.9, 12]} />
       </mesh>
     </group>
   )
@@ -414,35 +544,6 @@ function Stairs({ a, b, width = 3.4, rise = 1.4 }: { a: Pt; b: Pt; width?: numbe
   )
 }
 
-/** Small outdoor stage: raised brick platform with steps and a shade roof. */
-function Stage({ at, yaw }: { at: Pt; yaw: number }) {
-  const brick = useMemo(() => new THREE.MeshStandardMaterial({ color: '#a4523b', roughness: 0.9 }), [])
-  return (
-    <group position={[at[0], 0, at[1]]} rotation={[0, yaw, 0]}>
-      <mesh position={[0, 0.4, 0]} material={brick} castShadow receiveShadow>
-        <boxGeometry args={[9, 0.8, 6]} />
-      </mesh>
-      <mesh position={[0, 0.81, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[8.6, 5.6]} />
-        <meshStandardMaterial color="#c9b79a" roughness={0.9} />
-      </mesh>
-      {[0.2, 0.45].map((h, i) => (
-        <mesh key={i} position={[0, h / 2, 3.3 + i * -0.3 + 0.3]} material={concrete}>
-          <boxGeometry args={[4, h, 0.6]} />
-        </mesh>
-      ))}
-      <mesh position={[0, 4.6, -1]} rotation={[0.18, 0, 0]} material={white} castShadow>
-        <boxGeometry args={[9.6, 0.15, 5.5]} />
-      </mesh>
-      {[-1, 1].map((sx) => (
-        <mesh key={sx} position={[sx * 4.4, 2.7, -3.4]} material={dark}>
-          <cylinderGeometry args={[0.1, 0.1, 3.8, 8]} />
-        </mesh>
-      ))}
-    </group>
-  )
-}
-
 /** Domed skylight on the Library roof. */
 function LibraryDome({ at, y }: { at: Pt; y: number }) {
   return (
@@ -508,10 +609,9 @@ export function Landmarks({ campus }: { campus: Campus }) {
     // facing ends of Math (D) and Administration (B), and of Crawford (E) and Math
     const tents = { from: [-137, -195] as Pt, to: [-102, -162] as Pt }
     const walk = { from: [-240, -135] as Pt, to: [-205, -158] as Pt }
-    const stage = clear(collider, -189, -122, 6, campus)
     const stairs = mathStairs(campus)
     const lib = campus.buildings.find((b) => b.code === 'C')
-    return { rock, letters, lettersYaw, globe, tents, walk, stage, stairs, lib }
+    return { rock, letters, lettersYaw, globe, tents, walk, stairs, lib }
   }, [campus])
   const flags = campus.features.filter((f) => f.kind === 'flagpole')
   return (
@@ -521,7 +621,6 @@ export function Landmarks({ campus }: { campus: Campus }) {
       {placed.globe && <GlobePlaza at={[placed.globe.x, placed.globe.z]} />}
       <TentRow from={placed.tents.from} to={placed.tents.to} />
       <CoveredWalk from={placed.walk.from} to={placed.walk.to} />
-      <Stage at={placed.stage} yaw={placed.rock ? Math.atan2(placed.rock[0] - placed.stage[0], placed.rock[1] - placed.stage[1]) : 0} />
       {placed.stairs && <Stairs a={placed.stairs.a} b={placed.stairs.b} />}
       {campus.paths
         .filter((p) => p.kind === 'steps')
@@ -554,7 +653,6 @@ export function landmarkSpots(campus: Campus): { name: string; at: Pt; r: number
   const E = bcentroid(campus, 'E')
   if (E) out.push({ name: 'Slap the Rock', at: clear(collider, E[0] + 55, E[1] - 5, 3), r: 10 })
   out.push({ name: 'KSU Sign · Hornet Village', at: [-208, 171], r: 10 })
-  out.push({ name: 'Outdoor Stage', at: clear(collider, -189, -122, 6, campus), r: 9 })
   const g = campus.features.find((f) => f.kind === 'sculpture')
   if (g) out.push({ name: 'The Globe', at: [g.x, g.z], r: 16 })
   return out
