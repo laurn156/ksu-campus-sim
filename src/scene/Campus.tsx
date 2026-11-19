@@ -925,8 +925,10 @@ function civilBuildingsParts(b: Building) {
   const roof=b.code==='O'?new THREE.MeshStandardMaterial({map:facade('metal'),color:'#d5d8d3',roughness:.9,side:THREE.DoubleSide}):material(b.code==='L1'?'#8c928b':'#e4e5dc')
   const brick=new THREE.MeshStandardMaterial({map:facade('textilebrick'),roughness:.95,side:THREE.DoubleSide})
   const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);parts.push({geo:g,mat:m})}
-  parts.push({geo:wallsGeometry(b,0,b.code==='L1'?1.2:.35),mat:b.code==='L1'?brick:concrete})
-  parts.push({geo:wallsGeometry(b,b.code==='L1'?1.2:.35,b.h),mat:siding},{geo:flatGeometry(b.poly,b.h+.03,4),mat:roof})
+  const lowerHeight=b.code==='L'?3.05:b.code==='L1'?1.2:.35
+  const redBrick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.95,side:THREE.DoubleSide})
+  parts.push({geo:wallsGeometry(b,0,lowerHeight),mat:b.code==='L'?redBrick:b.code==='L1'?brick:concrete})
+  parts.push({geo:wallsGeometry(b,lowerHeight,b.h),mat:siding},{geo:flatGeometry(b.poly,b.h+.03,4),mat:roof})
   let area=0;for(let i=0;i<b.poly.length;i++){const a=b.poly[i],c=b.poly[(i+1)%b.poly.length];area+=a[0]*c[1]-c[0]*a[1]}
   const edge=(index:number)=>{
     const a=b.poly[index],c=b.poly[(index+1)%b.poly.length],dx=c[0]-a[0],dz=c[1]-a[1],length=Math.hypot(dx,dz)
@@ -939,15 +941,37 @@ function civilBuildingsParts(b: Building) {
   // Keep trim and openings attached to the building's mapped edges.
   if(b.code==='L') {
     const front=edge(9)
-    front.panel(front.length,.2,.45,0,b.h-.15,.2,frame)
-    for(const x of [-front.length*.36,-front.length*.18,0]){
-      front.panel(3.1,1.45,.14,x,1.8,.1,dark)
-      front.panel(3.3,.1,.2,x,2.58,.18,frame)
-      front.panel(.08,1.45,.2,x,1.8,.19,frame)
+    // Light dividing trim separates the red brick from the ribbed metal above.
+    front.panel(front.length,.12,.22,0,3.08,.1,frame)
+    front.panel(front.length,.18,.4,0,b.h-.08,.2,frame)
+    // Two tall window compositions, including the pale square glass-block centers.
+    const blockCanvas=document.createElement('canvas');blockCanvas.width=256;blockCanvas.height=256
+    const gc=blockCanvas.getContext('2d')!;gc.fillStyle='#8eaaa7';gc.fillRect(0,0,256,256)
+    for(let y=0;y<256;y+=32)for(let x=0;x<256;x+=32){gc.fillStyle=(x/32+y/32)%2?'#a6bcb6':'#b2c6c0';gc.fillRect(x+2,y+2,28,28);gc.fillStyle='rgba(255,255,255,.25)';gc.fillRect(x+3,y+3,26,4)}
+    const blockTex=new THREE.CanvasTexture(blockCanvas);blockTex.colorSpace=THREE.SRGBColorSpace
+    const glassBlock=new THREE.MeshStandardMaterial({map:blockTex,roughness:.55,side:THREE.DoubleSide})
+    for(const x of [-front.length*.28,front.length*.27]){
+      front.panel(4.3,3.2,.14,x,1.9,.08,frame)
+      front.panel(2.7,2.7,.16,x,1.75,.18,glassBlock)
+      for(const dx of [-1.78,1.78])front.panel(.56,2.75,.18,x+dx,1.77,.2,dark)
+      front.panel(4.05,.45,.18,x,3.25,.2,dark)
+      front.panel(.1,3.15,.21,x-2.1,1.9,.27,frame)
+      front.panel(.1,3.15,.21,x+2.1,1.9,.27,frame)
     }
-    front.panel(1.5,2.4,.16,front.length*.26,1.2,.12,door)
-    front.panel(1.1,2.1,.2,front.length*.26,1.15,.23,dark)
-    front.panel(3.2,1.3,.14,front.length*.4,1.7,.1,dark)
+    // Projecting white frame and glazed double entrance between the windows.
+    front.panel(5.4,3.25,.14,0,1.65,.1,frame)
+    front.panel(5.1,3.05,.16,0,1.65,.21,dark)
+    for(const x of [-2.45,-1.25,0,1.25,2.45])front.panel(.11,3.05,.2,x,1.65,.3,frame)
+    for(const y of [.2,2.45,3.1])front.panel(5,.1,.21,0,y,.31,frame)
+    front.panel(5.8,.22,2.5,0,3.5,1.22,frame)
+    for(const x of [-2.55,2.55])front.panel(.23,3.5,.23,x,1.75,2.25,frame)
+    // Thin translucent-looking transom above the entrance, with a modest raised gable.
+    front.panel(5.2,.55,.2,0,3.9,.3,frame)
+    front.panel(4.8,.35,.23,0,3.9,.42,dark)
+    // Additional windows and a service door along the opposite elevation.
+    const rear=edge(3)
+    for(const x of [-rear.length*.28,0,rear.length*.28])rear.panel(2,1.25,.14,x,1.8,.12,dark)
+    rear.panel(1.25,2.2,.16,rear.length*.4,1.1,.12,door)
     // Multiple small ventilators on the broad low roof.
     const [x0,z0,x1,z1]=bbox(b.poly)
     for(let x=x0+3;x<x1-2;x+=7)for(let z=z0+3;z<z1-2;z+=7)if(pointInPoly(x,z,b.poly)){
