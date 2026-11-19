@@ -58,6 +58,8 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
     g.fillStyle = '#b9bdb8'
     for (let x = 0; x < W; x += 17) g.fillRect(x, 0, 2, H)
   },
+  // The library's entrance has an uninterrupted brick facade.
+  librarybrick: (g) => { brick(g, [150, 79, 66], 19) },
   // classic campus red brick with stone sill band (Student Center, Library, Howell/Norton, Wilder)
   redbrick: (g) => {
     brick(g, [158, 74, 52], 7)

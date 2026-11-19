@@ -593,6 +593,57 @@ function hornetHubParts(b:Building){
   return out
 }
 
+/** Entrance, rear glazing, and the monument sign at the Johnson Library. */
+function libraryDetails(b:Building){
+  const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const material=(color:string,roughness=.8)=>new THREE.MeshStandardMaterial({color,roughness,side:THREE.DoubleSide})
+  const concrete=material('#dddcd2'),glass=material('#587b76',.3),dark=material('#253b38'),frame=material('#c1c8bd'),brick=material('#965b4c')
+  const edge=(a:Pt,c:Pt,fn:(box:(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>void,len:number,place:(g:THREE.BufferGeometry,x:number,y:number,z:number)=>THREE.BufferGeometry)=>void)=>{
+    const len=Math.hypot(c[0]-a[0],c[1]-a[1]),angle=Math.atan2(-(c[1]-a[1]),c[0]-a[0]),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    const place=(g:THREE.BufferGeometry,x:number,y:number,z:number)=>{g.translate(x,y,z);g.rotateY(angle);g.translate(mx,0,mz);return g}
+    const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>out.push({geo:place(new THREE.BoxGeometry(w,h,d),x,y,z),mat:m})
+    fn(box,len,place)
+  }
+  // The long southwest wall looks over the courtyard toward Mathematics.
+  edge(b.poly[23],b.poly[26],(box,len,place)=>{
+    box(len,.36,1.25,0,b.h-.15,.5,concrete)
+    box(len-.8,1.05,.1,0,b.h-1,.12,glass)
+    for(let x=-len/2+1;x<len/2;x+=1.25)box(.055,1.1,.16,x,b.h-1,.2,frame)
+    // Recessed-looking dark glazed doorway and deep shelter, with low brick planters.
+    box(13,3.25,.16,0,1.8,.12,dark)
+    for(const x of [-6.5,-4.35,-2.2,0,2.2,4.35,6.5])box(.1,3.25,.2,x,1.8,.25,frame)
+    box(13,.12,.22,0,3.35,.25,frame)
+    box(16,.4,3.2,0,3.65,1.7,concrete)
+    for(const x of [-5,5])box(.35,3.5,.35,x,1.75,2.85,concrete)
+    for(const x of [-9,9]){box(3,1.1,2.4,x,.55,2.2,brick);box(3.15,.13,2.55,x,1.15,2.2,concrete)}
+    for(let i=0;i<3;i++)box(12,.15,1.0,0,.075+i*.15,4.9-i*.95,concrete)
+    const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128
+    const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f6f5ef';ctx.textAlign='center';ctx.font='bold 70px sans-serif';ctx.fillText('L. V. JOHNSON LIBRARY',512,91)
+    const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
+    out.push({geo:place(new THREE.PlaneGeometry(12,1.4),0,5.1,.2),mat:new THREE.MeshStandardMaterial({map:tex,transparent:true,depthWrite:false,side:THREE.DoubleSide})})
+    // Stone monument stands on the lawn to the entrance's right as viewed from the courtyard.
+    const signX=-len/2-5,signZ=13
+    box(5.5,1.8,.45,signX,.9,signZ,concrete)
+    box(3.0,1.1,.45,signX,2.05,signZ,concrete)
+    const sign=document.createElement('canvas');sign.width=1024;sign.height=512
+    const sg=sign.getContext('2d')!;sg.fillStyle='#eeeee9';sg.fillRect(0,0,1024,512);sg.fillStyle='#343c3a';sg.textAlign='center';sg.font='bold 60px serif';sg.fillText('LAWRENCE V. JOHNSON',512,225);sg.fillText('LIBRARY',512,310)
+    const st=new THREE.CanvasTexture(sign);st.colorSpace=THREE.SRGBColorSpace
+    out.push({geo:place(new THREE.PlaneGeometry(5.25,1.55),signX,.95,signZ+.24),mat:new THREE.MeshStandardMaterial({map:st,side:THREE.DoubleSide})})
+    const medallion=new THREE.CylinderGeometry(.54,.54,.12,24);medallion.rotateX(Math.PI/2)
+    out.push({geo:place(medallion,signX,2.05,signZ+.26),mat:frame})
+  })
+  // Green glass and pale horizontal bands trace the curved rear footprint.
+  for(let i=8;i<=17;i++)edge(b.poly[i],b.poly[i+1],(box,len)=>{
+    box(len,2.9,.14,0,2.3,.1,glass)
+    for(let x=-len/2+.8;x<len/2;x+=1.6)box(.075,2.9,.2,x,2.3,.2,frame)
+    for(const y of [.9,2.2,3.7])box(len,.09,.2,0,y,.2,frame)
+    box(len,2.1,.15,0,5.25,.1,concrete)
+    box(len,.65,.15,0,b.h-1,.1,glass)
+    box(len,.24,.9,0,b.h-.05,.36,concrete)
+  })
+  return out
+}
+
 function Buildings({ campus }: { campus: Campus }) {
   useEffect(() => () => { occluders.meshes.length = 0 }, [])
   const items = useMemo(() => {
@@ -629,6 +680,7 @@ function Buildings({ campus }: { campus: Campus }) {
       if (b.code === 'A') parts.push(...studentCenterDetails())
       if (b.code === 'X') parts.push(...stingersDetails(b))
       if (b.code === 'D') parts.push(...mathematicsScreen(b))
+      if (b.code === 'C') parts.push(...libraryDetails(b))
       if (b.code === 'Q') parts.push(...engineeringCenterDetails(b))
       return { b, parts, flat: look.roof === 'flat' }
     })
