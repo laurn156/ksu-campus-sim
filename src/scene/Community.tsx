@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { Character } from '../characters/Character'
+import { studentFace } from './studentFace'
 import { Collider, pointInPoly, type Campus } from '../campus'
 import { player, spawnPoint, type AvatarLook } from './Player'
 import type { Profile } from '../ui/Welcome'
@@ -86,16 +87,18 @@ function AmbientStudents({campus}:{campus:Campus}) {
   const head=useRef<THREE.InstancedMesh>(null), body=useRef<THREE.InstancedMesh>(null)
   const left=useRef<THREE.InstancedMesh>(null),right=useRef<THREE.InstancedMesh>(null)
   const arms=useRef<THREE.InstancedMesh>(null)
+  const faces=useRef<THREE.InstancedMesh>(null), backpacks=useRef<THREE.InstancedMesh>(null)
+  const faceTexture=useMemo(studentFace,[])
   const helper=useMemo(()=>new THREE.Object3D(),[])
   const base=useMemo(()=>new THREE.Matrix4(),[]), part=useMemo(()=>new THREE.Matrix4(),[])
   const palette=useMemo(()=>['#8ab1e8','#e9876b','#aecb91','#b9a5e0','#f2cc5f','#6f90c4'].map(c=>new THREE.Color(c)),[])
   const shirts=useMemo(()=>['#ece9df','#333638','#c6a231','#849276','#8790a9','#b394ac'].map(c=>new THREE.Color(c)),[])
   useEffect(()=>{
-    walkers.states.forEach((_,i)=>{head.current?.setColorAt(i,palette[i%palette.length]);arms.current?.setColorAt(i*2,palette[i%palette.length]);arms.current?.setColorAt(i*2+1,palette[i%palette.length]);body.current?.setColorAt(i,shirts[(i*5)%shirts.length]);left.current?.setColorAt(i,new THREE.Color('#55586a'));right.current?.setColorAt(i,new THREE.Color('#55586a'))})
-    for(const mesh of [head.current,body.current,left.current,right.current,arms.current]) if(mesh?.instanceColor)mesh.instanceColor.needsUpdate=true
+    walkers.states.forEach((_,i)=>{head.current?.setColorAt(i,palette[i%palette.length]);arms.current?.setColorAt(i*2,palette[i%palette.length]);arms.current?.setColorAt(i*2+1,palette[i%palette.length]);body.current?.setColorAt(i,shirts[(i*5)%shirts.length]);left.current?.setColorAt(i,new THREE.Color('#55586a'));right.current?.setColorAt(i,new THREE.Color('#55586a'));backpacks.current?.setColorAt(i,new THREE.Color(['#333b3b','#8b6e52','#dad1bd'][i%3]))})
+    for(const mesh of [head.current,body.current,left.current,right.current,arms.current,backpacks.current]) if(mesh?.instanceColor)mesh.instanceColor.needsUpdate=true
   },[walkers,palette,shirts])
   useFrame(({clock},delta)=>{
-    if(!head.current || !body.current || !left.current || !right.current || !arms.current)return
+    if(!head.current || !body.current || !left.current || !right.current || !arms.current || !faces.current || !backpacks.current)return
     walkers.states.forEach((person,i)=>{
       const path=walkers.candidates[person.segment]
       const goal=person.target===0?path.a:path.b
@@ -111,6 +114,9 @@ function AmbientStudents({campus}:{campus:Campus}) {
       helper.position.set(person.x,0,person.z)
       helper.rotation.set(0,Math.atan2(dx,dz),0);helper.scale.setScalar(1);helper.updateMatrix();base.copy(helper.matrix)
       part.makeTranslation(0,1.13,0);head.current!.setMatrixAt(i,part.premultiply(base))
+      part.makeTranslation(0,1.15,0.342);faces.current!.setMatrixAt(i,part.premultiply(base))
+      helper.position.set(0,.64,-.235);helper.rotation.set(0,0,0);helper.scale.setScalar(i%3===0?1:0);helper.updateMatrix()
+      part.copy(helper.matrix).premultiply(base);backpacks.current!.setMatrixAt(i,part)
       part.makeTranslation(0,0.62,0);body.current!.setMatrixAt(i,part.premultiply(base))
       const swing=Math.sin(clock.elapsedTime*6+i)*0.05
       part.makeTranslation(-0.12,0.20,swing);left.current!.setMatrixAt(i,part.premultiply(base))
@@ -120,11 +126,13 @@ function AmbientStudents({campus}:{campus:Campus}) {
         part.copy(helper.matrix).premultiply(base);arms.current!.setMatrixAt(i*2+j,part)
       }
     })
-    for(const mesh of [head.current,body.current,left.current,right.current,arms.current])mesh!.instanceMatrix.needsUpdate=true
+    for(const mesh of [head.current,body.current,left.current,right.current,arms.current,faces.current,backpacks.current])mesh!.instanceMatrix.needsUpdate=true
   })
   const n=walkers.states.length
   return <group>
     <instancedMesh ref={head} args={[undefined,undefined,n]} frustumCulled={false}><sphereGeometry args={[0.34,12,10]}/><meshStandardMaterial roughness={0.9}/></instancedMesh>
+    <instancedMesh ref={faces} args={[undefined,undefined,n]} frustumCulled={false}><planeGeometry args={[0.42,0.36]}/><meshBasicMaterial map={faceTexture} transparent alphaTest={0.05} depthWrite={false}/></instancedMesh>
+    <instancedMesh ref={backpacks} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[0.15,0.14,4,8]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
     <instancedMesh ref={body} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[0.23,0.18,4,10]}/><meshStandardMaterial roughness={0.95}/></instancedMesh>
     <instancedMesh ref={left} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[0.1,0.14,4,8]}/><meshStandardMaterial roughness={0.95}/></instancedMesh>
     <instancedMesh ref={right} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[0.1,0.14,4,8]}/><meshStandardMaterial roughness={0.95}/></instancedMesh>

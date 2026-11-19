@@ -1,6 +1,7 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { studentFace } from './studentFace'
 import { bbox, Collider, pointInPoly, type Campus, type Pt } from '../campus'
 
 type Route = Pt[]
@@ -38,14 +39,22 @@ function useTrafficRoutes(campus:Campus) {
     const pathsForParking=campus.paths.flatMap(p=>p.pts)
     const parkingRoutes:Route[]=[]
     for(const lot of campus.areas.filter(a=>a.kind==='parking' && a.a>400)) {
-      const [x0,z0,x1,z1]=bbox(lot.poly)
-      let point:Pt|null=null
-      for(let x=x0+3;x<x1 && !point;x+=5)for(let z=z0+3;z<z1 && !point;z+=5)if(pointInPoly(x,z,lot.poly)&&pointInPoly(x,z,campus.boundary)&&!collider.blocked(x,z,1))point=[x,z]
-      if(!point)continue
-      const choices=pathsForParking.map(p=>({p,d:Math.hypot(p[0]-point![0],p[1]-point![1])})).filter(p=>p.d>6&&p.d<70).sort((a,b)=>a.d-b.d)
-      const choice=choices.find(c=>usable([c.p,point!],collider))
+      const [x0,z0,x1,z1]=bbox(lot.poly), candidates:Pt[]=[]
+      // Sample across the lot, not just its first corner, so pedestrians are visible among cars.
+      for(let x=x0+3;x<x1;x+=8)for(let z=z0+3;z<z1;z+=8)
+        if(pointInPoly(x,z,lot.poly)&&pointInPoly(x,z,campus.boundary)&&!collider.blocked(x,z,1))candidates.push([x,z])
+      if(candidates.length<2)continue
+      const starts=[0,Math.floor(candidates.length*.33),Math.floor(candidates.length*.66)]
+      for(const index of starts) {
+        const start=candidates[index]
+        const finish=candidates.find((p,j)=>j!==index && Math.hypot(p[0]-start[0],p[1]-start[1])>=12 && Math.hypot(p[0]-start[0],p[1]-start[1])<=32 && [0.25,.5,.75].every(t=>pointInPoly(start[0]+(p[0]-start[0])*t,start[1]+(p[1]-start[1])*t,lot.poly)) && usable([start,p],collider))
+        if(finish)parkingRoutes.push([start,finish])
+      }
+      // Also connect a campus path to the lot for pedestrians arriving and leaving.
+      const point=candidates[Math.floor(candidates.length/2)]
+      const choices=pathsForParking.map(p=>({p,d:Math.hypot(p[0]-point[0],p[1]-point[1])})).filter(p=>p.d>6&&p.d<70).sort((a,b)=>a.d-b.d)
+      const choice=choices.find(c=>usable([c.p,point],collider))
       if(choice)parkingRoutes.push([choice.p,point])
-      if(parkingRoutes.length>=14)break
     }
     return {roads,paths:selected,parkingRoutes}
   },[campus])
@@ -86,7 +95,7 @@ function Rider({kind,index}:{kind:'bike'|'scooter'|'skate';index:number}) {
     {kind==='bike' && <group><Wheel z={-.65}/><Wheel z={.65}/><Rod a={[0,.34,-.65]} b={[0,.38,0]} color="#e2b529"/><Rod a={[0,.38,0]} b={[0,.34,.65]} color="#e2b529"/><Rod a={[0,.34,-.65]} b={[0,.85,-.18]} color="#e2b529"/><Rod a={[0,.85,-.18]} b={[0,.34,.65]} color="#e2b529"/><Rod a={[0,.34,.65]} b={[0,1.05,.55]}/><Rod a={[-.3,1.05,.55]} b={[.3,1.05,.55]}/><mesh position={[0,.86,-.18]}><boxGeometry args={[.27,.06,.3]}/><meshStandardMaterial color="#242424"/></mesh></group>}
     {kind==='scooter' && <group><Wheel z={-.47} r={.15}/><Wheel z={.5} r={.15}/><mesh position={[0,.19,0]}><boxGeometry args={[.26,.08,.95]}/><meshStandardMaterial color="#c4bdad"/></mesh><Rod a={[0,.2,.48]} b={[0,1.12,.43]}/><Rod a={[-.27,1.12,.43]} b={[.27,1.12,.43]}/></group>}
     {kind==='skate' && <group><mesh position={[0,.13,0]}><boxGeometry args={[.3,.08,.95]}/><meshStandardMaterial color="#b98145"/></mesh>{[-.33,.33].flatMap(z=>[-.14,.14].map(x=><mesh key={x+','+z} position={[x,.08,z]} rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[.07,.07,.06,10]}/><meshStandardMaterial color="#d5d4c8"/></mesh>))}</group>}
-    <group position={[0,kind==='bike'?.46:.18,kind==='bike'?-.13:0]} scale={.8}><SimplePerson color={colors[index%colors.length]} walking={false}/></group>
+    <group position={[0,kind==='bike'?.46:.18,kind==='bike'?-.13:0]} scale={.8}><SimplePerson color={colors[index%colors.length]} walking={false} backpack={index%3===0}/></group>
   </group>
 }
 export function Traffic({campus}:{campus:Campus}) {
@@ -94,7 +103,7 @@ export function Traffic({campus}:{campus:Campus}) {
   const colors=['#dbded9','#314e67','#a13b35','#6d7371','#d1bd96']
   return <>
     {Array.from({length:Math.min(13,roads.length*2)},(_,i)=>{const path=roads[i%roads.length];return <TrafficMover key={'car'+i} path={path} index={i} speed={8+i%3} kind="road"><Car color={colors[i%colors.length]}/></TrafficMover>})}
-    {parkingRoutes.flatMap((path,i)=>[0,1,2].map(j=><TrafficMover key={'parking'+i+'-'+j} path={path} index={i*3+j} speed={1.05+j*.12} kind="parking"><ParkingWalker index={i*3+j}/></TrafficMover>))}
+    <ParkingCrowd routes={parkingRoutes}/>
     {Array.from({length:Math.min(30,paths.length)},(_,i)=><TrafficMover key={'rider'+i} path={paths[i]} index={i} speed={i%3===0?3.5:2.4} kind="path"><Rider kind={(['bike','skate','scooter'] as const)[i%3]} index={i}/></TrafficMover>)}
   </>
 }
@@ -103,19 +112,59 @@ const personBody = new THREE.CapsuleGeometry(.20,.16,4,10)
 const personLimb = new THREE.CapsuleGeometry(.075,.12,4,8)
 const shirtMaterial = new THREE.MeshStandardMaterial({color:'#eee9dd',roughness:.95})
 const pantsMaterial = new THREE.MeshStandardMaterial({color:'#55586a',roughness:.95})
-function SimplePerson({color,walking}:{color:string;walking:boolean}) {
+function SimplePerson({color,walking,backpack}:{color:string;walking:boolean;backpack:boolean}) {
   const left=useRef<THREE.Mesh>(null),right=useRef<THREE.Mesh>(null)
   const skin=useMemo(()=>new THREE.MeshStandardMaterial({color,roughness:.9}),[color])
+  const face=useMemo(studentFace,[])
   useFrame(({clock})=>{if(walking && left.current && right.current){const swing=Math.sin(clock.elapsedTime*6)*.35;left.current.rotation.x=swing;right.current.rotation.x=-swing}})
   return <group>
     <mesh position={[0,1.12,0]} geometry={personHead} material={skin}/>
+    <mesh position={[0,1.13,.292]}><planeGeometry args={[.36,.31]}/><meshBasicMaterial map={face} transparent alphaTest={.05} depthWrite={false}/></mesh>
+    {backpack && <mesh position={[0,.65,-.22]} scale={[1,1,.65]}><capsuleGeometry args={[.14,.13,4,8]}/><meshStandardMaterial color="#554a42" roughness={.95}/></mesh>}
     <mesh position={[0,.63,0]} geometry={personBody} material={shirtMaterial}/>
     {[-1,1].map(side=><mesh key={side} position={[side*.25,.63,0]} rotation={[0,0,-side*.2]} geometry={personLimb} material={skin}/>)}
     <mesh ref={left} position={[-.1,.2,0]} geometry={personLimb} material={pantsMaterial}/>
     <mesh ref={right} position={[.1,.2,0]} geometry={personLimb} material={pantsMaterial}/>
   </group>
 }
-function ParkingWalker({index}:{index:number}) {
-  const colors=['#aecb91','#8ab1e8','#e9876b','#b9a5e0']
-  return <SimplePerson color={colors[index%colors.length]} walking/>
+function ParkingCrowd({routes}:{routes:Route[]}) {
+  const heads=useRef<THREE.InstancedMesh>(null), faces=useRef<THREE.InstancedMesh>(null)
+  const bodies=useRef<THREE.InstancedMesh>(null), limbs=useRef<THREE.InstancedMesh>(null), bags=useRef<THREE.InstancedMesh>(null)
+  const face=useMemo(studentFace,[]), helper=useMemo(()=>new THREE.Object3D(),[])
+  const base=useMemo(()=>new THREE.Matrix4(),[]), part=useMemo(()=>new THREE.Matrix4(),[])
+  const journeys=useMemo(()=>routes.flatMap((path,i)=>[0,1].map(j=>({path,length:routeLength(path),index:i*2+j,speed:1.05+j*.12}))),[routes])
+  const colors=useMemo(()=>['#aecb91','#8ab1e8','#e9876b','#b9a5e0','#f2cc5f'].map(c=>new THREE.Color(c)),[])
+  useEffect(()=>{
+    journeys.forEach((_,i)=>{heads.current?.setColorAt(i,colors[i%colors.length]);bodies.current?.setColorAt(i,new THREE.Color(['#eee9dd','#323638','#aab698'][i%3]));bags.current?.setColorAt(i,new THREE.Color(['#554a42','#292c2b','#c8bfaa'][i%3]))})
+    for(const mesh of [heads.current,bodies.current,bags.current])if(mesh?.instanceColor)mesh.instanceColor.needsUpdate=true
+  },[journeys,colors])
+  useFrame(({clock})=>{
+    if(!heads.current||!faces.current||!bodies.current||!limbs.current||!bags.current)return
+    journeys.forEach((journey,i)=>{
+      const {path,length,index,speed}=journey;if(!length)return
+      const phase=(clock.elapsedTime*speed+index*length*.29)%(length*2),forward=phase<length
+      const pos=positionAlong(path,forward?phase:length*2-phase);if(!pos)return
+      const dir=forward?1:-1
+      helper.position.set(pos.x,0,pos.z);helper.rotation.set(0,Math.atan2(pos.dx*dir,pos.dz*dir),0);helper.scale.setScalar(1);helper.updateMatrix();base.copy(helper.matrix)
+      part.makeTranslation(0,1.12,0);heads.current!.setMatrixAt(i,part.premultiply(base))
+      part.makeTranslation(0,1.13,.292);faces.current!.setMatrixAt(i,part.premultiply(base))
+      part.makeTranslation(0,.63,0);bodies.current!.setMatrixAt(i,part.premultiply(base))
+      helper.position.set(0,.65,-.22);helper.rotation.set(0,0,0);helper.scale.setScalar(i%3===0?1:0);helper.updateMatrix();part.copy(helper.matrix).premultiply(base);bags.current!.setMatrixAt(i,part)
+      const swing=Math.sin(clock.elapsedTime*6+i)*.05
+      for(let k=0;k<4;k++){
+        const arm=k>=2,side=k%2===0?-1:1
+        helper.position.set(side*(arm?.25:.10),arm?.63:.20,arm?0:swing*side);helper.rotation.set(0,0,arm?-side*.2:0);helper.scale.setScalar(1);helper.updateMatrix()
+        part.copy(helper.matrix).premultiply(base);limbs.current!.setMatrixAt(i*4+k,part)
+      }
+    })
+    for(const m of [heads.current,faces.current,bodies.current,limbs.current,bags.current])m!.instanceMatrix.needsUpdate=true
+  })
+  const n=journeys.length
+  return <group>
+    <instancedMesh ref={heads} args={[undefined,undefined,n]} frustumCulled={false}><sphereGeometry args={[.29,12,10]}/><meshStandardMaterial roughness={.9}/></instancedMesh>
+    <instancedMesh ref={faces} args={[undefined,undefined,n]} frustumCulled={false}><planeGeometry args={[.36,.31]}/><meshBasicMaterial map={face} transparent alphaTest={.05} depthWrite={false}/></instancedMesh>
+    <instancedMesh ref={bodies} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[.20,.16,4,10]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
+    <instancedMesh ref={limbs} args={[undefined,undefined,n*4]} frustumCulled={false}><capsuleGeometry args={[.075,.12,4,8]}/><meshStandardMaterial color="#657080" roughness={.95}/></instancedMesh>
+    <instancedMesh ref={bags} args={[undefined,undefined,n]} frustumCulled={false}><capsuleGeometry args={[.14,.13,4,8]}/><meshStandardMaterial roughness={.95}/></instancedMesh>
+  </group>
 }
