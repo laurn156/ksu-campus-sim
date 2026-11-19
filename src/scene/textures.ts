@@ -123,7 +123,14 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
     g.fillRect(0, 0, W, 6)
     g.fillRect(0, 70, W, 3)
   },
-  // brick with glass bands (ETC, Atrium, Stingers)
+  // Engineering Technology Center: glass curtain wall with fine horizontal rails.
+  etcglass: (g) => {
+    g.fillStyle='#426e70';g.fillRect(0,0,W,H)
+    const reflection=g.createLinearGradient(0,0,W,H);reflection.addColorStop(0,'rgba(193,220,209,.30)');reflection.addColorStop(.55,'rgba(107,163,157,.08)');reflection.addColorStop(1,'rgba(25,51,50,.2)');g.fillStyle=reflection;g.fillRect(0,0,W,H)
+    g.fillStyle='#bdcbc7';for(let x=0;x<W;x+=32)g.fillRect(x,0,2,H);for(let y=0;y<H;y+=38)g.fillRect(0,y,W,2)
+  },
+  etcbrick: (g) => { brick(g,[120,76,60],13) },
+  // brick with glass bands (Atrium and other buildings)
   brickglass: (g) => {
     brick(g, [150, 70, 50], 3)
     g.fillStyle = '#577f8b'

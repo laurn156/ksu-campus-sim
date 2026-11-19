@@ -28,7 +28,7 @@ export const LOOKS: Record<string, Look> = {
   N: L('glass', 'flat', { base: 'redbrick' }), // Architecture
   O: L('metal', 'flat'),
   P60: L('deck', 'flat'), // Parking deck
-  Q: L('brickglass', 'flat', { base: 'redbrick' }), // Engineering Technology Center
+  Q: L('etcglass', 'flat', { base: 'etcbrick', floors: 3 }), // Engineering Technology Center
   R1: L('redbrick', 'flat'), // Howell Hall
   R2: L('redbrick', 'flat'), // Norton Hall
   R10: L('tanbrick', 'hip', { roofColor: '#6d6a68' }),

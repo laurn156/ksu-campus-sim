@@ -388,6 +388,61 @@ function mathematicsScreen(b:Building){
   return details
 }
 
+/** ETC's east-facing entrance is approximated from the campus footprint and reference photos. */
+function engineeringCenterDetails(b:Building){
+  const out:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const a=b.poly[3],c=b.poly[4],length=Math.hypot(c[0]-a[0],c[1]-a[1])
+  const angle=Math.atan2(-(c[1]-a[1]),c[0]-a[0]),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+  const material=(color:string,roughness=.85)=>new THREE.MeshStandardMaterial({color,roughness,side:THREE.DoubleSide})
+  const white=material('#e7e7e0'),silver=material('#b5c2bd',.5),glass=material('#487c79',.25),concrete=material('#c8c5b9'),dark=material('#465451')
+  const transform=(g:THREE.BufferGeometry,x:number,y:number,z:number)=>{g.translate(x,y,z);g.rotateY(angle);g.translate(mx,0,mz);return g}
+  const box=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial)=>out.push({geo:transform(new THREE.BoxGeometry(w,h,d),x,y,z),mat})
+  // Long curtain wall is topped by the deep, light roof edge in the photographs.
+  box(length+.4,.36,1.0,0,b.h-.1,.32,white)
+  box(length+.7,.20,1.45,0,b.h-.42,.47,white)
+  // Elevated entry landing, glazed vestibule, metal mullions and double doors.
+  box(23,.24,4.4,0,3.68,2.15,concrete)
+  box(9.2,3.25,.14,0,5.5,.16,glass)
+  for(const x of [-4.55,-3.03,-1.52,0,1.52,3.03,4.55])box(.08,3.25,.18,x,5.5,.27,silver)
+  for(const y of [3.88,5.1,7.1])box(9.2,.09,.18,0,y,.27,silver)
+  for(const x of [-1.05,1.05]){
+    box(1.85,2.85,.16,x,5.32,.35,glass)
+    for(const offset of [-.94,.94])box(.09,2.9,.2,x+offset,5.32,.48,white)
+    box(.09,.54,.2,x+.66,5.2,.52,silver)
+  }
+  box(10.2,.38,3.4,0,7.35,1.75,white)
+  box(10.6,.14,3.55,0,7.12,1.8,silver)
+  // Thin lettering stands above the projecting entry canopy.
+  const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=160
+  const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f2f2ed';ctx.textAlign='center';ctx.font='bold 79px sans-serif';ctx.fillText('ENGINEERING TECHNOLOGY CENTER',1024,108)
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace
+  const letters=transform(new THREE.PlaneGeometry(18,1.35),0,8.18,3.49)
+  out.push({geo:letters,mat:new THREE.MeshStandardMaterial({map:texture,transparent:true,depthWrite:false,side:THREE.DoubleSide})})
+  // Slender poles adjacent to the entry frame.
+  for(const x of [-8.9,-8.5,-8.1])box(.11,8.4,.11,x,7.85,3.5,silver)
+  // A broad flight rises from the lower approach to the entry terrace.
+  // These are visual steps, since the current terrain is flat.
+  for(let step=0;step<19;step++){
+    const height=(step+1)*.2,z=16.3-step*.66
+    box(5.2,height,.69,-7.8,height/2,z,concrete)
+  }
+  // Concrete retaining walls rise with the stair flight.
+  const wallShape=new THREE.Shape();wallShape.moveTo(0,0);wallShape.lineTo(13,0);wallShape.lineTo(13,4.0);wallShape.lineTo(0,.5);wallShape.closePath()
+  for(const x of [-10.6,-5]){
+    const g=new THREE.ExtrudeGeometry(wallShape,{depth:.25,bevelEnabled:false});g.rotateY(Math.PI/2);g.translate(x-.125,0,16.65);g.rotateY(angle);g.translate(mx,0,mz);out.push({geo:g,mat:concrete})
+  }
+  // Handrails run along the flight and the landing edge.
+  const segment=(p:THREE.Vector3,q:THREE.Vector3)=>{const v=q.clone().sub(p),g=new THREE.CylinderGeometry(.045,.045,v.length(),8);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize()));g.translate((p.x+q.x)/2,(p.y+q.y)/2,(p.z+q.z)/2);g.rotateY(angle);g.translate(mx,0,mz);out.push({geo:g,mat:silver})}
+  for(const x of [-10.35,-5.25]){
+    segment(new THREE.Vector3(x,.9,16.2),new THREE.Vector3(x,4.7,4.4))
+    for(let j=0;j<5;j++){const z=16.2-j*2.95,y=.2+j*.95;segment(new THREE.Vector3(x,y,z),new THREE.Vector3(x,y+.8,z))}
+  }
+  segment(new THREE.Vector3(-4.8,4.6,4.25),new THREE.Vector3(10.5,4.6,4.25))
+  for(let x=-4.8;x<=10.5;x+=2.5)segment(new THREE.Vector3(x,3.8,4.25),new THREE.Vector3(x,4.6,4.25))
+  box(1.4,1.0,1.4,12,.5,7.6,dark)
+  return out
+}
+
 function Buildings({ campus }: { campus: Campus }) {
   useEffect(() => () => { occluders.meshes.length = 0 }, [])
   const items = useMemo(() => {
@@ -416,6 +471,7 @@ function Buildings({ campus }: { campus: Campus }) {
       if (b.code === 'A') parts.push(...studentCenterDetails())
       if (b.code === 'X') parts.push(...stingersDetails(b))
       if (b.code === 'D') parts.push(...mathematicsScreen(b))
+      if (b.code === 'Q') parts.push(...engineeringCenterDetails(b))
       return { b, parts, flat: look.roof === 'flat' }
     })
   }, [campus])
