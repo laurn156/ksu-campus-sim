@@ -620,9 +620,9 @@ function libraryDetails(b:Building){
     const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128
     const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f6f5ef';ctx.textAlign='center';ctx.font='bold 70px sans-serif';ctx.fillText('L. V. JOHNSON LIBRARY',512,91)
     const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
-    out.push({geo:place(new THREE.PlaneGeometry(12,1.4),0,5.1,.2),mat:new THREE.MeshStandardMaterial({map:tex,transparent:true,depthWrite:false,side:THREE.DoubleSide})})
+    out.push({geo:place(new THREE.PlaneGeometry(12,1.4),0,5.1,1.25),mat:new THREE.MeshStandardMaterial({map:tex,transparent:true,depthWrite:false,side:THREE.DoubleSide})})
     // Stone monument stands on the lawn to the entrance's right as viewed from the courtyard.
-    const signX=-len/2-5,signZ=13
+    const signX=-len/2-12,signZ=21
     box(5.5,1.8,.45,signX,.9,signZ,concrete)
     box(3.0,1.1,.45,signX,2.05,signZ,concrete)
     const sign=document.createElement('canvas');sign.width=1024;sign.height=512
@@ -634,11 +634,11 @@ function libraryDetails(b:Building){
   })
   // Green glass and pale horizontal bands trace the curved rear footprint.
   for(let i=8;i<=17;i++)edge(b.poly[i],b.poly[i+1],(box,len)=>{
-    box(len,2.9,.14,0,2.3,.1,glass)
-    for(let x=-len/2+.8;x<len/2;x+=1.6)box(.075,2.9,.2,x,2.3,.2,frame)
-    for(const y of [.9,2.2,3.7])box(len,.09,.2,0,y,.2,frame)
-    box(len,2.1,.15,0,5.25,.1,concrete)
-    box(len,.65,.15,0,b.h-1,.1,glass)
+    box(len,7.5,.2,0,4.55,.16,glass)
+    for(let x=-len/2+.8;x<len/2;x+=1.6)box(.075,7.5,.24,x,4.55,.3,frame)
+    for(const y of [.8,2.2,3.7,5.2,6.7,8.3])box(len,.09,.24,0,y,.3,frame)
+    box(len,.55,.25,0,4.1,.34,concrete)
+    box(len,.65,.25,0,b.h-1,.22,glass)
     box(len,.24,.9,0,b.h-.05,.36,concrete)
   })
   return out
