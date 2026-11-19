@@ -47,6 +47,9 @@ export async function loadCampus(): Promise<Campus> {
   // Remove a narrow mapping spur that projected past the Textile Center's north wall.
   const textile = c.buildings.find((b) => b.code === 'M')
   if (textile && textile.poly.length === 30) textile.poly = textile.poly.filter((_, i) => i < 2 || i > 4)
+  // The Innovation Center is present in the map as an unnamed footprint.
+  const innovation = c.buildings.find((b) => b.id === '1556621556')
+  if (innovation) { innovation.name = 'Robin and Doug Shore Innovation Center'; innovation.short = innovation.name; innovation.kind = 'university'; innovation.h = 11.4; innovation.levels = 3 }
   // Administration is a two-storey building.
   const administration = c.buildings.find((b) => b.code === 'B')
   if (administration) { administration.h = 7.6; administration.levels = 2 }
@@ -146,4 +149,4 @@ export class Collider {
 }
 
 /** Is this an actual campus building (lettered code like "A", "R100", "S1")? */
-export const isCampusBuilding = (b: Building) => /^[A-Z]\d*$/.test(b.code) || b.name.startsWith('University Columns') || b.name === 'Science Lab Annex'
+export const isCampusBuilding = (b: Building) => /^[A-Z]\d*$/.test(b.code) || b.name.startsWith('University Columns') || b.name === 'Science Lab Annex' || b.name === 'Robin and Doug Shore Innovation Center'

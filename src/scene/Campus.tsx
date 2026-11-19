@@ -955,6 +955,12 @@ function recreationParts(b:Building) {
     }
     return {length,box,label}
   }
+  // The entrance-facing sides use brick bands; the distant hall walls stay tan.
+  for(const i of [8,9,10,12,13,14]) {
+    const e=edge(i);if(e.length<3)continue
+    e.box(e.length,6.4,.16,0,3.2,.08,brick)
+    for(const y of [1.35,2.1,3.05,4.05,5.05,6])e.box(e.length,.1,.2,0,y,.18,white)
+  }
   // Brick entrance wall faces the commuter parking lot, with a recessed glazed doorway.
   const entry=edge(11),w=Math.min(20,entry.length-.6)
   entry.box(w,6.6,.18,0,3.3,.1,brick)
@@ -969,7 +975,8 @@ function recreationParts(b:Building) {
   const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=220
   const ctx=canvas.getContext('2d')!;ctx.fillStyle='#202924';ctx.textAlign='center';ctx.font='bold 112px sans-serif';ctx.fillText('RECREATION & WELLNESS CENTER',1024,145,1990)
   const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
-  entry.label(tex,-w*.11,5.55,.27,w*.75,.7)
+  entry.box(w*.78,.9,.1,-w*.11,5.55,.3,white)
+  entry.label(tex,-w*.11,5.55,.39,w*.75,.7)
   const number=document.createElement('canvas');number.width=256;number.height=128
   const n=number.getContext('2d')!;n.fillStyle='#edc832';n.fillRect(0,0,256,128);n.fillStyle='#1c2922';n.textAlign='center';n.font='bold 84px sans-serif';n.fillText('955',128,94)
   const nt=new THREE.CanvasTexture(number);nt.colorSpace=THREE.SRGBColorSpace
@@ -982,6 +989,64 @@ function recreationParts(b:Building) {
   }
   const rear=edge(30);rear.box(1.7,2.5,.15,0,1.25,.1,dark);rear.box(1.5,2.25,.18,0,1.2,.22,metal)
   rear.box(3.2,1.5,1.8,5,.75,1.1,metal)
+  return parts
+}
+
+/** Robin and Doug Shore Innovation Center, including its perforated brick entrance. */
+function innovationCenterParts(b:Building) {
+  const parts:{geo:THREE.BufferGeometry;mat:THREE.MeshStandardMaterial}[]=[]
+  const solid=(color:string)=>new THREE.MeshStandardMaterial({color,roughness:.88,side:THREE.DoubleSide})
+  const brick=new THREE.MeshStandardMaterial({map:facade('librarybrick'),roughness:.95,side:THREE.DoubleSide})
+  const perforated=new THREE.MeshStandardMaterial({map:facade('innovationscreen'),roughness:.9,side:THREE.DoubleSide})
+  const glass=new THREE.MeshStandardMaterial({map:facade('etcglass'),roughness:.28,metalness:.12,side:THREE.DoubleSide})
+  const white=solid('#e3e5df'),dark=solid('#243b39'),frame=solid('#a4b5ac'),stone=solid('#d1cec2')
+  const roof=new THREE.MeshStandardMaterial({map:roofTexture(),color:'#f4f3ec',roughness:.95,side:THREE.DoubleSide})
+  parts.push({geo:wallsGeometry(b),mat:brick},{geo:flatGeometry(b.poly,b.h+.03,8),mat:roof})
+  let area=0;for(let i=0;i<b.poly.length;i++){const a=b.poly[i],c=b.poly[(i+1)%b.poly.length];area+=a[0]*c[1]-c[0]*a[1]}
+  const edge=(i:number)=>{
+    const a=b.poly[i],c=b.poly[(i+1)%b.poly.length],dx=c[0]-a[0],dz=c[1]-a[1],length=Math.hypot(dx,dz),sign=area>0?-1:1
+    const angle=-Math.atan2(dz,dx),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2
+    const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>{
+      const geo=new THREE.BoxGeometry(w,h,d);geo.translate(x,y,z*sign);geo.rotateY(angle);geo.translate(mx,0,mz);parts.push({geo,mat:m})
+    }
+    const label=(tex:THREE.Texture,x:number,y:number,z:number,w:number,h:number)=>{
+      const geo=new THREE.PlaneGeometry(w,h);if(sign<0)geo.rotateY(Math.PI);geo.translate(x,y,z*sign);geo.rotateY(angle);geo.translate(mx,0,mz)
+      parts.push({geo,mat:new THREE.MeshStandardMaterial({map:tex,transparent:true,alphaTest:.1,depthWrite:false,side:THREE.DoubleSide})})
+    }
+    return {length,box,label}
+  }
+  // A two-storey glazed corner sits inside the perforated brick frame.
+  for(const i of [12,13]){
+    const e=edge(i),w=e.length-1
+    e.box(w,7.1,.16,0,4.3,.1,glass)
+    e.box(e.length,2.4,.28,0,10.1,.15,perforated)
+    for(const x of [-e.length/2+.45,e.length/2-.45])e.box(.9,b.h,.3,x,b.h/2,.16,perforated)
+    e.box(w,.65,.28,0,4.25,.24,dark)
+    for(let x=-w/2+.1;x<=w/2;x+=1.5)e.box(.1,7.2,.25,x,4.3,.25,dark)
+    for(const y of [.75,4.25,7.8])e.box(w,.1,.26,0,y,.25,frame)
+  }
+  const front=edge(13)
+  front.box(4.4,3,.25,front.length*.18,1.55,.3,glass)
+  for(const x of [-2.15,-1.07,0,1.07,2.15])front.box(.1,3,.3,front.length*.18+x,1.55,.44,dark)
+  front.box(6,.18,2,front.length*.18,3.3,1,frame)
+  front.box(3.6,.12,2,front.length*.18,.06,1.3,stone)
+  // Building name on a dark fascia above the main doors.
+  const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=180
+  const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f0f1eb';ctx.textAlign='center';ctx.font='bold 87px sans-serif';ctx.fillText('ROBIN AND DOUG SHORE INNOVATION CENTER',1024,120,2000)
+  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
+  front.box(15,.9,.12,0,4.25,.32,dark);front.label(tex,0,4.25,.41,14.5,.68)
+  // Narrow vertically proportioned windows in the brick side and rear wings.
+  for(const i of [3,8,11]){
+    const e=edge(i)
+    for(let x=-e.length/2+2;x<e.length/2-1;x+=3.4)for(const y of [5.2,8.8]){
+      e.box(1.45,2.75,.14,x,y,.08,dark)
+      e.box(.07,2.75,.2,x,y,.18,frame)
+    }
+  }
+  // The service side has white stair and rooftop equipment volumes.
+  const side=edge(3);side.box(5.4,b.h,.14,-side.length*.3,b.h/2,.08,white)
+  const [x0,z0,x1,z1]=bbox(b.poly),cx=(x0+x1)/2,cz=(z0+z1)/2
+  const mechanical=new THREE.BoxGeometry(11,2.2,8);mechanical.translate(cx,12.5,cz);parts.push({geo:mechanical,mat:white})
   return parts
 }
 
@@ -1904,6 +1969,7 @@ function Buildings({ campus }: { campus: Campus }) {
           ...academicDetails(b),
         ], flat: true }
       }
+      if (b.id === '1556621556') return { b, parts: innovationCenterParts(b), flat: true }
       if (b.code === 'S1') return { b, parts: recreationParts(b), flat: true }
       if (b.code === 'B') return { b, parts: administrationParts(b), flat: true }
       if (b.code === 'R1' || b.code === 'R2') return { b, parts: residenceHallParts(b), flat: true }

@@ -180,6 +180,14 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
     g.fillStyle = 'rgba(0,0,0,.09)'
     for (let x = 0; x < W; x += 8) g.fillRect(x, 0, 3, H)
   },
+  // Perforated reddish brick screen around the Innovation Center entrance.
+  innovationscreen: (g) => {
+    g.fillStyle='#a55e4f';g.fillRect(0,0,W,H)
+    for(let y=4;y<H;y+=10)for(let x=(Math.floor(y/10)%2)*5;x<W;x+=10){
+      g.fillStyle='#563c38';g.fillRect(x+2,y+2,4,4)
+      g.fillStyle='rgba(245,188,153,.35)';g.fillRect(x+1,y+1,5,1)
+    }
+  },
   // Administration: closely spaced, light concrete fins in a dark recessed screen.
   administrationscreen: (g) => {
     g.fillStyle='#586864';g.fillRect(0,0,W,H)
