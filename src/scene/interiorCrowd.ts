@@ -5,7 +5,7 @@ export interface Activity { position:Point; seated?:boolean; heading?:number; du
 export interface IndoorAgent {id:number; position:Point; heading:number; seated:boolean; walk:boolean; activity:number; timer:number; route:Point[]; blocked:number}
 // Activity points sit beside the actual furniture, leaving circulation routes open.
 export const indoorActivities:Record<CrowdKind,Activity[]>={
- student:[{position:[-9,-6.3]},{position:[-9,-2.1]},{position:[1.5,-6],seated:true,heading:-Math.PI/2},{position:[1.5,-1],seated:true,heading:-Math.PI/2},{position:[7,-6]},{position:[10.8,-1]},{position:[8,7]},{position:[-7,8]}],
+ student:[{position:[-9,-6.3]},{position:[-9,-2.1]},{position:[1.95,-6],seated:true,heading:-Math.PI/2},{position:[-1.95,-1],seated:true,heading:Math.PI/2},{position:[7,-6]},{position:[10.8,-1]},{position:[8,7]},{position:[-7,8]},{position:[7,2]},{position:[10.5,2]},{position:[1.95,4],seated:true,heading:-Math.PI/2},{position:[-1.95,4],seated:true,heading:Math.PI/2},{position:[-7,4]}],
  classroom:[{position:[-6,-8],heading:0},...[-4,-1,2,5].flatMap(z=>[-8,-4,0,4,8].map(x=>({position:[x,z+1.25] as Point,seated:true,heading:Math.PI})))],
  library:[...[-9,-5,5,9].map(x=>({position:[x,-3.5] as Point,seated:true,heading:Math.PI})),...[-8,0,8].map(x=>({position:[x,4.5] as Point,seated:true,heading:Math.PI})),{position:[-11,-7]},{position:[6,-7]}],
  dorm:[{position:[-8,-3.8],seated:true,heading:Math.PI},{position:[8,-3.8],seated:true,heading:Math.PI},{position:[-8,6.3],seated:true},{position:[-3,7]},{position:[8,7]},{position:[0,5]},{position:[0,-6]},{position:[10,0]}],

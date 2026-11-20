@@ -3,7 +3,7 @@ import { InteriorCrowd } from '../src/scene/interiorCrowd.ts'
 import { clearPoint } from '../src/scene/diningSimulation.ts'
 const partition=[[-8,-2,12,.25],[8,-2,12,.25]]
 const obstacles={
- student:[[-5,-1,.3,8],[-5,8.1,.3,3.8],[5,-5,.3,7],[5,5.6,.3,8.8],[-11,-8,4,1.5],[-11,-3.8,4,1.5],[-11,.5,4,1.5],[-10,5,2,2],[-10,9,2,2],[0,-6,2,2],[0,-1,2,2],[0,4,2,2],[9,-6,3,2],[9,-1,3,2],[10,5,2,1.5],[-2,9,2.5,1],[-8.7,7,1.3,1.3],[12,8,1,1]],
+ student:[[-5,-1,.3,8],[-5,8.1,.3,3.8],[5,-5,.3,7],[5,5.6,.3,8.8],[-11,-8,4,1.5],[-11,-3.8,4,1.5],[-11,.5,4,1.5],[-10,5,2,2],[-10,9,2,2],[0,-6,3,2],[0,-1,3,2],[0,4,3,2],[9,-6,3,2],[9,-1,3,2],[10,5,2,1.5],[-2,9,2.5,1],[-8.7,7,1.3,1.3],[12,8,1,1]],
  classroom:[...[-4,-1,2,5].flatMap(z=>[-8,-4,0,4,8].map(x=>[x,z,1.4,1.1])),[0,-9,8,1]],
  library:[...partition,...[-10,-6,0,6,10].map(x=>[x,-9,1.8,1.2]),...[-11.8,11.8].flatMap(x=>[1,5].map(z=>[x,z,1.8,1.2])),...[-9,-5,5,9].map(x=>[x,-5,1.7,1.4]),...[-8,0,8].map(x=>[x,3,1.7,1.4]),[-10,8,2,1.5],[10,8,2,1]],
  dorm:[...partition,...[-8,8].flatMap(x=>[[x,-8,2,3],[x-2,-10,1.5,1],[x,-5,1.7,1.2]]),[-8,5,3,1.2],[-8,7,1.5,1],[-5,6,1.5,1.5],[10,5,1.5,1.5],[8,5,1.5,1.5]],
@@ -15,7 +15,7 @@ const obstacles={
  parking:[...[-9,-4,4,9].map(x=>[x+1.8,-6,2,4]),[2,5,1,1]],
 }
 for(const [kind,rects] of Object.entries(obstacles)){
- const sim=new InteriorCrowd(rects,kind,kind==='classroom'?8:5)
+ const sim=new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?7:5)
  assert(sim.agents.length>=4,`${kind}: insufficient people on entry`)
  assert(sim.agents.some(a=>a.position[0]<0)&&sim.agents.some(a=>a.position[0]>0),`${kind}: people not spread out`)
  const visited=sim.agents.map(a=>new Set([a.activity]))

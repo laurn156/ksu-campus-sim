@@ -21,7 +21,7 @@ function Ball({p,color,r=.1}:{p:V;color:string;r?:number}) {return <mesh positio
 function WallWindow({x,z=-11.8}:{x:number;z?:number}) {return <group><Block p={[x,2.4,z]} s={[3,2.5,.12]} c="#82aeb6"/>{[-1.5,0,1.5].map(a=><Block key={a} p={[x+a,2.4,z+.1]} s={[.12,2.6,.16]} c="#e9eee6"/>)}<Block p={[x,2.4,z+.1]} s={[3,.12,.16]} c="#e9eee6"/></group>}
 function Architecture({student}:{student:boolean}) {return <><Block p={[0,-.12,0]} s={[28,.24,24]} c="#d8d0bb"/><DiningWall p={[0,2.1,-11.95]} s={[28,4.2,.2]} color="#e9e7db">{[-10,-5,0,5,10].map(x=><WallWindow key={x} x={x}/>)}</DiningWall><DiningWall p={[-13.95,2.1,0]} s={[.2,4.2,24]} color="#e2e0d3"/><DiningWall p={[13.95,2.1,0]} s={[.2,4.2,24]} color="#e2e0d3"/><Block p={[-11,1.6,11.8]} s={[3.4,3.2,.15]} c="#83aeb1"/><Block p={[-11,1.6,11.69]} s={[.1,3.2,.2]} c="#ebece0"/><Label text="EXIT" p={[-11,3.5,11.6]} size={.3}/>{student&&<><DiningWall p={[-5,1.7,-1]} s={[.25,3.4,8]} color="#c8bda7"/><DiningWall p={[-5,1.7,8.1]} s={[.25,3.4,3.8]} color="#c8bda7"/><DiningWall p={[5,1.7,-5]} s={[.25,3.4,7]} color="#c8bda7"/><DiningWall p={[5,1.7,5.6]} s={[.25,3.4,8.8]} color="#c8bda7"/><Label text="FOOD COURT" p={[-9,3.5,-11.7]}/><Label text="GAME ROOM" p={[9,3.5,-11.7]}/></>}</>}
 const studentWalls:Rect[]=[[-5,-1,.3,8],[-5,8.1,.3,3.8],[5,-5,.3,7],[5,5.6,.3,8.8]]
-const studentFurniture:Rect[]=[[-11,-8,4,1.5],[-11,-3.8,4,1.5],[-11,.5,4,1.5],[-10,5,2,2],[-10,9,2,2],[0,-6,2,2],[0,-1,2,2],[0,4,2,2],[9,-6,3,2],[9,-1,3,2],[10,5,2,1.5],[-2,9,2.5,1],[-8.7,7,1.3,1.3],[12,8,1,1]]
+const studentFurniture:Rect[]=[[-11,-8,4,1.5],[-11,-3.8,4,1.5],[-11,.5,4,1.5],[-10,5,2,2],[-10,9,2,2],[0,-6,3,2],[0,-1,3,2],[0,4,3,2],[9,-6,3,2],[9,-1,3,2],[10,5,2,1.5],[-2,9,2.5,1],[-8.7,7,1.3,1.3],[12,8,1,1]]
 const desks:Rect[]=[];for(const z of [-4,-1,2,5])for(const x of [-8,-4,0,4,8])desks.push([x,z,1.4,1.1])
 function collision(x:number,z:number,rects:Rect[]){return Math.abs(x)>13.4||Math.abs(z)>11.3||rects.some(([cx,cz,w,d])=>Math.abs(x-cx)<w/2+.38&&Math.abs(z-cz)<d/2+.38)}
 function Move({look,rects}:{look:AvatarLook;rects:Rect[]}) {
@@ -57,7 +57,29 @@ function Move({look,rects}:{look:AvatarLook;rects:Rect[]}) {
 }
 function Pool(){return <group><Block p={[9,.8,-6]} s={[3.1,.35,1.8]} c="#624332"/><Block p={[9,1,-6]} s={[2.8,.08,1.5]} c="#387153"/>{[-1.3,0,1.3].map(x=>[-.7,.7].map(z=><Ball key={`${x}:${z}`} p={[9+x,1.08,-6+z]} color="#242820" r={.13}/>))}{[0,1,2,3,4].map(i=><Ball key={i} p={[8.6+i*.17,1.1,-6+(i%2)*.17]} color={['#f1e8ca','#db4840','#e3ba3d','#404c85','#252b27'][i]} r={.08}/>)}{[-1,1].map(x=>[-.6,.6].map(z=><Block key={`${x}:${z}`} p={[9+x,.4,-6+z]} s={[.22,.8,.22]} c="#564638"/>))}<Block p={[9,1.13,-5.3]} s={[2.7,.05,.05]} c="#c3a275"/></group>}
 function PingPong(){return <group><Block p={[9,.8,-1]} s={[3,.16,1.6]} c="#426e91"/><Block p={[9,1,-1]} s={[.04,.35,1.6]} c="#e6e6dd"/>{[-1.2,1.2].map(x=>[-.6,.6].map(z=><Block key={`${x}:${z}`} p={[9+x,.4,-1+z]} s={[.13,.8,.13]} c="#444e4b"/>))}<Ball p={[9.5,.96,-1]} color="#f6eee0" r={.08}/><mesh position={[8.5,.93,-.8]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[.25,12]}/><meshStandardMaterial color="#c65b4b"/></mesh></group>}
-function Student({look:_look}:{look:AvatarLook}) {const counters=[{z:-8,name:'CHICK-FIL-A',color:'#b8423e',items:'CHICKEN  •  FRIES'},{z:-3.8,name:'DUNKIN’',color:'#df7b36',items:'COFFEE  •  DONUTS'},{z:.5,name:'SUSHI',color:'#577e6c',items:'ROLLS  •  BOWLS'}];return <><Architecture student/>{counters.map((c,i)=><group key={c.name}><Block p={[-11,1,c.z]} s={[4,2,1.5]} c={c.color}/><Block p={[-11,2.9,c.z-.6]} s={[4.2,1,.2]} c="#f7f3e8"/><Label text={c.name} p={[-11,3,c.z-.46]} size={.45} color={c.color}/><Block p={[-11,2.2,c.z-.45]} s={[3.8,.5,.1]} c="#32413a"/><Label text={c.items} p={[-11,2.2,c.z-.36]} size={.24} color="#f5e8cb"/><Model name="laptop" p={[-11.8,2,c.z]} scale={.75}/>{i===1&&<Model name="kitchencoffeemachine" p={[-10.4,2,c.z]} scale={.8}/>}</group>)}{[-10,0,5].map((_,i)=><group key={i}><Model name="tableround" p={[0,0,-6+i*5]} scale={1.5}/>{[-1.5,1.5].map(x=><Model key={x} name="chaircushion" p={[x,0,-6+i*5]} r={x<0?Math.PI/2:-Math.PI/2} scale={1.1}/>)}</group>)}<Model name="loungesofa" p={[-10,0,5]} scale={1.5}/><Model name="loungechair" p={[-10,0,9]} scale={1.3}/><Model name="tablecoffee" p={[-8.7,0,7]} scale={1.2}/><Model name="pottedplant" p={[-13,0,10]} scale={1.3}/><Model name="trashcan" p={[-6.5,0,3]} scale={1.1}/><Pool/><PingPong/><Model name="loungechair" p={[10,0,5]} scale={1.4}/><Block p={[12,1,8]} s={[1,2,.8]} c="#32494b"/><Block p={[12,1.5,7.57]} s={[.7,.7,.08]} c="#82b9bd"/><Label text="ARCADE" p={[12,2.2,7.5]} size={.2}/><Block p={[-2,1,9]} s={[2.5,2,1]} c="#8d795e"/><Label text="INFO" p={[-2,2.3,8.4]} size={.3}/></>}
+function StudentTable({z,index}:{z:number;index:number}) {return <group>
+ <DiningModel name="tablecross" p={[0,0,z]} scale={2.75}/>
+ {[-1,1].map(side=><DiningModel key={side} name="chaircushion" p={[side*1.85,0,z]} r={side<0?Math.PI/2:-Math.PI/2} scale={2.05}/>)}
+ <DiningModel name="plate-dinner" pack="food" p={[-.35,.98,z]} scale={.58}/><DiningModel name={index===1?'donut-sprinkles':'sandwich'} pack="food" p={[-.35,1.02,z]} scale={.65}/><DiningModel name="cup" pack="food" p={[.45,1,z+.2]} scale={.7}/>
+ </group>}
+function Student({look:_look}:{look:AvatarLook}) {return <>
+ <Architecture student/>
+ {[{z:-8,name:'CHICK-FIL-A',color:'#b83f3d',foods:['burger','fries','sandwich'],menu:'CHICKEN  •  FRIES'},{z:-3.8,name:'DUNKIN’',color:'#e5843d',foods:['donut-sprinkles','cup-coffee','donut-sprinkles'],menu:'COFFEE  •  DONUTS'},{z:.5,name:'SUSHI',color:'#608978',foods:['maki-salmon','salad','maki-salmon'],menu:'ROLLS  •  BOWLS'}].map(({z,name,color,foods,menu},index)=><group key={name}>
+  <Block p={[-11,.55,z]} s={[3.9,1.1,1.45]} c={color}/><Block p={[-11,1.15,z]} s={[4,.12,1.5]} c="#efe9da"/>
+  <Block p={[-11,2.6,z-.6]} s={[4,.68,.16]} c={index===1?'#f6dfd9':'#f8f2e7'}/><Label text={name} p={[-11,2.61,z-.48]} size={.39} color={index===1?'#cc5d78':color}/>
+  <Block p={[-11,2.05,z-.55]} s={[3.9,.42,.12]} c="#2d413b"/><Label text={menu} p={[-11,2.06,z-.46]} size={.21} color="#f9efd6"/>
+  {foods.map((food,i)=><DiningModel key={i} name={food} pack="food" p={[-12.1+i*.72,1.25,z+.15]} scale={.72}/>)}
+  <Block p={[-9.62,1.28,z+.08]} s={[.42,.2,.38]} c="#344440"/><Block p={[-9.62,1.48,z-.01]} s={[.33,.26,.08]} c="#7fa59c"/>
+  {index===2&&<><Block p={[-11.35,1.58,z+.48]} s={[2.2,.7,.06]} c="#a9ced0"/>{[-12.42,-10.28].map(x=><Block key={x} p={[x,1.58,z+.48]} s={[.07,.75,.1]} c="#e6e9dc"/>)}</>}
+ </group>)}
+ {[-6,-1,4].map((z,i)=><StudentTable key={z} z={z} index={i}/>)}
+ <DiningModel name="loungesofa" p={[-10,0,5]} scale={2.1}/><DiningModel name="loungechair" p={[-10,0,9]} scale={1.9}/><DiningModel name="tablecoffee" p={[-8.7,0,7]} scale={1.65}/>
+ <DiningModel name="pottedplant" p={[-13,0,10]} scale={2}/><DiningModel name="trashcan" p={[-6.5,0,3]} scale={1.65}/>
+ <Pool/><PingPong/><DiningModel name="loungechair" p={[10,0,5]} scale={1.9}/>
+ <Block p={[12,.9,8]} s={[1,1.8,.8]} c="#32494b"/><Block p={[12,1.35,7.57]} s={[.7,.65,.08]} c="#82b9bd"/><Label text="ARCADE" p={[12,1.98,7.5]} size={.2}/>
+ <Block p={[-2,.55,9]} s={[2.5,1.1,1]} c="#987a5c"/><Block p={[-2,1.13,9]} s={[2.65,.12,1.1]} c="#ded2b9"/><Label text="INFORMATION" p={[-2,1.55,8.44]} size={.23}/><DiningModel name="laptop" p={[-2,1.2,9]} scale={1.1}/>
+ </>}
+
 function Classroom({look:_look}:{look:AvatarLook}) {return <><Architecture student={false}/><Block p={[0,2.3,-11.7]} s={[10,2.4,.18]} c="#fcfcf3"/><Label text={'∫ x² dx = x³ / 3 + C\nf(x) = ax² + bx + c\nsin² θ + cos² θ = 1'} p={[0,2.4,-11.55]} size={.37}/><Block p={[9,2.4,-11.7]} s={[4,2.4,.16]} c="#f7f7ed"/><Label text="PROJECTOR" p={[9,2.4,-11.55]} size={.25}/><Block p={[0,3.8,-3]} s={[.8,.25,.5]} c="#f6f4ea"/><Model name="desk" p={[-10,0,-9]} scale={1.4}/><Model name="computerscreen" p={[-10,1.05,-9]} scale={.8}/>{desks.map(([x,z],i)=><group key={`${x}:${z}`}><Model name="desk" p={[x,0,z]} scale={1.05}/><Model name="chairdesk" p={[x,0,z+1]} scale={1}/>{i%3===0?<Model name="laptop" p={[x,1,z]} scale={.7}/>:<Model name="books" p={[x,1,z]} scale={.65}/ >}</group>)}<mesh position={[-12,3.25,-11.7]}><circleGeometry args={[.48,20]}/><meshStandardMaterial color="#fdfbf0"/></mesh><Label text="◷" p={[-12,3.25,-11.55]} size={.7}/></>}
 
 // Each furniture placement carries its collision footprint, keeping visual and movement layouts together.
@@ -225,15 +247,9 @@ function RoomFinish({kind}:{kind:CrowdKind}) {
  </>
 }
 function FoodCounterDetails(){return <>
- {[{z:-8,foods:['burger','fries','sandwich'],title:'CHICKEN • FRIES • DRINKS'},{z:-3.8,foods:['donut-sprinkles','cup-coffee','donut-sprinkles'],title:'COFFEE • DONUTS'},{z:.5,foods:['maki-salmon','maki-salmon','salad'],title:'SUSHI • FRESH BOWLS'}].map(({z,foods,title})=><group key={z}>
-  <Block p={[-11,2.08,z]} s={[3.7,.12,1.35]} c="#e7e3d8"/><Block p={[-11,2.5,z-.3]} s={[3.4,.6,.1]} c="#32413a"/><Label text={title} p={[-11,2.5,z-.2]} size={.17} color="#f8ebcd"/>
-  {foods.map((food,i)=><DiningModel key={i} name={food} pack="food" p={[-12+i*.75,2.18,z+.15]} scale={.55}/>)}
-  <Block p={[-9.65,2.27,z+.1]} s={[.38,.24,.35]} c="#344440"/><Block p={[-9.65,2.45,z+.02]} s={[.3,.18,.08]} c="#96b2ae"/>
- </group>)}
- {[-6,-1,4].map((z,i)=><group key={z}><DiningModel name="cup" pack="food" p={[.1,1.08,z]} scale={.55}/><DiningModel name={i===1?'donut-sprinkles':'sandwich'} pack="food" p={[-.4,1.08,z]} scale={.5}/></group>)}
  <WallBoard x={-2} title="CAMPUS LIFE" lines={'EVENTS • CLUBS\nWELCOME, OWLS'} color="#977938"/>
- <Block p={[8,1.16,-6]} s={[2.95,.1,.08]} c="#49372d"/>{[-1.35,0,1.35].map(dx=>[-.7,.7].map(dz=><Ball key={`${dx}:${dz}`} p={[9+dx,1.19,-6+dz]} color="#242a26" r={.13}/>))}
- <Block p={[9,1.08,-1]} s={[.05,.3,1.5]} c="#f5f3e7"/><DiningModel name="pottedplant" p={[-6.4,0,10]} scale={1.2}/>
+ <Block p={[8,1.16,-6]} s={[2.95,.1,.08]} c="#49372d"/><Block p={[9,1.08,-1]} s={[.05,.3,1.5]} c="#f5f3e7"/>
+ <DiningModel name="pottedplant" p={[-6.4,0,10]} scale={1.8}/>
  </>}
 function ClassroomDetails(){return <>
  <Clock x={12}/><WallBoard x={-12} title="CLASSROOM" lines={'OFFICE HOURS\nASK QUESTIONS'} color="#ad8653"/>
@@ -301,7 +317,7 @@ function InteriorAgent({agent,look}:{agent:IndoorAgent;look:AvatarLook}) {
  return <group ref={group} position={[agent.position[0],0,agent.position[1]]} rotation={[0,agent.heading,0]}><Character {...look} color={colors[agent.id%colors.length]} top="tee" topColor={['#d6a939','#63867b','#b96555','#586f91','#92768e'][agent.id%5]} scale={1.15} walk={walk} sit={sit} sitLift={.112}/></group>
 }
 function InteriorPeople({kind,rects,look}:{kind:CrowdKind;rects:Rect[];look:AvatarLook}) {
- const sim=useMemo(()=>new InteriorCrowd(rects,kind,kind==='classroom'?8:5),[kind,rects])
+ const sim=useMemo(()=>new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?7:5),[kind,rects])
  useEffect(()=>()=>{indoorState.npcPositions=[]},[])
  useFrame((_,dt)=>{sim.step(Math.min(dt,.05),[indoorState.x,indoorState.z]);indoorState.npcPositions=sim.agents.map(a=>a.position)})
  return <>{sim.agents.map(agent=><InteriorAgent key={agent.id} agent={agent} look={look}/>)}</>
