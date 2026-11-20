@@ -6,6 +6,7 @@ import type { PaletteName } from '../characters/palette'
 import { centroid, Collider, westDeckGroundHeight, type Campus } from '../campus'
 import { busCaller, busPositions } from './Buses'
 import { indoorState } from './indoorState'
+import { activityState } from '../activities/activityState'
 
 /** Shared, mutable player state (read by the HUD / minimap without re-rendering React every frame). */
 export const player = { x: 0, z: 0, heading: 0, yaw: 0.6, pitch: 1.0, moving: false, tp: null as null | { x: number; z: number; yaw: number; buildingId?:string }, travelOrigin: null as null | { x: number; z: number }, travelBuilding: null as string | null, view: null as null | { x:number; z:number; yaw:number; buildingId?:string }, viewChanged: false, busRide: null as null | { index: number; until: number }, rides: 0, speedMultiplier: 1 }
@@ -171,7 +172,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
       else { player.x=bus.x; player.z=bus.z; snap.current=true }
     }
     if (k.has('q')) player.yaw += dt * 1.6
-    if (k.has('e')) player.yaw -= dt * 1.6
+    if (k.has('e') && !activityState.mode && !activityState.locked && !activityState.near) player.yaw -= dt * 1.6
     // camera-relative movement: "forward" points away from the camera
     const fwd = new THREE.Vector2(-Math.sin(player.yaw), -Math.cos(player.yaw))
     const right = new THREE.Vector2(-fwd.y, fwd.x)
@@ -180,7 +181,8 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     if (k.has('s') || k.has('arrowdown')) dir.sub(fwd)
     if (k.has('d') || k.has('arrowright')) dir.add(right)
     if (k.has('a') || k.has('arrowleft')) dir.sub(right)
-    const moving = !player.view && !player.busRide && dir.lengthSq() > 0.0001
+    if(activityState.locked)keys.current.clear()
+    const moving = !activityState.locked && !player.view && !player.busRide && dir.lengthSq() > 0.0001
     if (moving) {
       pan.current.set(0, 0)
       dir.normalize()

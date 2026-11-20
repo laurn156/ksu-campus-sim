@@ -11,7 +11,7 @@ import { STUDENTS, scheduleFor, type StudentProfile, type StudentId } from '../l
 import { makePathNetwork } from './Scrappy'
 import { centroid } from '../campus'
 
-export const community: { students:{id:StudentId;name:string;x:number;z:number;line:string}[] } = { students:[] }
+export const community: { students:{id:StudentId;name:string;x:number;z:number;line:string}[];talking:StudentId|null } = { students:[],talking:null }
 export function CampusStudents({ campus, minute }: {campus:Campus;minute:number}) {
   const collider=useMemo(()=>new Collider(campus.buildings),[campus])
   const network=useMemo(()=>makePathNetwork(campus,collider),[campus,collider])
@@ -36,7 +36,9 @@ function LifeStudent({profile,campus,minute,index,network,start}:{profile:Studen
   },[scheduled.code,network,campus])
   useFrame((_,raw)=>{
     const dt=Math.min(raw,.05); wait.current=Math.max(0,wait.current-dt)
-    const next=wait.current>0?undefined:route.current[0]
+    const conversing=community.talking===profile.id
+    const next=conversing||wait.current>0?undefined:route.current[0]
+    if(conversing&&ref.current)ref.current.rotation.y=Math.atan2(player.x-position.current[0],player.z-position.current[1])
     if(next!==undefined){const [tx,tz]=network.nodes[next],dx=tx-position.current[0],dz=tz-position.current[1],d=Math.hypot(dx,dz)
       if(d<.15)route.current.shift()
       else {const step=Math.min(d,dt*1.8);position.current[0]+=dx/d*step;position.current[1]+=dz/d*step;if(ref.current)ref.current.rotation.y=Math.atan2(dx,dz)}

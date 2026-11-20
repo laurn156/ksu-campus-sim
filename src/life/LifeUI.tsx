@@ -1,3 +1,4 @@
+import { activityState } from '../activities/activityState'
 import { indoorState } from '../scene/indoorState'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { distToSeg, type Campus } from '../campus'
@@ -43,7 +44,7 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
     const interval=setInterval(update,300);update();return()=>clearInterval(interval)
   },[campus])
   useEffect(()=>{
-    const key=(e:KeyboardEvent)=>{if(indoorState.active||e.key.toLowerCase()!=='f'||e.repeat||player.view||e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||e.target instanceof HTMLSelectElement)return
+    const key=(e:KeyboardEvent)=>{if(indoorState.active||activityState.mode||activityState.near||!['e','f'].includes(e.key.toLowerCase())||e.repeat||player.view||e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||e.target instanceof HTMLSelectElement)return
       const nearest=community.students.map(s=>({...s,d:Math.hypot(s.x-player.x,s.z-player.z)})).sort((a,b)=>a.d-b.d)[0]
       if(nearest&&nearest.d<5){setTalking(nearest.id);setAiReply('');life.setReply('')}
     }
@@ -58,6 +59,7 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
     },15000)
     return()=>clearInterval(id)
   },[talking,menu,invitation,life.state.relations])
+  useEffect(()=>{community.talking=talking;if(talking)activityState.locked=true;return()=>{community.talking=null;if(talking)activityState.locked=false}},[talking])
   useEffect(()=>()=>request.current?.abort(),[])
   const interact=(action:SocialAction,text='')=>{
     if(!npc)return
@@ -82,14 +84,14 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
   return <>
     <section className="life-status" aria-label="Player needs"><header>☀ Day {life.state.day} · {timeLabel(life.state.minute)} <span>{period(life.state.minute)}</span></header><div>{(Object.entries(life.state.needs) as [string,number][]).map(([name,value])=><div className="need" key={name}><span>{name}</span><div><i style={{width:Math.round(value)+'%',background:value<25?'#d36a55':'#e1ba3c'}}/></div><small>{Math.round(value)}</small></div>)}</div></section>
     <button className="life-phone-button" onClick={()=>setMenu('relationships')}>☰ Phone</button>
-    {closest&&!talking&&!menu&&!player.view&&<div className="life-near">Press <b>F</b> to talk to {STUDENTS.find(s=>s.id===closest)?.name}</div>}
+    {closest&&!talking&&!menu&&!player.view&&<div className="life-near">Press <b>E</b> to talk to {STUDENTS.find(s=>s.id===closest)?.name}</div>}
     {feedback&&<div className="life-feedback" role="status">{feedback}</div>}
     {(nearbyPlaces.length>0||nearBench)&&!player.view&&<section className="life-actions"><b>Nearby</b>{nearBench&&<div><strong>Bench</strong><button onClick={()=>doPlace('rest')}>Sit and rest · 30 min</button></div>}{nearbyPlaces.map(p=><div key={p.code}><strong>{p.title}</strong>{p.actions.map(a=><button key={a.id} onClick={()=>doPlace(a.id)}>{a.label}</button>)}{event?.code===p.code&&<button onClick={()=>doPlace('club')}>Join {event.name} · 1 hr</button>}</div>)}</section>}
     {invitation&&!talking&&<div className="life-invite"><b>{STUDENTS.find(s=>s.id===invitation)?.name}</b> waves you over. Want to chat?<div><button onClick={()=>{setTalking(invitation);setInvitation(null)}}>Say hello</button><button onClick={()=>setInvitation(null)}>Not now</button></div></div>}
     {talking&&npc&&r&&<div className="life-modal-back"><section className="life-dialog" role="dialog" aria-modal="true" aria-label={'Talk to '+npc.name}><header><div><small>{npc.major} · {moodFor(npc,life.state.minute,r.score)} · {scheduleFor(npc,life.state.minute).label}</small><h2>{npc.name}</h2><span>{npc.personality}</span></div><button onClick={()=>{request.current?.abort();setThinking(false);setTalking(null);life.setReply('');setAiReply('');setReplySource(null)}}>✕</button></header>
       <div className="life-speech"><b>{npc.name}</b><p>{thinking?'Thinking…':aiReply||life.reply||(r.met ? `Hi ${playerName}! Good to see you again.` : 'Hi! Want to introduce yourself?')}</p><small>{level(r.score)} · {r.score} relationship{!thinking&&replySource ? ` · ${replySource==='qwen'?'Local Qwen':replySource==='memory'?'Saved memory':'Offline fallback'}` : ''}</small></div>
       <div className="life-interactions">{interactions.map(group=><div key={group.label}><b>{group.label}</b><div>{group.items.map(a=><button key={a.id} onClick={()=>interact(a.id)}>{a.label}</button>)}</div></div>)}</div>
-      <form onSubmit={e=>{e.preventDefault();if(message.trim())interact('custom',message)}}><label htmlFor="life-message">Say something</label><div><input id="life-message" maxLength={240} placeholder="Type a message…" value={message} onChange={e=>setMessage(e.target.value)}/><button type="submit">Send</button></div><small>Local Qwen dialogue is used when Ollama is running; otherwise, local demo replies are shown.</small></form>
+      <form onSubmit={e=>{e.preventDefault();if(message.trim())interact('custom',message)}}><label htmlFor="life-message">Say something</label><div><input id="life-message" maxLength={240} placeholder="Type a message…" value={message} onChange={e=>setMessage(e.target.value)}/><button type="submit">Send</button></div><small>The campus dialogue service responds when available; otherwise, saved offline replies are shown.</small></form>
     </section></div>}
     {menu&&<div className="life-modal-back"><section className="life-phone" role="dialog" aria-modal="true" aria-label="Campus phone"><header><div><small>CAMPUSVERSE</small><h2>Your phone</h2></div><button onClick={()=>setMenu(null)}>✕</button></header><nav>{(['relationships','schedule','activities','stories','character'] as const).map(t=><button key={t} aria-pressed={menu===t} onClick={()=>setMenu(t)}>{t}</button>)}</nav>
       <div className="phone-content">{menu==='relationships'&&<><h3>Relationships</h3>{STUDENTS.filter(s=>relation(life.state,s.id).met).length===0&&<p>Meet a student to see them here.</p>}{STUDENTS.filter(s=>relation(life.state,s.id).met).map(s=>{const rel=relation(life.state,s.id);return <div className="relationship" key={s.id}><b>{s.name}</b><span>{level(rel.score)}</span><div><i style={{width:Math.max(0,Math.min(100,rel.score))+'%'}}/></div><small>{s.major} · {s.personality}</small></div>})}</>}

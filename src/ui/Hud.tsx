@@ -6,6 +6,7 @@ import { landmarkSpots } from '../scene/Landmarks'
 import { scrappy } from '../scene/Scrappy'
 import { busPositions } from '../scene/Buses'
 import { community } from '../scene/Community'
+import { activityState } from '../activities/activityState'
 import { indoorState } from '../scene/indoorState'
 import type { Mode } from './GameFlow'
 
@@ -111,6 +112,7 @@ function GoTo({ campus, onView }: { campus: Campus; onView: (target:{x:number;z:
       className="goto"
       value=""
       onChange={(e) => {
+        if (activityState.locked) return
         const p = places[Number(e.target.value)]
         if (p) onView(p.go())
         e.target.blur() // keep WASD for walking
@@ -171,7 +173,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
     }
     const interval=setInterval(()=>{const next=closest();setNearby(old=>old?.name===next?.name?old:next);if(!next && !player.busRide)setMessage('')},200)
     const key=(e:KeyboardEvent)=>{
-      if(indoorState.active||e.key.toLowerCase()!=='f'||e.repeat||e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement||player.busRide||player.view)return
+      if(indoorState.active||activityState.locked||e.key.toLowerCase()!=='f'||e.repeat||e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement||player.busRide||player.view)return
       const next=closest(); if(!next)return
       // Buses take priority over chatting so a crowd at the stop never blocks boarding.
       if(next.kind!=='bus'&&community.students.some(s=>Math.hypot(s.x-player.x,s.z-player.z)<5))return
