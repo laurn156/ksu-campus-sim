@@ -698,7 +698,7 @@ function libraryDetails(b:Building){
   })
   // West entrance ("910"): two sets of glass doors under a white canopy band on round columns,
   // a gray louver high on the brick and the yellow building-number sign (reference photo).
-  edge(b.poly[26],b.poly[0],(box,len,place)=>{
+  edge(b.poly[0],b.poly[1],(box,len,place)=>{
     const white=material('#eeeee8')
     box(len*.62,.45,1.6,-len*.06,3.4,.8,white)
     for(const x of [-len*.33,len*.2])out.push({geo:place(new THREE.CylinderGeometry(.24,.24,3.2,16),x,1.6,1.3),mat:white})
@@ -715,15 +715,6 @@ function libraryDetails(b:Building){
     const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace
     out.push({geo:place(new THREE.PlaneGeometry(1.2,.56),-len*.02,5.3,.1),mat:new THREE.MeshStandardMaterial({map:tx,transparent:true,side:THREE.DoubleSide})})
     box(.5,.25,.3,-len*.02,6.4,.18,material('#cfd2cf'))
-  })
-  // Two entrances along the adjoining brick wall beside the library lawn.
-  edge(b.poly[21],b.poly[22],(box,len)=>{
-    for(const x of [-len*.24,len*.24]){
-      box(2.5,2.8,.18,x,1.4,.2,dark)
-      for(const dx of [-1.25,0,1.25])box(.1,2.9,.24,x+dx,1.45,.34,frame)
-      box(2.6,.12,.24,x,2.85,.34,frame)
-      box(.08,.55,.12,x+.42,1.35,.42,concrete)
-    }
   })
   // Green glass and pale horizontal bands trace the curved rear footprint.
   for(let i=8;i<=17;i++)edge(b.poly[i],b.poly[i+1],(box,len)=>{
@@ -1124,7 +1115,7 @@ function innovationCenterParts(b:Building) {
   const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=180
   const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f0f1eb';ctx.textAlign='center';ctx.font='bold 87px sans-serif';ctx.fillText('ROBIN AND DOUG SHORE INNOVATION CENTER',1024,120,2000)
   const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
-  front.box(13,.9,.12,-front.length*.2,4.25,.32,dark);front.label(tex,-front.length*.2,4.25,.41,12.5,.68)
+  front.box(13.4,1,.14,-front.length*.2,4.25,.48,dark);front.label(tex,-front.length*.2,4.25,.58,12.5,.68)
   // A broad glass bay sits between the brick sections along the front.
   const middle=edge(5),mw=middle.length-3
   middle.box(mw,7.1,.16,0,4.3,.1,glass)
@@ -2271,6 +2262,8 @@ function Ground({ campus, overlay = false }: { campus: Campus; overlay?: boolean
 }
 
 /** Thousands of trees as two instanced meshes: along walkways, on lawns, dense in the woods. */
+// Keep the Shore Innovation Center's glazed front and corner clear of trees.
+const nearShoreFront = (x: number, z: number) => distToSeg(x, z, [-57.91, -197.83], [-36.53, -210.25]) < 14 || distToSeg(x, z, [-44.68, -175.38], [-57.91, -197.83]) < 9
 function Trees({ campus }: { campus: Campus }) {
   const { trunks, crowns } = useMemo(() => {
     const collider = new Collider(campus.buildings)
@@ -2303,12 +2296,14 @@ function Trees({ campus }: { campus: Campus }) {
     const tryAdd = (x: number, z: number, sc: number) => {
       if (spots.length > 14000) return
       if (collider.blocked(x, z, 3) || onPavement(x, z)) return
+      // keep the Shore Innovation Center's glazed front clear of trees
+      if (nearShoreFront(x, z)) return
       spots.push([x, z, sc])
     }
     if (campus.treesFromAerial) {
       // real tree positions detected in the aerial photo
       // keep roughly 1 in 4 detected canopy points: the woods still read as woods, the lawns stay open
-      for (const t of campus.trees) if (Math.hypot(t[0]+81.5,t[1]+75)>8.5 && !campus.areas.some((a) => (a.name === 'S. Walter Kelly Sr. Memorial Field' || a.name === 'Field #1' || a.name === 'Field #3') && pointInPoly(t[0], t[1], a.poly)) && (rnd() < 0.12 || ((t[2] ?? 1) > 1.32 && rnd() < 0.22))) spots.push([t[0], t[1], (t[2] ?? 1) * 1.25])
+      for (const t of campus.trees) if (Math.hypot(t[0]+81.5,t[1]+75)>8.5 && !campus.areas.some((a) => (a.name === 'S. Walter Kelly Sr. Memorial Field' || a.name === 'Field #1' || a.name === 'Field #3') && pointInPoly(t[0], t[1], a.poly)) && (rnd() < 0.12 || ((t[2] ?? 1) > 1.32 && rnd() < 0.22)) && !nearShoreFront(t[0], t[1])) spots.push([t[0], t[1], (t[2] ?? 1) * 1.25])
     } else for (const [x, z] of campus.trees) tryAdd(x, z, 1.2)
     // lines of trees along walkways (like the aerial view)
     if (!campus.treesFromAerial) for (const p of campus.paths) {
