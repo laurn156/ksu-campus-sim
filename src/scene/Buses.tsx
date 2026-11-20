@@ -3,7 +3,11 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { Campus, Pt } from '../campus'
 
-export const busPositions: { x: number; z: number }[] = []
+export const busPositions: { x: number; z: number; h: number }[] = []
+// Where the player is standing on campus (written by Player each frame). A bus
+// holds at its current spot while the player is next to it, so it can be boarded.
+export const busCaller = { x: NaN, z: NaN, riding: -1 }
+const HOLD_RADIUS = 11
 
 // An illustrative campus shuttle, not a live route or a timetable.
 function busTexture() {
@@ -48,9 +52,13 @@ function Shuttle({ path, offset, texture }: { path: Pt[]; offset: number; textur
   useFrame((_, dtRaw) => {
     if (!ref.current || data.length === 0) return
     if (!motion.current) motion.current={distance:offset*data.length*2,wait:0,inStop:false}
-    const m=motion.current, dt=Math.min(dtRaw,0.05)
-    if (m.wait>0) m.wait=Math.max(0,m.wait-dt)
-    else m.distance=(m.distance+dt*8)%(data.length*2)
+    const m=motion.current, dt=Math.min(dtRaw,0.05), index=Math.round(offset * 4)
+    const here=busPositions[index]
+    const waiting=!!here && busCaller.riding!==index && Math.hypot(here.x-busCaller.x,here.z-busCaller.z)<HOLD_RADIUS
+    if (!waiting) {
+      if (m.wait>0) m.wait=Math.max(0,m.wait-dt)
+      else m.distance=(m.distance+dt*8)%(data.length*2)
+    }
     const cycle = m.distance
     const atStop=Math.abs((cycle<data.length?cycle:2*data.length-cycle)-stopAt)<6
     if(atStop && !m.inStop){m.wait=6;m.inStop=true}
@@ -65,7 +73,7 @@ function Shuttle({ path, offset, texture }: { path: Pt[]; offset: number; textur
     const dir = forward ? 1 : -1
     ref.current.position.set(a[0]+(b[0]-a[0])*t + dz*1.6*dir, 0, a[1]+(b[1]-a[1])*t - dx*1.6*dir)
     ref.current.rotation.y = Math.atan2(dx*dir, dz*dir)
-    busPositions[Math.round(offset * 4)] = { x: ref.current.position.x, z: ref.current.position.z }
+    busPositions[index] = { x: ref.current.position.x, z: ref.current.position.z, h: ref.current.rotation.y }
   })
   return <group ref={ref}>
     <mesh position={[0,1.8,0]} castShadow><boxGeometry args={[2.5,2.8,10.5]} /><meshStandardMaterial color="#171919" roughness={0.55} /></mesh>

@@ -165,13 +165,14 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
       const candidates: {kind:'student'|'scrappy'|'bus';name:string;line:string;distance:number;index?:number}[] = []
       candidates.push({kind:'scrappy',name:'Scrappy',line:'Hooty Hoo! Thanks for stopping by!',distance:Math.hypot(scrappy.x-player.x,scrappy.z-player.z)})
       busPositions.forEach((b,i)=>{if(b)candidates.push({kind:'bus',name:'Big Owl Bus',line:'On board! Enjoy the ride.',distance:Math.hypot(b.x-player.x,b.z-player.z),index:i})})
-      return candidates.filter(c=>c.distance<(c.kind==='bus'?7:5)).sort((a,b)=>a.distance-b.distance)[0] ?? null
+      return candidates.filter(c=>c.distance<(c.kind==='bus'?9:5)).sort((a,b)=>a.distance-b.distance)[0] ?? null
     }
     const interval=setInterval(()=>{const next=closest();setNearby(old=>old?.name===next?.name?old:next);if(!next && !player.busRide)setMessage('')},200)
     const key=(e:KeyboardEvent)=>{
       if(indoorState.active||e.key.toLowerCase()!=='f'||e.repeat||e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement||player.busRide||player.view)return
-      if(community.students.some(s=>Math.hypot(s.x-player.x,s.z-player.z)<5))return
       const next=closest(); if(!next)return
+      // Buses take priority over chatting so a crowd at the stop never blocks boarding.
+      if(next.kind!=='bus'&&community.students.some(s=>Math.hypot(s.x-player.x,s.z-player.z)<5))return
       if(next.kind==='bus' && next.index!==undefined) {player.busRide={index:next.index,until:Infinity};player.rides++}
       setMessage(next.line)
       window.dispatchEvent(new CustomEvent('campus-action',{detail:{kind:next.kind,allowed:!player.travelOrigin}}))

@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { Character, type Headwear, type Face, type Accessory } from '../characters/Character'
 import type { PaletteName } from '../characters/palette'
 import { centroid, Collider, westDeckGroundHeight, type Campus } from '../campus'
-import { busPositions } from './Buses'
+import { busCaller, busPositions } from './Buses'
 import { indoorState } from './indoorState'
 
 /** Shared, mutable player state (read by the HUD / minimap without re-rendering React every frame). */
@@ -144,6 +144,8 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05)
+    busCaller.riding = player.busRide?.index ?? -1
+    if (indoorState.active) { busCaller.x = NaN; busCaller.z = NaN } else { busCaller.x = player.x; busCaller.z = player.z }
     if (indoorState.active) { if(player.busRide){const bus=busPositions[player.busRide.index];if(bus){player.x=bus.x;player.z=bus.z}} keys.current.clear(); player.moving = false; return }
     const k = keys.current
     if (player.viewChanged) { pan.current.set(0,0); snap.current=true; player.viewChanged=false }

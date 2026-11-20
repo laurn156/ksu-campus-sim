@@ -103,7 +103,7 @@ function Library({look}:{look:AvatarLook}) {return <><Dividers/><Label text="LIB
 function Dorm({look:_look}:{look:AvatarLook}) {return <><Dividers/><Label text="RESIDENCE" p={[0,3.45,-11.68]}/>{[-8,8].map((x,i)=><group key={x}><Model name="bedsingle" p={[x,0,-8]} scale={1.5}/><Model name="cabinetbed" p={[x+2,0,-8]} scale={1.1}/><Model name="lampsquaretable" p={[x+2,.65,-8]} scale={.8}/><Model name="bookcaseclosed" p={[x-2,0,-10]} scale={1.4}/><Model name="desk" p={[x,0,-5]} scale={1.2}/><Model name="laptop" p={[x,1,-5]} scale={.75}/><Model name="chairdesk" p={[x,0,-4]} scale={1}/><Poster x={x} title={i?'STUDY':'GO OWLS'} color={i?'#5e8a83':'#d6a63a'}/></group>)}<Model name="loungesofa" p={[-8,0,5]} scale={1.5}/><Model name="tablecoffee" p={[-8,0,7]} scale={1.3}/><Model name="loungechair" p={[-5,0,6]} scale={1.2}/><Model name="kitchenfridge" p={[10,0,5]} scale={1.3}/><Model name="kitchencabinet" p={[8,0,5]} scale={1.3}/><Model name="kitchencoffeemachine" p={[8,1.1,5]} scale={.7}/><Model name="pottedplant" p={[12,0,10]}/></>}
 function Lab({look:_look}:{look:AvatarLook}) {return <><Dividers/><Label text="ENGINEERING LAB" p={[0,3.5,-11.68]}/>{[-9,-5,5,9].map(x=><group key={x}><Model name="desk" p={[x,0,-7]} scale={1.5}/><Model name="computerscreen" p={[x,1.15,-7]} scale={.8}/><Model name="chairdesk" p={[x,0,-5.7]}/></group>)}{[-8,0,8].map(x=><group key={x}><Model name="table" p={[x,0,3]} scale={1.6}/><Block p={[x,1.35,3]} s={[1.3,.8,.8]} c="#748b8b"/><Block p={[x,1.45,3.43]} s={[.9,.4,.08]} c="#d1e6d8"/><Ball p={[x,1.1,3.48]} color="#e8ba46" r={.12}/></group>)}<Model name="bookcaseopen" p={[-12,0,-9]} scale={1.5}/><Model name="bookcaseclosed" p={[12,0,-9]} scale={1.5}/><Poster x={-6} title="DESIGN • BUILD"/><Poster x={6} title="INNOVATE" color="#5c8d88"/></>}
 function Garage({look:_look}:{look:AvatarLook}) {return <><Dividers/><Label text="COMPETITION WORKSHOP" p={[0,3.45,-11.68]} size={.4}/><Model name="race" pack="car" p={[-7,0,-7]} scale={2.2}/><Model name="debris-tire" pack="car" p={[-11,0,-4]} scale={1.2}/><Model name="wheel-racing" pack="car" p={[-11,0,-6]} scale={1.2}/><Model name="cone" pack="car" p={[-3,0,-6]}/>{[6,10].map(x=><group key={x}><Model name="table" p={[x,0,-7]} scale={1.6}/><Block p={[x,1.35,-7]} s={[1.4,.7,.7]} c="#b7503b"/><Ball p={[x,1.8,-7]} color="#43565c" r={.25}/></group>)}<Model name="desk" p={[-8,0,5]} scale={1.5}/><Model name="computerscreen" p={[-8,1.1,5]} scale={.8}/><Model name="bookcaseopen" p={[11,0,7]} scale={1.4}/><Block p={[5,1.3,5]} s={[.8,.3,.8]} c="#3a4d51"/>{[-1,1].map(x=>[-1,1].map(z=><group key={`${x}:${z}`}><Block p={[5+x*.7,1.3,5+z*.7]} s={[1.2,.08,.08]} c="#404e52"/><Ball p={[5+x*1.2,1.3,5+z*.7]} color="#82999a" r={.25}/></group>))}</>}
-function Greenhouse({look:_look}:{look:AvatarLook}) {return <><Label text="GREENHOUSE" p={[0,3.45,-11.68]}/>{[-9,-5,5,9].map((x,i)=><group key={x}><DiningModel name="table" p={[x,0,-7]} scale={1.8}/>{[-.55,0,.55].map((n,j)=><DiningModel key={n} name={['plantsmall1','plantsmall2','plantsmall3'][j]} p={[x+n,1,-7]} scale={1.45}/>)}<Model name={i%2?'crop-melon':'crop-carrot'} pack="nature" p={[x,0,-5]} scale={1.3}/></group>)}{[-8,0,8].map(x=><group key={x}><DiningModel name="table" p={[x,0,3]} scale={1.8}/><DiningModel name="pottedplant" p={[x,1,3]} scale={1.25}/></group>)}<DiningModel name="bookcaseopen" p={[-11,0,8]} scale={1.4}/><DiningModel name="pottedplant" p={[11,0,8]} scale={2.3}/></>}
+function Greenhouse({look:_look}:{look:AvatarLook}) {return <><Label text="GREENHOUSE" p={[0,3.92,-11.6]} size={.4}/>{[-9,-5,5,9].map(x=><DiningModel key={x} name="table" p={[x,0,-7]} scale={1.8}/>)}{[-8,0,8].map(x=><DiningModel key={x} name="table" p={[x,0,3]} scale={1.8}/>)}<DiningModel name="pottedplant" p={[11,0,8]} scale={2.3}/></>}
 
 function Hoop({x,z}:{x:number;z:number}) {return <group><Block p={[x,3.1,z]} s={[2.2,1.3,.12]} c="#edf0e7"/><Block p={[x,2.8,z+.5]} s={[1,.07,.7]} c="#c26a43"/><mesh position={[x,2.75,z+.7]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.42,.045,6,16]}/><meshStandardMaterial color="#d46e49"/></mesh></group>}
 function Treadmill({x,z}:{x:number;z:number}) {return <group><Block p={[x,.18,z]} s={[1.2,.3,2.2]} c="#495957"/><Block p={[x,.35,z]} s={[.85,.06,1.8]} c="#253b3b"/><Block p={[x,1,z-.9]} s={[.12,1.6,.12]} c="#798b85"/><Block p={[x,1.75,z-.9]} s={[1.15,.2,.3]} c="#718480"/></group>}
@@ -226,11 +226,11 @@ const rooms:Record<Exclude<InteriorKind,'student'|'classroom'>,Placed[]>={
  dorm:[...[-8,8].flatMap(x=>[piece('bedsingle',x,-8,2,3),piece('bookcaseclosed',x-2,-10,1.5,1),piece('desk',x,-5,1.7,1.2)]),piece('loungesofa',-8,5,3,1.2),piece('tablecoffee',-8,7,1.5,1),piece('loungechair',-5,6,1.5,1.5),piece('kitchenfridge',10,5,1.5,1.5),piece('kitchencabinet',8,5,1.5,1.5)],
  lab:[...[-9,-5,5,9].map(x=>piece('desk',x,-7,2,1.5)),...[-8,0,8].map(x=>piece('table',x,3,2,1.5)),piece('bookcaseopen',-12,-9),piece('bookcaseclosed',12,-9)],
  garage:[piece('race',-7,-7,5,3,2.2,0,'car'),...[-11].map(x=>piece('debris-tire',x,-4,1,1,1.2,0,'car')),...[6,10].map(x=>piece('table',x,-7,2,1.5)),piece('desk',-8,5,2,1.5),piece('bookcaseopen',11,7),piece('table',5,5,2,1.5)],
- greenhouse:[...[-7,7].map(x=>piece('table',x,7,2,1.5)),...[-9,-5,5,9].map(x=>piece('table',x,-7,2,1.5)),...[-8,0,8].map(x=>piece('table',x,3,2,1.5)),piece('bookcaseopen',-11,8),piece('pottedplant',11,8)],
+ greenhouse:[...[-7,7].map(x=>piece('table',x,7,2,1.5)),...[-9,-5,5,9].map(x=>piece('table',x,-7,2,1.5)),...[-8,0,8].map(x=>piece('table',x,3,2,1.5)),piece('kitchensink',-11,8),piece('pottedplant',11,8),piece('soil',13.25,4.5,1,1.3)],
  recreation:[...[4,7,10].map(x=>piece('table',x,-6,1.3,2.3)),...[4,7].map(x=>piece('table',x,5,2,1.2)),piece('table',11,4,.5,8)],
  office:[...[-9,-5,5,9].map(x=>piece('desk',x,-7,2,1.4)),piece('desk',-8,5,2.2,1.5),piece('loungesofa',7,5,2.5,1.5),piece('tablecoffee',7,7,1.6,1.2),piece('pottedplant',11,9)],
  bus:[...[-1.5,1.5].flatMap(x=>[-8,0,8].map(z=>piece('chair',x,z,.12,.12))),...[-3.25,3.25].map(x=>piece('chair',x,0,.4,24)),...[-7,-3,1,5].flatMap(z=>[-2.85,2.85].map(x=>piece('chair',x,z,.55,1.15))),piece('desk',-2.25,-10,1.5,2)],
- uits:[...[-10.5,10.5].map(x=>piece('desk',x,0,.18,20)),piece('desk',0,-9.8,21,.2),...[-6,0].map(x=>piece('desk',x,-6.6,4,1.2)),piece('desk',7,-7.5,4,1.3),piece('desk',9,-3.2,1.5,1.2),piece('bookcaseopen',9,1,1.5,1.2)],
+ uits:[...[-10.5,10.5].map(x=>piece('desk',x,0,.18,20)),piece('desk',0,-9.8,21,.2),...[-6,0].map(x=>piece('desk',x,-6.6,4,1.2)),piece('desk',7,-7.5,4,1.3),piece('desk',9.8,-3.25,1.2,2.6),piece('bookcaseopen',9,1,1.5,1.2)],
  dining:[...[-9,-5,5,9].map(x=>piece('kitchenbar',x,-8,2,1.5)),...[-8,0,8].map(x=>piece('table',x,3,1.7,1.4)),...[-8,8].map(x=>piece('table',x,8,1.7,1.4))],
  parking:[...[-9,-4,4,9].map(x=>piece('sedan',x+1.8,-6,2,4,1.5,0,'car')),piece('cone',2,5,1,1,1,0,'car')]
 }
@@ -281,20 +281,22 @@ function GarageDetails(){return <>
  {[6,10].map(x=><group key={x}><Block p={[x,.97,-7]} s={[1.8,.1,1.1]} c="#a68a69"/><Block p={[x+.35,1.24,-7]} s={[.55,.4,.6]} c="#b74939"/><Block p={[x+.35,1.48,-7]} s={[.5,.08,.55]} c="#d18a63"/><Ball p={[x-.4,1.2,-7]} color="#687b73" r={.22}/></group>)}
  <Block p={[5,1.35,5]} s={[.9,.3,.9]} c="#53696a"/>{[-1,1].flatMap(x=>[-1,1].map(z=><group key={`${x}:${z}`}><Block p={[5+x*.7,1.38,5+z*.7]} s={[1.3,.08,.08]} c="#3f514f"/><Ball p={[5+x*1.25,1.4,5+z*.7]} color="#202e2c" r={.25}/></group>))}
  </>}
+function Pot({p,w=.4,h=.36,leaf,flower,r=.3}:{p:V;w?:number;h?:number;leaf:string;flower?:string;r?:number}) {const [x,y,z]=p;return <group>
+ <Block p={[x,y+h/2,z]} s={[w,h,w]} c="#a8714f"/><Block p={[x,y+h+.012,z]} s={[w*.86,.025,w*.86]} c="#4a3527"/>
+ <mesh position={[x,y+h+r*.8,z]} castShadow><icosahedronGeometry args={[r,1]}/><meshStandardMaterial color={leaf}/></mesh>{flower&&<Ball p={[x,y+h+r*1.65,z]} color={flower} r={r*.38}/>}
+ </group>}
 function GreenhouseDetails(){return <>
- {[-9,-5,5,9].flatMap(x=>[-.6,0,.6].map((dx,i)=><group key={`${x}:${dx}`}><Block p={[x+dx,1.2,-7]} s={[.4,.4,.4]} c="#aa7253"/><mesh position={[x+dx,1.68,-7]}><icosahedronGeometry args={[.34,1]}/><meshStandardMaterial color={['#538b53','#75a65b','#43875e'][i]}/></mesh>{i===1&&<Ball p={[x+dx,1.98,-7]} color="#dfc35c" r={.13}/>}</group>))}
- {[-8,0,8].map(x=><group key={x}><Block p={[x,1.18,3]} s={[.5,.35,.5]} c="#a76e53"/><mesh position={[x,1.7,3]}><icosahedronGeometry args={[.45,1]}/><meshStandardMaterial color="#538b57"/></mesh><Ball p={[x,2.08,3]} color="#d58c91" r={.14}/></group>)}
- {[-7,7].map(x=><group key={x}><DiningModel name="table" p={[x,0,7]} scale={1.8}/>{[-.6,0,.6].map((dx,i)=><group key={dx}><Block p={[x+dx,1.16,7]} s={[.4,.32,.4]} c="#a87256"/><mesh position={[x+dx,1.58,7]}><icosahedronGeometry args={[.32,1]}/><meshStandardMaterial color={['#53905b','#709c59','#498a67'][i]}/></mesh><Ball p={[x+dx,1.87,7]} color={['#e2b458','#c98692','#e9c976'][i]} r={.13}/></group>)}</group>)}
- {/* Pipework and stacked growing shelves stay close to the rear wall. */}
- <Block p={[0,3.65,-10.7]} s={[25,.1,.1]} c="#718e88"/>{[-10,-5,0,5,10].map(x=><Block key={x} p={[x,3.35,-10.7]} s={[.08,.65,.08]} c="#718e88"/>)}
- {[-10,0,10].map(x=><group key={x}>{[.45,1.05,1.65,2.25].map(y=><group key={y}><Block p={[x,y,-10.85]} s={[2.6,.1,.8]} c="#8b9e90"/>{[-.8,0,.8].map((dx,i)=><group key={dx}><Block p={[x+dx,y+.17,-10.75]} s={[.34,.28,.34]} c="#aa7655"/><DiningModel name={['plantsmall1','plantsmall2','plantsmall3'][i]} p={[x+dx,y+.34,-10.75]} scale={1.05}/></group>)}</group>)}{[-1.25,1.25].map(dx=><Block key={dx} p={[x+dx,1.35,-10.85]} s={[.08,2.7,.8]} c="#758d81"/>)}</group>)}
- {[-8,0,8].map(x=><group key={x}><Block p={[x,1.14,3]} s={[1.5,.12,.8]} c="#7e6452"/>{[-.45,-.15,.15,.45].map((dx,i)=><group key={dx}><Block p={[x+dx,1.27,3]} s={[.24,.18,.24]} c="#9b7658"/><Ball p={[x+dx,1.47,3]} color={i%2?'#6c9965':'#88ae70'} r={.16}/></group>)}</group>)}
+ {/* Bench plants: one pot per spot, foliage sits on the soil instead of inside it. */}
+ {[-9,-5,5,9].flatMap(x=>[-.6,0,.6].map((dx,i)=><Pot key={`${x}:${dx}`} p={[x+dx,1.02,-7]} leaf={['#538b53','#75a65b','#43875e'][i]} flower={i===1?'#dfc35c':undefined}/>))}
+ {[-8,0,8].map(x=><group key={x}><Block p={[x,1.08,3]} s={[1.6,.1,.8]} c="#7e6452"/>{[-.55,-.18,.18,.55].map((dx,i)=><Pot key={dx} p={[x+dx,1.13,3]} w={.26} h={.2} r={.15} leaf={i%2?'#6c9965':'#88ae70'}/>)}</group>)}
+ {[-7,7].map(x=><group key={x}><DiningModel name="table" p={[x,0,7]} scale={1.8}/>{[-.6,0,.6].map((dx,i)=><Pot key={dx} p={[x+dx,1.02,7]} w={.4} h={.32} r={.28} leaf={['#53905b','#709c59','#498a67'][i]} flower={['#e2b458','#c98692','#e9c976'][i]}/>)}</group>)}
+ {/* Seedling shelves against the rear wall. */}
+ {[-10,0,10].map(x=><group key={x}>{[.45,1.05,1.65,2.25].map(y=><group key={y}><Block p={[x,y,-10.85]} s={[2.6,.1,.8]} c="#8b9e90"/>{[-.8,0,.8].map((dx,i)=><Pot key={dx} p={[x+dx,y+.05,-10.8]} w={.3} h={.22} r={.14} leaf={['#5f9a5c','#7aa862','#4c8a62'][i]}/>)}</group>)}{[-1.25,1.25].map(dx=><Block key={dx} p={[x+dx,1.35,-10.85]} s={[.08,2.7,.8]} c="#758d81"/>)}</group>)}
  <DiningModel name="kitchensink" p={[-11,0,8]} scale={1.8}/><Block p={[-10.8,1.45,8]} s={[.12,.7,.12]} c="#9eb2a7"/><Block p={[-11.05,1.8,8]} s={[.6,.1,.12]} c="#9eb2a7"/>
- <Block p={[10.8,.45,8.6]} s={[1.2,.9,1]} c="#a68f73"/><Label text="POTTING SOIL" p={[10.8,.5,9.15]} size={.16} color="#f8eedb"/>
- <Block p={[12.9,2.4,-8]} s={[.12,.7,1.3]} c="#e8e8d9"/><Label text="TEMP  72°" p={[12.8,2.4,-7.25]} size={.13}/>
- <WallBoard x={-4} title="GREENHOUSE" lines={'PLANTS • RESEARCH\nGROWING TOGETHER'} color="#5b8061"/><WallBoard x={4} title="PLANT CARE" lines={'WATER • LIGHT\nGROW • LEARN'} color="#728d63"/>
- {[-9,-5,5,9].flatMap(x=>[-.6,0,.6].map((n,i)=><group key={`${x}:${n}`}><Block p={[x+n,1.18,-7]} s={[.35,.32,.35]} c="#aa7655"/><DiningModel name={['plantsmall1','plantsmall2','plantsmall3'][i]} p={[x+n,1.35,-7]} scale={.65}/></group>))}
- {[-8,0,8].map(x=><group key={x}><DiningModel name="plantsmall2" p={[x-.5,1.05,3]} scale={.9}/><DiningModel name="plantsmall3" p={[x+.5,1.05,3]} scale={.85}/></group>)}
+ {/* Potting soil bag and thermostat sit flush against the east wall. */}
+ <group position={[13.25,0,4.5]} rotation={[0,-Math.PI/2,0]}><Block p={[0,.45,0]} s={[1.2,.9,.9]} c="#a68f73"/><Label text="POTTING SOIL" p={[0,.55,.46]} size={.16} color="#f8eedb"/></group>
+ <group position={[13.84,2.1,-2.5]} rotation={[0,-Math.PI/2,0]}><Block p={[0,0,.03]} s={[.75,.5,.06]} c="#f1efe4"/><Block p={[0,.04,.065]} s={[.55,.24,.02]} c="#33504b"/><Label text="72°F" p={[0,.04,.08]} size={.14} color="#bfe8c9"/><Label text="TEMP" p={[0,-.17,.07]} size={.07} color="#3c4f4a"/></group>
+ <WallBoard x={-5} title="GREENHOUSE" lines={'PLANTS • RESEARCH\nGROWING TOGETHER'} color="#5b8061"/><WallBoard x={5} title="PLANT CARE" lines={'WATER • LIGHT\nGROW • LEARN'} color="#728d63"/>
  </>}
 function RecreationDetails(){return <>
  <WallBoard x={3} title="WELLNESS" lines={'MOVE • PLAY\nSTAY ACTIVE'} color="#567a75"/><WallBoard x={10} title="CLIMB" lines={'CHALLENGE YOURSELF\nGO OWLS'} color="#aa8350"/>
@@ -323,7 +325,8 @@ function ActivityZones({kind}:{kind:CrowdKind}) {
 }
 function InteriorDetails({kind}:{kind:CrowdKind}) {return <><RoomFinish kind={kind}/><ActivityZones kind={kind}/ >{kind==='student'?<FoodCounterDetails/>:kind==='classroom'?<ClassroomDetails/>:kind==='library'?<LibraryDetails/>:kind==='dorm'?<DormDetails/>:kind==='lab'?<LabDetails/>:kind==='garage'?<GarageDetails/>:kind==='greenhouse'?<GreenhouseDetails/>:kind==='recreation'?<RecreationDetails/>:kind==='office'?<OfficeDetails/>:<ParkingDetails/>}</>}
 
-function BusSeat({x,z}:{x:number;z:number}) {return <group><Block p={[x,.32,z]} s={[1,.55,1.15]} c="#405964"/><Block p={[x,.64,z]} s={[1.05,.2,1.15]} c="#b7974d"/><Block p={[x,1.13,z-.47]} s={[1.05,1.1,.22]} c="#4d6871"/></group>}
+// Riders face the front of the bus (-z), so the backrest sits behind them on the +z side.
+function BusSeat({x,z}:{x:number;z:number}) {return <group><Block p={[x,.32,z]} s={[.9,.55,1.05]} c="#405964"/><Block p={[x,.64,z]} s={[.95,.2,1.05]} c="#b7974d"/><Block p={[x,1.13,z+.47]} s={[.95,1.1,.22]} c="#4d6871"/></group>}
 function BusDriver({look}:{look:AvatarLook}) {const seated=useRef(1),drive=useRef(1);return <group position={[-2.1,.35,-9.4]} rotation={[0,Math.PI,0]}><Character {...look} color="blue" top="tee" topColor="#4b6261" scale={1.15} sit={seated} sitLift={.112} eat={drive}/></group>}
 function BusInterior({look}:{look:AvatarLook}){return <>
  <BusDriver look={look}/>
@@ -331,7 +334,7 @@ function BusInterior({look}:{look:AvatarLook}){return <>
  <DiningWall p={[-3.45,1.9,0]} s={[.16,3.8,24]} color="#e3e2d5">{[-8,-4,0,4,8].map(z=><Block key={z} p={[-3.34,2.3,z]} s={[.08,1.6,2.9]} c="#86adb3"/>)}</DiningWall>
  <DiningWall p={[3.45,1.9,0]} s={[.16,3.8,24]} color="#e3e2d5">{[-8,-4,0,4,8].map(z=><Block key={z} p={[3.34,2.3,z]} s={[.08,1.6,2.9]} c="#86adb3"/>)}</DiningWall>
  <DiningWall p={[0,1.9,-11.9]} s={[7,3.8,.18]} color="#d8ddd3"><Block p={[0,2.45,-11.78]} s={[6,1.85,.1]} c="#87aeb3"/><Label text="BIG OWL BUS" p={[0,3.55,-11.65]} size={.26}/></DiningWall>
- {[-7,-3,1,5].flatMap(z=>[-2.45,2.45].map(x=><BusSeat key={`${x}:${z}`} x={x} z={z}/>))}
+ {[-7,-3,1,5].flatMap(z=>[-2.12,2.12].map(x=><BusSeat key={`${x}:${z}`} x={x} z={z}/>))}
  {[-1.5,1.5].map(x=><group key={x}><Block p={[x,3.2,0]} s={[.08,.08,20]} c="#dfc66d"/>{[-8,0,8].map(z=><Block key={z} p={[x,1.65,z]} s={[.08,3.1,.08]} c="#dfc66d"/>)}</group>)}
  <Block p={[-2.25,.65,-9.6]} s={[1.1,1.3,1.4]} c="#41535a"/><Block p={[-2.2,1.15,-10.5]} s={[1.5,.3,.65]} c="#485558"/><mesh position={[-2.2,1.48,-10.1]} rotation={[Math.PI/2-.4,0,0]}><torusGeometry args={[.4,.06,6,20]}/><meshStandardMaterial color="#222f32"/></mesh>
  <Block p={[2.6,1,9]} s={[.55,2,.6]} c="#414f50"/><Block p={[2.6,1.45,8.65]} s={[.4,.35,.08]} c="#a9d8c5"/><Label text="TAP ID" p={[2.6,1.45,8.59]} size={.13}/>
@@ -339,17 +342,37 @@ function BusInterior({look}:{look:AvatarLook}){return <>
  <Block p={[0,3.5,11.7]} s={[2.5,.35,.12]} c="#a84237"/><Label text="EMERGENCY EXIT" p={[0,3.5,11.6]} size={.18} color="#fff7e8"/>
  </>}
 
+function Cable({points,color,r=.022}:{points:V[];color:string;r?:number}) {const curve=useMemo(()=>new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p))),[points]);return <mesh castShadow><tubeGeometry args={[curve,24,r,6,false]}/><meshStandardMaterial color={color} roughness={.6}/></mesh>}
+const patchColors=['#3f7fc4','#e2b946','#d0573f','#4f9a62','#3f7fc4','#9b6bc0','#e2b946','#3f7fc4']
+// A network rack in local space: the front faces +z. Units with status lights, a patch panel and patch cords.
+function ServerRack({p,r=0}:{p:V;r?:number}) {
+ const cords=useMemo(()=>patchColors.map((_,i)=>{const x=-.42+i*.12,side=i<4?-.56:.56;return [[x,2.18,.58],[x,1.98,.66],[side*.9,1.9,.64],[side,1.7,.6]] as V[]}),[])
+ return <group position={p} rotation={[0,r,0]}>
+  <Block p={[0,1.25,0]} s={[1.2,2.5,1.1]} c="#1d2829"/><Block p={[0,2.52,0]} s={[1.24,.06,1.14]} c="#2c3a3b"/>
+  {[-.56,.56].map(x=><Block key={x} p={[x,1.2,.56]} s={[.08,2.3,.05]} c="#3a4a4b"/>)}
+  {[.25,.5,.75,1,1.25,1.5,1.75].map((y,i)=><group key={y}><Block p={[0,y,.56]} s={[1.02,.2,.04]} c={i%3===0?'#2f3f40':'#263435'}/>{[-.38,-.3,-.22].map(x=><Block key={x} p={[x,y,.585]} s={[.05,.11,.01]} c="#162020"/>)}<Ball p={[.32,y+.03,.59]} color="#6fe08c" r={.022}/><Ball p={[.4,y+.03,.59]} color={i%2?'#6fe08c':'#f0b94a'} r={.022}/></group>)}
+  <Block p={[0,2.18,.56]} s={[1.02,.16,.05]} c="#c9cdc6"/>{patchColors.map((_,i)=><Block key={i} p={[-.42+i*.12,2.18,.59]} s={[.07,.06,.02]} c="#2a3334"/>)}
+  {cords.map((pts,i)=><Cable key={i} points={pts} color={patchColors[i]} r={.016}/>)}
+ </group>}
 function UitsInterior(){return <>
  <Block p={[0,.025,0]} s={[21,.05,20]} c="#d5ddd5"/><Block p={[-6.5,.055,3.5]} s={[7,.02,4]} c="#d5c9ac"/><Block p={[0,.055,-3]} s={[10,.02,5]} c="#c3d2c9"/>
  <DiningWall p={[-10.5,1.65,0]} s={[.18,3.3,20]} color="#d4d9ce"/><DiningWall p={[10.5,1.65,0]} s={[.18,3.3,20]} color="#d4d9ce"/>
- <DiningWall p={[0,1.65,-9.8]} s={[21,3.3,.18]} color="#e4e7dc"><Block p={[0,2.55,-9.65]} s={[5,.6,.12]} c="#304f4b"/><Label text="UITS • TECHNOLOGY SUPPORT" p={[0,2.55,-9.55]} size={.27} color="#f7d56b"/></DiningWall>
- {[-6,0].map(x=><group key={x}><Block p={[x,.55,-6.6]} s={[4,1.1,1.2]} c="#977e62"/><Block p={[x,1.14,-6.6]} s={[4.1,.12,1.3]} c="#eee7d8"/><DiningModel name="computerscreen" p={[x,1.23,-6.6]} scale={1.35}/><DiningModel name="computerkeyboard" p={[x,1.25,-6.1]} scale={1.05}/><Block p={[x,2.2,-8.9]} s={[2,.45,.1]} c="#426b62"/><Label text="HELP DESK" p={[x,2.2,-8.82]} size={.2} color="#f4eee0"/></group>)}
- <Block p={[7,.55,-7.5]} s={[4,1.1,1.3]} c="#8d846f"/><Block p={[7,1.14,-7.5]} s={[4.1,.12,1.4]} c="#d7d8cd"/><DiningModel name="laptop" p={[6.3,1.23,-7.5]} scale={1.4}/><DiningModel name="laptop" p={[7.5,1.23,-7.5]} scale={1.2}/><Label text="REPAIR BENCH" p={[7,2.15,-8.8]} size={.22}/>
- <Block p={[9,.9,-3.2]} s={[1.5,1.8,1.2]} c="#39494a"/>{[.4,.75,1.1,1.45].map(y=><group key={y}><Block p={[9,y,-2.55]} s={[1.25,.25,.08]} c="#172c2d"/>{[-.35,0,.35].map(dx=><Ball key={dx} p={[9+dx,y,-2.48]} color={dx?'#7cb3a2':'#e2be57'} r={.045}/>)}</group>)}
+ <DiningWall p={[0,1.65,-9.8]} s={[21,3.3,.18]} color="#e4e7dc"/>
+ {/* Wall signage: every sign is mounted flush on a wall and laid out so none overlap. */}
+ <Block p={[-3,2.75,-9.66]} s={[6.4,.6,.1]} c="#304f4b"/><Label text="UITS • TECHNOLOGY SUPPORT" p={[-3,2.75,-9.6]} size={.3} color="#f7d56b"/>
+ <Block p={[2.6,2.5,-9.66]} s={[2.2,1,.1]} c="#22393f"/><Block p={[2.6,2.5,-9.6]} s={[2,.82,.02]} c="#163036"/><Label text={'NOW SERVING\nA 014'} p={[2.6,2.5,-9.58]} size={.2} color="#f5e8b7"/>
+ <Block p={[-9.1,2.3,-9.66]} s={[1.5,1.1,.1]} c="#ae9165"/><Label text={'TECH HELP\nCHECK IN'} p={[-9.1,2.3,-9.6]} size={.17} color="#fff1db"/>
+ <Block p={[7,2.05,-9.66]} s={[2.6,.45,.1]} c="#5d6b66"/><Label text="REPAIR BENCH" p={[7,2.05,-9.6]} size={.2} color="#f4eee0"/>
+ <group position={[-10.4,2.3,3.5]} rotation={[0,Math.PI/2,0]}><Block p={[0,0,0]} s={[2.8,.5,.1]} c="#426b62"/><Label text="WAITING AREA" p={[0,0,.06]} size={.22} color="#f4eee0"/></group>
+ {[-6,0].map((x,i)=><group key={x}><Block p={[x,.55,-6.6]} s={[4,1.1,1.2]} c="#977e62"/><Block p={[x,1.14,-6.6]} s={[4.1,.12,1.3]} c="#eee7d8"/><DiningModel name="computerscreen" p={[x,1.23,-6.6]} scale={1.35}/><DiningModel name="computerkeyboard" p={[x,1.25,-6.1]} scale={1.05}/><Block p={[x,1.95,-9.66]} s={[2,.42,.1]} c="#426b62"/><Label text={`HELP DESK ${i+1}`} p={[x,1.95,-9.6]} size={.19} color="#f4eee0"/></group>)}
+ <Block p={[7,.55,-7.5]} s={[4,1.1,1.3]} c="#8d846f"/><Block p={[7,1.14,-7.5]} s={[4.1,.12,1.4]} c="#d7d8cd"/><DiningModel name="laptop" p={[6.3,1.23,-7.5]} scale={1.4}/><DiningModel name="laptop" p={[7.5,1.23,-7.5]} scale={1.2}/>
+ {/* Network closet: two racks against the east wall with a cable tray feeding them from above. */}
+ <ServerRack p={[9.8,0,-2.6]} r={-Math.PI/2}/><ServerRack p={[9.8,0,-3.9]} r={-Math.PI/2}/>
+ <Block p={[10.15,3.0,-4]} s={[.4,.05,5]} c="#8d9693"/>{[-1,1].map(d=><Block key={d} p={[10.15+d*.19,3.06,-4]} s={[.03,.12,5]} c="#6f7875"/>)}
+ {['#3f7fc4','#e2b946','#7d8a88'].map((c,i)=><group key={c}><Cable points={[[10.05+i*.08,2.55,-2.4-i*.12],[10.05+i*.08,2.8,-2.4-i*.12],[10.08+i*.08,3.02,-1.9]]} color={c} r={.03}/><Cable points={[[10.05+i*.08,2.55,-3.7-i*.12],[10.06+i*.08,2.85,-3.9-i*.1],[10.1+i*.08,3.02,-4.6]]} color={c} r={.03}/></group>)}
+ <Cable points={[[9.4,.05,-1.9],[8.9,.03,-1.2],[8.9,.03,.2],[9.2,.05,.6]]} color="#3f7fc4" r={.03}/>
  <DiningModel name="bookcaseopen" p={[9,0,1]} scale={2.3}/>{[.45,.9,1.35].map(y=><DiningModel key={y} name="laptop" p={[9,y,1]} scale={1.1}/>)}
- {[-8,-5].map(x=><DiningModel key={x} name="chaircushion" p={[x,0,3.1]} scale={2.1}/>)}<Label text="WAITING AREA" p={[-6.5,2.4,-9.5]} size={.2}/>
- <Block p={[2,2.3,-9.55]} s={[2.5,1.2,.12]} c="#31535a"/><Label text={'NOW SERVING\nA 014'} p={[2,2.3,-9.46]} size={.22} color="#f5e8b7"/>
- <Block p={[-9,2.3,-9.5]} s={[1.5,1.3,.12]} c="#ae9165"/><Label text={'TECH HELP\nCHECK IN'} p={[-9,2.3,-9.42]} size={.15} color="#fff1db"/>
+ {[-8,-5].map(x=><DiningModel key={x} name="chaircushion" p={[x,0,3.1]} r={Math.PI} scale={2.1}/>)}
  </>}
 
 function InteriorAgent({agent,look,sim}:{agent:IndoorAgent;look:AvatarLook;sim:InteriorCrowd}) {
