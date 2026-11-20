@@ -1,6 +1,8 @@
 export type Point={x:number;y:number}
 /** Planar two-link inverse kinematics, in world units. */
 export function solveArm(p:Point,l1=1.5,l2=1.5){const r=Math.hypot(p.x,p.y);if(r>l1+l2||r<Math.abs(l1-l2)+.02)return null;const elbow=Math.acos(Math.max(-1,Math.min(1,(r*r-l1*l1-l2*l2)/(2*l1*l2))));const shoulder=Math.atan2(p.y,p.x)-Math.atan2(l2*Math.sin(elbow),l1+l2*Math.cos(elbow));return {shoulder,elbow}}
+/** The elbow-up solution keeps the links above the game table. */
+export function solveArmAbove(p:Point){const a=solveArm(p);return a?{shoulder:2*Math.atan2(p.y,p.x)-a.shoulder,elbow:-a.elbow}:null}
 export function smoothPath(points:Point[]):Point[]{return points.map((p,i)=>{const a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)];return {x:(a.x+2*p.x+b.x)/4,y:(a.y+2*p.y+b.y)/4}})}
 export type Body='Wedge'|'Compact'|'Low profile'|'Wide defense'
 export type Weapon='Horizontal spinner'|'Vertical spinner'|'Flipper'|'Pusher'
