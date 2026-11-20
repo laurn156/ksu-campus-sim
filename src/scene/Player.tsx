@@ -50,9 +50,15 @@ export function approach(campus: Campus, poly: [number, number][]): { x: number;
   return { x: cx, z: cz + 30, yaw: 0 }
 }
 
-/** Start just outside the Student Center, on the side that faces the middle of campus. */
+/** Start on the Globe plaza, just in front of the sculpture, looking past it toward the Student Center
+ *  (the same view as the main menu). Falls back to outside the Student Center if the Globe is missing. */
 export function spawnPoint(campus: Campus): [number, number, number] {
   const collider = new Collider(campus.buildings)
+  const globe = campus.features.find((f) => f.kind === 'sculpture' && f.name === 'Globe')
+  if (globe) for (let r = 8; r < 20; r += 1) {
+    const x = globe.x, z = globe.z + r
+    if (!collider.blocked(x, z, 1.5)) return [x, z, 0]
+  }
   const sc = campus.buildings.find((b) => b.code === 'A') ?? campus.buildings[0]
   const [cx, cz] = centroid(sc.poly)
   const len = Math.hypot(cx, cz) || 1
