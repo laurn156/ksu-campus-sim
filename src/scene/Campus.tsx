@@ -8,6 +8,7 @@ import { facade, parkingTexture, roofTexture, stepsTexture } from './textures'
 import { lookFor } from './styles'
 import { Props } from './Props'
 import { Buses } from './Buses'
+import { visibleTreePositions } from './treeRegistry'
 import { Scrappy } from './Scrappy'
 import { Traffic } from './Traffic'
 import { Landmarks } from './Landmarks'
@@ -2269,8 +2270,9 @@ function Trees({ campus }: { campus: Campus }) {
     const collider = new Collider(campus.buildings)
     // spatial grid of road/path segments so trees stay off pavement
     const CELL = 25
-    const grid = new Map<string, [Pt, Pt, number][]>()
+    const grid = new Map<string, [Pt, Pt, number, boolean][]>()
     const key = (x: number, z: number) => `${Math.floor(x / CELL)},${Math.floor(z / CELL)}`
+    const roads = new Set(campus.roads)
     for (const l of [...campus.roads, ...campus.paths]) {
       for (let i = 0; i < l.pts.length - 1; i++) {
         const a = l.pts[i]
@@ -2280,7 +2282,7 @@ function Trees({ campus }: { campus: Campus }) {
           for (let gz = Math.floor((z0 - 8) / CELL); gz <= Math.floor((z1 + 8) / CELL); gz++) {
             const k = `${gx},${gz}`
             if (!grid.has(k)) grid.set(k, [])
-            grid.get(k)!.push([a, b, l.w / 2])
+            grid.get(k)!.push([a, b, l.w / 2, roads.has(l)])
           }
       }
     }
@@ -2290,6 +2292,7 @@ function Trees({ campus }: { campus: Campus }) {
       for (const p of parking) if (pointInPoly(x, z, p.poly)) return true
       return false
     }
+    const onRoad = (x:number,z:number) => (grid.get(key(x,z)) ?? []).some(([a,b,hw,isRoad])=>isRoad && distToSeg(x,z,a,b)<hw+1.3)
     let s = 12345
     const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647)
     const spots: [number, number, number][] = [] // x, z, scale
@@ -2334,6 +2337,8 @@ function Trees({ campus }: { campus: Campus }) {
         }
     }
     const removed = new Set(discGolfTreesToRemove(campus, spots, discGolfSpots(campus)))
+    spots.forEach(([x,z],i)=>{if(onRoad(x,z))removed.add(i)})
+    visibleTreePositions.splice(0,visibleTreePositions.length,...spots.filter((_,i)=>!removed.has(i)).map(([x,z]):[number,number]=>[x,z]))
     const n = spots.length - removed.size
     const trunkGeo = new THREE.CylinderGeometry(0.22, 0.32, 3, 6)
     trunkGeo.translate(0, 1.5, 0)

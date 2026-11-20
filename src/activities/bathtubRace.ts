@@ -18,7 +18,7 @@ export function bathtubCourse(campus: Campus): Pt[] {
 export type RaceCar={x:number;z:number;heading:number;speed:number;next:number;finished:boolean}
 export function newRace(course:Pt[]):RaceCar { const a=course[0],b=course[1];return {x:a[0],z:a[1],heading:Math.atan2(b[0]-a[0],b[1]-a[1]),speed:0,next:1,finished:false} }
 /** Arcade acceleration, steering, and building/boundary collision. */
-export function driveRace(car:RaceCar,keys:Set<string>,dt:number,course:Pt[],blocked:(x:number,z:number)=>boolean) {
+export function driveRace(car:RaceCar,keys:Set<string>,dt:number,course:Pt[],blocked:(x:number,z:number)=>boolean,laps=1) {
  dt=Math.min(dt,.05)
  const forward=keys.has('w')||keys.has('arrowup'),reverse=keys.has('s')||keys.has('arrowdown')
  car.speed=Math.max(-4,Math.min(11,car.speed+((forward?10:0)-(reverse?12:0))*dt))
@@ -28,13 +28,5 @@ export function driveRace(car:RaceCar,keys:Set<string>,dt:number,course:Pt[],blo
  const x=car.x+Math.sin(car.heading)*car.speed*dt,z=car.z+Math.cos(car.heading)*car.speed*dt
  if(blocked(x,z))car.speed=0;else {car.x=x;car.z=z}
  const target=course[car.next%course.length]
- if(Math.hypot(car.x-target[0],car.z-target[1])<4){car.next++;if(car.next>course.length){car.finished=true;car.speed=0}}
-}
-/** Lightweight ghost opponent follows the course without colliding with players. */
-export function raceOpponent(course:Pt[],distance:number,lane=1.6){
- const lengths=course.map((p,i)=>Math.hypot(course[(i+1)%course.length][0]-p[0],course[(i+1)%course.length][1]-p[1]))
- const total=lengths.reduce((a,b)=>a+b,0);let remain=Math.max(0,Math.min(distance,total)),index=0
- while(index<lengths.length-1&&remain>lengths[index]){remain-=lengths[index];index++}
- const a=course[index],b=course[(index+1)%course.length],len=lengths[index]||1,dx=(b[0]-a[0])/len,dz=(b[1]-a[1])/len,t=Math.min(1,remain/len)
- return {x:a[0]+dx*len*t+dz*lane,z:a[1]+dz*len*t-dx*lane,heading:Math.atan2(dx,dz),finished:distance>=total,total}
+ if(Math.hypot(car.x-target[0],car.z-target[1])<4){car.next++;if(car.next>course.length*laps){car.finished=true;car.speed=0}}
 }

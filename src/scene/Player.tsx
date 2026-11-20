@@ -76,6 +76,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   const throwing = useRef(0)
   const keys = useRef(new Set<string>())
   const dist = useRef(30)
+  const preRaceDistance = useRef<number|null>(null)
   const snap = useRef(false)
   const drag = useRef<{ x: number; y: number; pan: boolean } | null>(null)
   const pan = useRef(new THREE.Vector2())
@@ -148,6 +149,8 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05)
+    if(activityState.mode==='bathtub'&&preRaceDistance.current===null){preRaceDistance.current=dist.current;dist.current=Math.min(dist.current,18)}
+    else if(activityState.mode!=='bathtub'&&preRaceDistance.current!==null){dist.current=preRaceDistance.current;preRaceDistance.current=null}
     seated.current = activityState.mode === 'bathtub' || activityState.mode === 'busdrive' ? 1 : 0
     throwing.current = activityState.mode === 'disc' && performance.now() < activityState.throwUntil ? 1 : 0
     busCaller.riding = player.busRide?.index ?? -1

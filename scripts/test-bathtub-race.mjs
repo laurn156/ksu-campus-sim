@@ -15,6 +15,6 @@ driveRace(car,new Set(['w']),.05,course,()=>true)
 assert.equal(car.speed,0);assert.equal(car.x,x);assert.equal(car.z,z)
 car.x=course[2][0];car.z=course[2][1];driveRace(car,new Set(),.05,course,()=>false)
 assert.equal(car.next,1,'checkpoints cannot be skipped')
-for(let i=1;i<=course.length;i++){[car.x,car.z]=course[i%course.length];driveRace(car,new Set(),.05,course,()=>false)}
+for(let i=1;i<=course.length*2;i++){[car.x,car.z]=course[i%course.length];driveRace(car,new Set(),.05,course,()=>false,2);if(i===course.length)assert(!car.finished,'first lap must not finish the race')}
 assert(car.finished,'last checkpoint finishes race')
 console.log('Bathtub race course, controls, collisions and ordered finish verified')
