@@ -22,15 +22,17 @@ for(const [kind,rects] of Object.entries(obstacles)){
  assert(sim.agents.length>=4,`${kind}: insufficient people on entry`)
  assert(sim.agents.some(a=>a.position[0]<0)&&sim.agents.some(a=>a.position[0]>0),`${kind}: people not spread out`)
  const visited=sim.agents.map(a=>new Set([a.activity]))
- let carriedWater=false,carriedLaptop=false
+ let carriedWater=false,carriedLaptop=false,busReturned=false
+ const busExited=new Set()
  for(let frame=0;frame<3600;frame++){
   const previous=sim.agents.map(a=>[...a.position]);sim.step(.05,player)
-  for(const a of sim.agents){if(a.carry==='water'&&a.walk)carriedWater=true;if(a.carry==='laptop'&&a.walk)carriedLaptop=true;if(Math.hypot(a.position[0]-sim.activities[a.activity].position[0],a.position[1]-sim.activities[a.activity].position[1])<.18)visited[a.id].add(a.activity);assert(clearPoint(...a.position,rects),`${kind}: walked into furniture`);assert(Math.hypot(a.position[0]-previous[a.id][0],a.position[1]-previous[a.id][1])<.08,`${kind}: teleported`);assert(Math.hypot(a.position[0]-player[0],a.position[1]-player[1])>=.74,`${kind}: hit player`)}
-  for(let i=0;i<sim.agents.length;i++)for(let j=i+1;j<sim.agents.length;j++)assert(Math.hypot(sim.agents[i].position[0]-sim.agents[j].position[0],sim.agents[i].position[1]-sim.agents[j].position[1])>=.60,`${kind}: characters overlap`)
+  for(const a of sim.agents){if(kind==='bus'&&a.out)busExited.add(a.id);if(kind==='bus'&&busExited.has(a.id)&&!a.out&&a.walk)busReturned=true;if(a.out)continue;if(a.carry==='water'&&a.walk)carriedWater=true;if(a.carry==='laptop'&&a.walk)carriedLaptop=true;if(Math.hypot(a.position[0]-sim.activities[a.activity].position[0],a.position[1]-sim.activities[a.activity].position[1])<.18)visited[a.id].add(a.activity);assert(clearPoint(...a.position,rects),`${kind}: walked into furniture`);assert(Math.hypot(a.position[0]-previous[a.id][0],a.position[1]-previous[a.id][1])<.08,`${kind}: teleported`);assert(Math.hypot(a.position[0]-player[0],a.position[1]-player[1])>=.74,`${kind}: hit player`)}
+  for(let i=0;i<sim.agents.length;i++)for(let j=i+1;j<sim.agents.length;j++)if(!sim.agents[i].out&&!sim.agents[j].out)assert(Math.hypot(sim.agents[i].position[0]-sim.agents[j].position[0],sim.agents[i].position[1]-sim.agents[j].position[1])>=.60,`${kind}: characters overlap`)
  }
  assert(visited.every(s=>s.size>=2),`${kind}: an agent never changed activity`)
  if(kind==='greenhouse')assert(carriedWater,'greenhouse: nobody carried a watering can between stations')
  if(kind==='uits')assert(carriedLaptop,'UITS: nobody carried a laptop to the help desk')
+ if(kind==='bus')assert(busExited.size>0&&busReturned,'bus passengers did not leave and re-enter')
  console.log(`${kind}: populated, distributed, and moving safely`)
 }
 // Reproduce two people meeting head-on; both must eventually get past one another.

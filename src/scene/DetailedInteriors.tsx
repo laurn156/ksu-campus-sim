@@ -358,7 +358,7 @@ function InteriorAgent({agent,look,sim}:{agent:IndoorAgent;look:AvatarLook;sim:I
  const arrived=()=>{const goal=sim.activities[agent.activity];return !agent.route.length&&Math.hypot(agent.position[0]-goal.position[0],agent.position[1]-goal.position[1])<.18}
  useFrame(({clock},dt)=>{
   const activity=sim.activities[agent.activity],active=arrived()&&!agent.walk,role=active?activity.role:undefined
-  if(group.current){group.current.position.set(agent.position[0],0,agent.position[1]);group.current.rotation.y=agent.heading}
+  if(group.current){group.current.visible=!agent.out;group.current.position.set(agent.position[0],0,agent.position[1]);group.current.rotation.y=agent.heading}
   if(prop.current){prop.current.visible=role==='pool'||role==='ping'||role==='water'||!!agent.carry||role==='notes'||role==='repair'||role==='help';prop.current.rotation.x=role==='pool'?-.08:Math.sin(clock.elapsedTime*3+agent.id)*.55;prop.current.position.z=role==='pool'?.35+Math.sin(clock.elapsedTime*2+agent.id)*.2:.35;prop.current.children[0].visible=role==='pool';prop.current.children[1].visible=role==='ping';prop.current.children[2].visible=role==='water'||agent.carry==='water';prop.current.children[3].visible=role==='notes'||role==='repair'||role==='help'||agent.carry==='laptop'}
   walk.current=THREE.MathUtils.lerp(walk.current,agent.walk?.75:0,Math.min(1,dt*8));sit.current=THREE.MathUtils.lerp(sit.current,agent.seated?1:0,Math.min(1,dt*5));eat.current=role==='eat'||role==='pool'||role==='ping'||role==='water'||role==='plant'||role==='notes'||role==='staff'||role==='repair'?1:0
  })
@@ -375,7 +375,7 @@ function StudentGameBalls({sim}:{sim:InteriorCrowd}) {
 function InteriorPeople({kind,rects,look}:{kind:CrowdKind;rects:Rect[];look:AvatarLook}) {
  const sim=useMemo(()=>new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:5),[kind,rects])
  useEffect(()=>()=>{indoorState.npcPositions=[]},[])
- useFrame((_,dt)=>{sim.step(Math.min(dt,.05),[indoorState.x,indoorState.z]);indoorState.npcPositions=sim.agents.map(a=>a.position)})
+ useFrame((_,dt)=>{sim.step(Math.min(dt,.05),[indoorState.x,indoorState.z]);indoorState.npcPositions=sim.agents.filter(a=>!a.out).map(a=>a.position)})
  return <>{sim.agents.map(agent=><InteriorAgent key={agent.id} agent={agent} look={look} sim={sim}/>)}{kind==='student'&&<StudentGameBalls sim={sim}/>}</>
 }
 export function DetailedRoom({kind,look}:{kind:InteriorKind;look:AvatarLook}) {
