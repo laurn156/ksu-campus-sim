@@ -27,7 +27,7 @@ export function LifeUI({life,playerName,onEdit}:{campus:Campus;life:LifeControll
   const r=npc?relation(life.state,npc.id):null
   useEffect(()=>{
     const update=()=>{const nearest=community.students.map(s=>({...s,d:Math.hypot(s.x-player.x,s.z-player.z)})).sort((a,b)=>a.d-b.d)[0]
-      setClosest(!player.view&&nearest&&nearest.d<5?nearest.id:null)}
+      setClosest(!indoorState.active&&!activityState.mode&&!activityState.locked&&!player.view&&nearest&&nearest.d<5?nearest.id:null)}
     const interval=setInterval(update,300);update();return()=>clearInterval(interval)
   },[])
   useEffect(()=>{

@@ -10,7 +10,7 @@ export function busStops(path:Pt[],x:number,z:number):Pt[] {
  for(const p of ordered){distance+=Math.hypot(p[0]-last[0],p[1]-last[1]);last=p;if(distance>=75){stops.push(p);distance=0;if(stops.length===3)break}}
  return stops.length>=2?stops:[]
 }
-export type BusRun={car:RaceCar;stops:Pt[];next:number;doors:boolean;wait:number;passengers:number;finished:boolean;elapsed:number;pickedUp:number;collisions:number;impactCooldown:number}
+export type BusRun={car:RaceCar;stops:Pt[];next:number;doors:boolean;wait:number;passengers:number;finished:boolean;elapsed:number;pickedUp:number;collisions:number;impactCooldown:number;pedestrianHits:number}
 export function driveBus(run:BusRun,keys:Set<string>,dt:number,blocked:(x:number,z:number)=>boolean){
  if(run.finished)return
  run.elapsed+=Math.min(dt,.05)
@@ -29,4 +29,4 @@ export function toggleBusDoors(run:BusRun):'opened'|'closed'|'moving'|'away' {
 }
 
 /** Reward completed pickups while encouraging careful, efficient driving. */
-export function busScore(run:BusRun){return Math.max(0,run.pickedUp*100-run.collisions*25-Math.floor(run.elapsed/10)*5)}
+export function busScore(run:BusRun){return Math.max(0,run.pickedUp*100-(run.collisions-(run.pedestrianHits||0))*25-(run.pedestrianHits||0)*50-Math.floor(run.elapsed/10)*5)}

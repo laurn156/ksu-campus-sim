@@ -30,3 +30,11 @@ export function driveRace(car:RaceCar,keys:Set<string>,dt:number,course:Pt[],blo
  const target=course[car.next%course.length]
  if(Math.hypot(car.x-target[0],car.z-target[1])<4){car.next++;if(car.next>course.length){car.finished=true;car.speed=0}}
 }
+/** Lightweight ghost opponent follows the course without colliding with players. */
+export function raceOpponent(course:Pt[],distance:number,lane=1.6){
+ const lengths=course.map((p,i)=>Math.hypot(course[(i+1)%course.length][0]-p[0],course[(i+1)%course.length][1]-p[1]))
+ const total=lengths.reduce((a,b)=>a+b,0);let remain=Math.max(0,Math.min(distance,total)),index=0
+ while(index<lengths.length-1&&remain>lengths[index]){remain-=lengths[index];index++}
+ const a=course[index],b=course[(index+1)%course.length],len=lengths[index]||1,dx=(b[0]-a[0])/len,dz=(b[1]-a[1])/len,t=Math.min(1,remain/len)
+ return {x:a[0]+dx*len*t+dz*lane,z:a[1]+dz*len*t-dx*lane,heading:Math.atan2(dx,dz),finished:distance>=total,total}
+}
