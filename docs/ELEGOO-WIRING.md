@@ -100,4 +100,4 @@ Upload [the controller firmware](../hardware/elegoo/NestLifeController.ino) at 1
 
 ## Integration approach
 
-The controller can be toggled on or off during normal campus play. Its inputs control only the local player; normal movement and activity events are synchronized through the existing multiplayer system. Keyboard and mouse remain available. On Linux, the development server starts a local USB bridge when available. The joystick-only sketch can be used to test movement before wiring the remaining components.
+The controller can be toggled on or off during normal campus play when no other player is connected. It automatically disconnects when another player joins. Keyboard and mouse remain available. On Linux, the development server starts a local USB bridge when available. The joystick-only sketch can be used to test movement before wiring the remaining components.
