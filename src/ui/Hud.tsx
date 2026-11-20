@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { groupResidenceLocations } from './locationGroups'
 import { centroid, Collider, distToSeg, isCampusBuilding, type Campus } from '../campus'
 import { approach, player } from '../scene/Player'
 import { landmarkSpots } from '../scene/Landmarks'
@@ -85,10 +86,11 @@ export function Minimap({ campus, onOpen }: { campus: Campus; onOpen: () => void
 /** "Go to" menu: jump straight to any campus building or landmark. */
 function GoTo({ campus, onView }: { campus: Campus; onView: (target:{x:number;z:number;yaw:number;buildingId?:string})=>void }) {
   const places = useMemo(() => {
-    const bs = campus.buildings
-      .filter(isCampusBuilding)
-      .map((b) => ({ label: `${b.code ? b.code + ' · ' : ''}${b.short || b.name}`, go: () => ({...approach(campus, b.poly),buildingId:b.id}) }))
-      .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))
+    const {singles, grouped} = groupResidenceLocations(campus.buildings.filter(isCampusBuilding))
+    const bs = [
+      ...singles.map(b => ({label: `${b.code ? b.code + ' · ' : ''}${b.short || b.name}`, go: () => ({...approach(campus, b.poly),buildingId:b.id})})),
+      ...grouped.map(({label,building}) => ({label, go: () => approach(campus, building.poly)})),
+    ].sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))
     const collider = new Collider(campus.buildings)
     const near = (x: number, z: number) => {
       for (let r = 6; r <= 25; r += 3) for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
@@ -183,7 +185,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
   return (
     <>
       <div className="brandbar">
-        <span className="ksu">KSU</span> Campus Life <span className="sub">Marietta</span>
+        <span className="ksu">Nest</span> Life <span className="sub">Marietta</span>
       </div>
       <GoTo campus={campus} onView={viewLocation} />
       <button className="edit-character" onClick={onEdit}>✦ Edit character</button>

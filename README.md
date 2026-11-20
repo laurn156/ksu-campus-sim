@@ -1,4 +1,4 @@
-# KSU Campus Life (working title)
+# Nest Life
 
 A Sims-inspired game set on Kennesaw State University's **Marietta campus**, built from the real campus layout.
 
@@ -61,6 +61,6 @@ Open **Social → Settings** to opt into offline roaming. This is off by default
 
 Before a multiplayer demonstration, configure and apply the migrations, then test with two distinct registered accounts in separate browser profiles: move outdoors and indoors, send and accept a friend request, exchange messages, enable offline roaming, disconnect one account, and reconnect. This repository cannot apply the migration without database administration access.
 
-Campus Life needs, relationships, story progress and memories remain in local browser storage rather than Supabase. Press F near an AI student to talk; their dialogue uses built-in rules unless Ollama with `qwen3:4b` is available to the local Vite development server. To enable local dialogue, install Ollama, run `ollama pull qwen3:4b`, and run the development server on localhost. Static builds use fallback dialogue. Do not expose the Vite development server publicly. Run the simulation checks with `node --experimental-strip-types scripts/test-life.mjs`.
+Nest Life needs, relationships, story progress and memories remain in local browser storage rather than Supabase. Press F near an AI student to talk; their dialogue uses built-in rules unless Ollama with `qwen3:4b` is available to the local Vite development server. To enable local dialogue, install Ollama, run `ollama pull qwen3:4b`, and run the development server on localhost. Static builds use fallback dialogue. Do not expose the Vite development server publicly. Run the simulation checks with `node --experimental-strip-types scripts/test-life.mjs`.
 
 Before testing accounts, configure the Supabase Auth site URL, redirect allowlist, email/password sign-in, confirmation and password reset delivery. Anonymous demo identities are tied to their browser and cannot be recovered after sign-out. This multiplayer prototype is not ready for public release: presence claims are not identity-verified, and it lacks authoritative movement, server-side chat rate limiting and moderation tooling. Per-user broadcast channels and database RLS still restrict who can publish as a user or read private messages. In Supabase Realtime settings, disable public channel access so private-channel policies are enforced.

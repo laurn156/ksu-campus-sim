@@ -174,14 +174,14 @@ function HeadwearMesh({ kind, body, accent }: { kind: Headwear; body: string; ac
       )
     case 'cap': // backwards cap (from the reference): deep round crown, forehead strap opening, brim out back-left
       return (
-        <group position={[0, HEAD_Y + 0.08, -0.02]} rotation={[-0.2, 0, 0]}>
-          {/* crown: hugs the top of the head; tilted back so the forehead opening clears the eyes */}
-          <mesh scale={[1.06, 0.92, 1.05]} material={hat}>
+        <group position={[0, HEAD_Y, 0]} rotation={[-0.2, 0, 0]}>
+          {/* Keep the crown concentric with the head so the two surfaces cannot intersect and flicker. */}
+          <mesh scale={[1.065, 1.015, 1.015]} material={hat}>
             <sphereGeometry args={[HEAD_R, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2]} />
           </mesh>
           {/* panel seams */}
           {[0, Math.PI / 3, -Math.PI / 3].map((ry) => (
-            <mesh key={ry} rotation={[0, ry, 0]} scale={[1.07, 0.93, 1.06]} material={seam}>
+            <mesh key={ry} rotation={[0, ry, 0]} scale={[1.07, 1.02, 1.02]} material={seam}>
               <torusGeometry args={[HEAD_R, 0.004, 4, 48, Math.PI]} />
             </mesh>
           ))}
@@ -210,8 +210,8 @@ function HeadwearMesh({ kind, body, accent }: { kind: Headwear; body: string; ac
       )
     case 'beanie': // sits high and pushed back so the eyes show
       return (
-        <group position={[0, HEAD_Y + 0.13, -0.05]} rotation={[-0.38, 0, 0]}>
-          <mesh scale={[1.05, 0.95, 1.03]} material={hat}>
+        <group position={[0, HEAD_Y, 0]} rotation={[-0.38, 0, 0]}>
+          <mesh scale={[1.07, 1.02, 1.02]} material={hat}>
             <sphereGeometry args={[HEAD_R, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
           </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]} scale={[1, 1, 1.5]} material={dark}>

@@ -25,7 +25,7 @@ export function Welcome({ screen, profile, hasSaved, onChange, onCreate, onPlay,
   const set = (patch: Partial<AvatarLook>) => onChange({ ...profile, look: { ...profile.look, ...patch } })
   const randomize = () => set({color:(Object.keys(PALETTE) as PaletteName[])[Math.floor(Math.random()*Object.keys(PALETTE).length)], top:tops[Math.floor(Math.random()*tops.length)].value, bottom:bottoms[Math.floor(Math.random()*bottoms.length)].value, headwear:hats[Math.floor(Math.random()*hats.length)].value})
   return <main className={'start-shell '+(screen==='create'?'creator-shell':'')}>
-    <header className="start-header"><div className="start-brand"><span>✦</span> KSU CAMPUS LIFE <small>MARIETTA</small></div><span className="start-edition">A CAMPUS ADVENTURE</span></header>
+    <header className="start-header"><div className="start-brand"><span>✦</span> NEST LIFE <small>MARIETTA</small></div><span className="start-edition">A CAMPUS ADVENTURE</span></header>
     {screen === 'welcome' ? <section className="welcome-layout">
       <div className="welcome-copy"><div className="eyebrow">YOUR CAMPUS, YOUR STORY</div><h1>Welcome to<br /><em>Owl Nation.</em></h1><p>Explore familiar places and make the campus your own.</p>
         <div className="welcome-actions"><button className="primary" onClick={hasSaved ? onPlay : onCreate}>{hasSaved ? 'Continue exploring' : 'Create your character'} <span>→</span></button>{hasSaved && <button className="secondary" onClick={onCreate}>Edit character</button>}</div>

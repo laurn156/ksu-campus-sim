@@ -53,7 +53,7 @@ export function CampusDay({campus,username}:{campus:Campus;username:string}) {
     setProgress(p=>p.completed.includes(id)?p:{...p,completed:[...p.completed,id]})
     setNotice('Nice! You completed an activity.')
   }
-  return <section className="day-panel" aria-label="Campus Life activities">
+  return <section className="day-panel" aria-label="Nest Life activities">
     <button className="day-toggle" onClick={()=>setOpen(v=>!v)} aria-expanded={open}>☀ Day {progress.day} <span>{progress.completed.length}/{tasks.length} ideas {open?'−':'+'}</span></button>
     {open && <div className="day-content"><p>Optional ideas for your day. Explore at your own pace.</p>{blocked && <div className="day-warning">Return to your character to take part in activities.</div>}{tasks.map(t=>{
       const finished=progress.completed.includes(t.id), available=near.includes(t.id) && !blocked
