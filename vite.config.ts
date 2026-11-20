@@ -1,4 +1,6 @@
 import react from '@vitejs/plugin-react'
+// @ts-expect-error The relay is shared with the Node production server.
+import { installDemoRelay } from './scripts/demo-relay.mjs'
 import { defineConfig, type Plugin } from 'vite'
 import { DIALOGUE_FORMAT, dialogueMessages, parseDialogue } from './scripts/dialogue-prompt.mjs'
 
@@ -6,6 +8,7 @@ import { DIALOGUE_FORMAT, dialogueMessages, parseDialogue } from './scripts/dial
 function localDialogue():Plugin {
   let lastRequest=0
   return {name:'campus-local-dialogue',configureServer(server) {
+    if(server.httpServer) installDemoRelay(server.httpServer)
     server.middlewares.use('/api/campus-class',async(req,res)=>{
       const address=req.socket.remoteAddress, host=req.headers.host
       if(!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(address||'')||req.method!=='POST'||req.headers.origin!=='http://'+host||!(host?.startsWith('127.0.0.1:')||host?.startsWith('localhost:'))||!req.headers['content-type']?.startsWith('application/json')){res.statusCode=403;res.end();return}

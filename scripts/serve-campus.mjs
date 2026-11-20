@@ -1,5 +1,6 @@
 // Run the built game and its server-side Ollama proxy together.
 import http from 'node:http'
+import { installDemoRelay } from './demo-relay.mjs'
 import { readFile, stat } from 'node:fs/promises'
 import { extname, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -36,7 +37,9 @@ async function api(req,res){
  return respond(res,200,lesson&&kind==='lesson'?{lesson:output}:{reply:output.reply.slice(0,2000)})
  }catch{return respond(res,502,{error:'The Ollama model did not return a usable answer. Check that the configured model is running and try again.'})}
 }
-http.createServer(async(req,res)=>{try{const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);if(url.pathname==='/api/campus-class'||url.pathname==='/api/campus-dialogue')return await api(req,res);if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405);return res.end()}
+const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);if(url.pathname==='/api/campus-class'||url.pathname==='/api/campus-dialogue')return await api(req,res);if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405);return res.end()}
  let path=resolve(root,'.'+decodeURIComponent(url.pathname));if(path!==root&&!path.startsWith(root+sep)){res.writeHead(403);return res.end()}try{if((await stat(path)).isDirectory())path=resolve(path,'index.html')}catch{path=resolve(root,'index.html')}
  const data=await readFile(path);res.writeHead(200,{'Content-Type':types[extname(path)]||'application/octet-stream','X-Content-Type-Options':'nosniff'});res.end(req.method==='HEAD'?undefined:data)
- }catch{res.writeHead(404);res.end()}}).listen(port,host,()=>console.log(`Nest Life server listening on http://${host}:${port}`))
+ }catch{res.writeHead(404);res.end()}})
+installDemoRelay(server)
+server.listen(port,host,()=>console.log(`Nest Life server listening on http://${host}:${port}`))

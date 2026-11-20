@@ -72,3 +72,17 @@ Before testing accounts, configure the Supabase Auth site URL, redirect allowlis
 ### Hosting Ollama-powered classes and student conversations
 
 Run `npm run build` and then `npm run serve` on the machine hosting the game. The server serves the built game and calls Ollama on the server; players do not need to install Ollama. By default it listens on `127.0.0.1:4173` and uses `http://127.0.0.1:11434` with `qwen3:4b`. Set `HOST`, `PORT`, `OLLAMA_URL`, or `OLLAMA_MODEL` on the server to match your deployment. For example, `HOST=0.0.0.0 npm run serve` makes the server accessible on your local network. The Vite development server also provides the two AI endpoints on localhost. When Ollama cannot respond, conversations use their existing fallback and classes show an error with a retry option instead of an unrelated lesson. A static-only host has no AI endpoint; run the game server and Ollama on the host for classes to work.
+
+### Hackathon demo: play together without accounts
+
+Build and start the game server on one computer:
+
+```sh
+npm install
+npm run build
+HOST=0.0.0.0 npm run serve
+```
+
+On the host computer open `http://localhost:4173`. On another computer on the same network, open `http://<host-computer-local-IP>:4173` (and allow port 4173 through the host firewall if necessary). Each player chooses a name and character; there is no account or password. Both devices must connect to the same running server. For a deployed demo, use a Node host that supports WebSockets and serve the app with `npm run serve`.
+
+Use **Campus chat** for everyone and **Players** to see who's online, send a friend request or private message, and invite someone to tic-tac-toe. Guest identities, friendships and messages are temporary and disappear on disconnect or server restart. Local character customization remains saved in the browser. Run `node scripts/test-demo-relay.mjs` to check the guest relay.
