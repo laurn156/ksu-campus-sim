@@ -482,7 +482,7 @@ export function Character({
   })
 
   return (
-    <group ref={root} position={position} rotation={rotation} scale={scale}>
+    <group ref={root} position={position} rotation={rotation} scale={scale} userData={{ noWalk: true }}>
       <group ref={torso}>
         {/* Compact rounded stubs; trousers and shoes share their animated leg groups. */}
         {[-1, 1].map((s, i) => (

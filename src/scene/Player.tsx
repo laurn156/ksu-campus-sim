@@ -7,6 +7,7 @@ import type { PaletteName } from '../characters/palette'
 import { centroid, Collider, westDeckGroundHeight, type Campus } from '../campus'
 import { busCaller, busPositions } from './Buses'
 import { indoorState } from './indoorState'
+import { WalkSurface } from './walkSurface'
 import { activityState } from '../activities/activityState'
 
 /** Shared, mutable player state (read by the HUD / minimap without re-rendering React every frame). */
@@ -90,7 +91,16 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
   const drag = useRef<{ x: number; y: number; pan: boolean } | null>(null)
   const pan = useRef(new THREE.Vector2())
   const cameraTarget = useRef(new THREE.Vector3())
-  const { camera, gl } = useThree()
+  const { camera, gl, scene } = useThree()
+  // Stairs, terraces and other raised pieces: step up to STEP high, anything taller blocks you.
+  const surface = useMemo(() => new WalkSurface(scene), [scene])
+  if (import.meta.env.DEV) (window as unknown as {__walk?: WalkSurface}).__walk = surface
+  const footY = useRef(0)
+  useEffect(() => {
+    const times = [800, 2500, 5000, 9000, 15000].map(t => setTimeout(() => surface.rebuild(), t))
+    const every = setInterval(() => surface.rebuild(), 20000)
+    return () => { times.forEach(clearTimeout); clearInterval(every) }
+  }, [surface])
 
   useEffect(() => {
     // dev: window.__tp(x, z, yaw?, dist?) teleports the player (for screenshots / debugging)
@@ -181,6 +191,7 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
       player.yaw = player.tp.yaw
       player.heading = player.tp.yaw + Math.PI
       player.tp = null
+      footY.current = Math.max(westDeckGroundHeight(campus, player.x, player.z), surface.heightAt(player.x, player.z, 3) ?? 0)
       snap.current = true
     }
     if (player.travelOrigin && Math.hypot(player.x-player.travelOrigin.x,player.z-player.travelOrigin.z)>12) player.travelBuilding = null
@@ -208,12 +219,17 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
       const speed = (k.has('shift') ? RUN : WALK) * player.speedMultiplier
       const nx = player.x + dir.x * speed * dt
       const nz = player.z + dir.y * speed * dt
-      // move, or slide along the wall if blocked
-      if (!collider.blocked(nx, nz)) {
+      // move, or slide along the wall if blocked (buildings, plus raised pieces taller than a step)
+      const STEP = 0.55, foot = footY.current
+      const tooHigh = (x: number, z: number) => { const top = surface.heightAt(x, z, foot + 2.2); return top !== null && top > foot + STEP }
+      // If something raised already overlaps the player (e.g. it was placed after they arrived), let them walk out.
+      const stuck = tooHigh(player.x, player.z)
+      const blocked = (x: number, z: number) => collider.blocked(x, z) || (!stuck && tooHigh(x, z))
+      if (!blocked(nx, nz)) {
         player.x = nx
         player.z = nz
-      } else if (!collider.blocked(nx, player.z)) player.x = nx
-      else if (!collider.blocked(player.x, nz)) player.z = nz
+      } else if (!blocked(nx, player.z)) player.x = nx
+      else if (!blocked(player.x, nz)) player.z = nz
       const want = Math.atan2(dir.x, dir.y)
       let d = want - player.heading
       d = Math.atan2(Math.sin(d), Math.cos(d))
@@ -221,7 +237,13 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
     }
     player.moving = moving
     walk.current = THREE.MathUtils.lerp(walk.current, moving ? (k.has('shift') ? 1 : 0.75) : 0, Math.min(1, dt * 10))
-    const groundY = westDeckGroundHeight(campus, player.x, player.z)
+    // Stand on the highest walkable surface within a step of the feet; ease up stairs and drop down smoothly.
+    const base = westDeckGroundHeight(campus, player.x, player.z)
+    const top = player.busRide ? null : surface.heightAt(player.x, player.z, footY.current + 0.6)
+    const target = Math.max(base, top ?? -Infinity)
+    footY.current = target > footY.current ? THREE.MathUtils.lerp(footY.current, target, Math.min(1, dt * 18)) : Math.max(target, footY.current - dt * 6)
+    if (Math.abs(footY.current - target) < 0.005) footY.current = target
+    const groundY = footY.current
     if (body.current) {
       body.current.visible = activityState.mode !== 'busdrive' && activityState.mode !== 'parking'
       body.current.position.set(player.x, groundY, player.z)
@@ -230,7 +252,7 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
     // Sims-style camera: high three-quarter view that follows smoothly
     const pitch = player.pitch
     const viewX=(player.view?.x ?? player.x)+pan.current.x,viewZ=(player.view?.z ?? player.z)+pan.current.y
-    const viewY=westDeckGroundHeight(campus,viewX,viewZ)
+    const viewY=player.view?westDeckGroundHeight(campus,viewX,viewZ):footY.current
     const want = new THREE.Vector3(
       (player.view?.x ?? player.x) + pan.current.x + Math.sin(player.yaw) * Math.cos(pitch) * dist.current,
       viewY + Math.sin(pitch) * dist.current,
