@@ -3,12 +3,13 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { Campus, Pt } from '../campus'
 import { protectedShuttle } from './trafficSafety'
+import { approachSpeed } from './approachBehavior'
 
 export const busDriver = { index: -1 }
 export const busPositions: { x: number; z: number; h: number }[] = []
 // Where the player is standing on campus (written by Player each frame). A bus
 // holds at its current spot while the player is next to it, so it can be boarded.
-export const busCaller = { x: NaN, z: NaN, riding: -1 }
+export const busCaller = { x: NaN, z: NaN, heading:0, moving:false, riding: -1 }
 const HOLD_RADIUS = 11
 
 // An illustrative campus shuttle, not a live route or a timetable.
@@ -65,7 +66,7 @@ function Shuttle({ path, offset, texture }: { path: Pt[]; offset: number; textur
     if(clearing)ref.current.visible=false
     if (!waiting) {
       if (m.wait>0) m.wait=Math.max(0,m.wait-dt)
-      else m.distance=(m.distance+dt*8)%(data.length*2)
+      else {const pace=here?approachSpeed(here.x,here.z,busCaller.x,busCaller.z,busCaller.heading,busCaller.moving,busCaller.riding!==index,11,32):1;m.distance=(m.distance+dt*8*pace)%(data.length*2)}
     }
     const cycle = m.distance
     const atStop=Math.abs((cycle<data.length?cycle:2*data.length-cycle)-stopAt)<6

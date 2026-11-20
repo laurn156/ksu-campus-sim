@@ -3,6 +3,9 @@ import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { RoundedBox } from '@react-three/drei'
 import { Collider, type Campus, type Pt } from '../campus'
+import { player } from './Player'
+import { indoorState } from './indoorState'
+import { approachSpeed } from './approachBehavior'
 
 // Shared position lets the HUD locate the mascot at the instant the menu is used.
 export const scrappy = { x: -105, z: -197 }
@@ -116,12 +119,14 @@ export function Scrappy({ campus }: { campus: Campus }) {
       const [x,z] = network.nodes[next], dx=x-scrappy.x, dz=z-scrappy.z, length=Math.hypot(dx,dz)
       if (length < 0.1) { scrappy.x=x; scrappy.z=z; current.current=next; route.current.shift() }
       else {
-        const step=Math.min(length,2.5*dt); scrappy.x+=dx/length*step; scrappy.z+=dz/length*step
+        const pace=approachSpeed(scrappy.x,scrappy.z,player.x,player.z,player.heading,player.moving,!indoorState.active&&!player.view,5,15);const step=Math.min(length,2.5*dt*pace); scrappy.x+=dx/length*step; scrappy.z+=dz/length*step
         if (group.current) { const desired=Math.atan2(dx,dz); const delta=Math.atan2(Math.sin(desired-group.current.rotation.y),Math.cos(desired-group.current.rotation.y)); group.current.rotation.y+=delta*Math.min(1,dt*5) }
       }
     }
     if (group.current) group.current.position.set(scrappy.x,0,scrappy.z)
-    const swing=Math.sin(clock.elapsedTime*7)*0.42
+    const paused=approachSpeed(scrappy.x,scrappy.z,player.x,player.z,player.heading,player.moving,!indoorState.active&&!player.view,5,15)===0
+    if(paused&&group.current){const desired=Math.atan2(player.x-scrappy.x,player.z-scrappy.z);const delta=Math.atan2(Math.sin(desired-group.current.rotation.y),Math.cos(desired-group.current.rotation.y));group.current.rotation.y+=delta*Math.min(1,dt*5)}
+    const swing=paused?0:Math.sin(clock.elapsedTime*7)*0.42
     if (leftLeg.current) leftLeg.current.rotation.x=swing
     if (rightLeg.current) rightLeg.current.rotation.x=-swing
   })

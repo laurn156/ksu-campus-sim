@@ -92,23 +92,25 @@ export class DiningSimulation {
   a.blockedFor=0;a.walk=true;a.position=next;a.heading=Math.atan2(dx,dz);return false
  }
  private direct(a:Diner,target:Point,dt:number){const dx=target[0]-a.position[0],dz=target[1]-a.position[1],d=Math.hypot(dx,dz);if(d<.04){a.position=[...target];a.walk=false;return true}const step=Math.min(d,dt*.65),next:Point=[a.position[0]+dx/d*step,a.position[1]+dz/d*step];if((this.playerPosition&&Math.hypot(next[0]-this.playerPosition[0],next[1]-this.playerPosition[1])<.75)||this.agents.some(b=>b.id!==a.id&&b.phase!=='away'&&Math.hypot(next[0]-b.position[0],next[1]-b.position[1])<.68)){a.walk=false;return false}a.position=next;a.walk=true;return false}
- step(dt:number,playerPosition:Point|null=null){
+ step(dt:number,playerPosition:Point|null=null,pauseId:number|null=null,approaching=false){
   this.playerPosition=playerPosition
   if(this.events.length>512)this.events.splice(0,this.events.length-512)
-  for(const a of this.agents){a.timer-=dt
+  for(const a of this.agents){if(a.id===pauseId){a.walk=false;continue}a.timer-=dt
+   const proximity=approaching&&playerPosition?Math.hypot(a.position[0]-playerPosition[0],a.position[1]-playerPosition[1]):Infinity
+   const motionDt=dt*(proximity<1.5?0:proximity<3?.45:1)
    const stationX=[-9,-5,5,9][a.station],seat=a.seat===null?null:this.seats[a.seat]
    switch(a.phase){
     case 'away': if(a.timer<=0&&(!this.playerPosition||Math.hypot(this.playerPosition[0],this.playerPosition[1]-10.5)>=1)&&!this.agents.some(b=>b.id!==a.id&&b.phase!=='away'&&Math.hypot(b.position[0],b.position[1]-10.5)<1)){a.position=[0,10.5];a.phase='enter';this.events.push(`${a.id}:enter`);this.plan(a,[0,7])}break
-    case 'enter':if(this.move(a,dt)){a.phase='toQueue';this.plan(a,[stationX,-2.5])}break
-    case 'toQueue':if(this.move(a,dt)){a.phase='queue';a.heading=Math.PI;this.events.push(`${a.id}:queue`)}break
+    case 'enter':if(this.move(a,motionDt)){a.phase='toQueue';this.plan(a,[stationX,-2.5])}break
+    case 'toQueue':if(this.move(a,motionDt)){a.phase='queue';a.heading=Math.PI;this.events.push(`${a.id}:queue`)}break
     case 'queue':{const available=this.stationOwners[a.station]===null;const free=available?this.freeSeat():-1;if(available&&free>=0){this.stationOwners[a.station]=a.id;this.seatOwners[free]=a.id;a.seat=free;a.phase='toCounter';this.plan(a,[stationX,-4])}break}
-    case 'toCounter':if(this.move(a,dt)){a.phase='pickup';a.timer=2.4;a.heading=Math.PI;this.events.push(`${a.id}:counter`)}break
+    case 'toCounter':if(this.move(a,motionDt)){a.phase='pickup';a.timer=2.4;a.heading=Math.PI;this.events.push(`${a.id}:counter`)}break
     case 'pickup':if(a.timer<=0&&a.seat!==null){a.tray=true;this.stationOwners[a.station]=null;a.phase='toSeat';this.events.push(`${a.id}:tray`);this.plan(a,this.seats[a.seat].approach)}break
-    case 'toSeat':if(seat&&this.move(a,dt)){a.phase='sit';a.heading=seat.heading}break
-    case 'sit':if(seat&&this.direct(a,seat.chair,dt)){a.phase='eat';a.seated=true;a.walk=false;a.timer=16+a.id*3;this.events.push(`${a.id}:eat`)}break
+    case 'toSeat':if(seat&&this.move(a,motionDt)){a.phase='sit';a.heading=seat.heading}break
+    case 'sit':if(seat&&this.direct(a,seat.chair,motionDt)){a.phase='eat';a.seated=true;a.walk=false;a.timer=16+a.id*3;this.events.push(`${a.id}:eat`)}break
     case 'eat':a.walk=false;if(a.timer<=0){a.phase='stand';a.seated=false;this.events.push(`${a.id}:stand`)}break
-    case 'stand':if(seat&&this.direct(a,seat.approach,dt)){this.seatOwners[a.seat!]=null;a.seat=null;a.tray=false;a.phase='leave';this.plan(a,[0,10.5])}break
-    case 'leave':if(this.move(a,dt)){a.phase='away';a.walk=false;a.timer=8+a.id*3;this.events.push(`${a.id}:leave`)}break
+    case 'stand':if(seat&&this.direct(a,seat.approach,motionDt)){this.seatOwners[a.seat!]=null;a.seat=null;a.tray=false;a.phase='leave';this.plan(a,[0,10.5])}break
+    case 'leave':if(this.move(a,motionDt)){a.phase='away';a.walk=false;a.timer=8+a.id*3;this.events.push(`${a.id}:leave`)}break
    }
   }
  }

@@ -47,7 +47,7 @@ function Move({look,rects,startZ=9}:{look:AvatarLook;rects:Rect[];startZ?:number
  },[gl])
  useFrame((_,raw)=>{
   const dt=Math.min(raw,.05),k=keys.current
-  if(indoorState.activity)keys.current.clear()
+  if(indoorState.activity||indoorState.talkingNpc!==null)keys.current.clear()
   if(k.has('q'))orbit.current.yaw+=dt*1.6;if(k.has('e'))orbit.current.yaw-=dt*1.6
   let x=Number(k.has('d')||k.has('arrowright'))-Number(k.has('a')||k.has('arrowleft')),z=Number(k.has('s')||k.has('arrowdown'))-Number(k.has('w')||k.has('arrowup'))
   const n=Math.hypot(x,z)
@@ -293,8 +293,8 @@ function KitchenWorker({worker,index}:{worker:typeof kitchenWorkers[number];inde
 }
 function DiningCrowd({look}:{look:AvatarLook}) {
  const sim=useMemo(()=>new DiningSimulation(diningObstacles,diningTables.map(({x,z})=>[x,z]),5),[])
- useEffect(()=>()=>{indoorState.npcPositions=[]},[])
- useFrame((_,dt)=>{sim.step(Math.min(dt,.05),[indoorState.x,indoorState.z]);indoorState.npcPositions=[...sim.agents.filter(a=>a.phase!=='away').map(a=>a.position),...kitchenWorkers.map(({x,z})=>[x,z] as [number,number])]})
+ useEffect(()=>()=>{indoorState.npcPositions=[];indoorState.npcIds=[];indoorState.talkingNpc=null},[])
+ useFrame((_,dt)=>{sim.step(Math.min(dt,.05),[indoorState.x,indoorState.z],indoorState.talkingNpc,indoorState.moving);const present=sim.agents.filter(a=>a.phase!=='away');indoorState.npcPositions=[...present.map(a=>a.position),...kitchenWorkers.map(({x,z})=>[x,z] as [number,number])];indoorState.npcIds=[...present.map(a=>a.id),...kitchenWorkers.map((_,i)=>-100-i)]})
  return <>{sim.agents.map(agent=><DiningAgent key={agent.id} agent={agent} look={look}/>)}</>
 }
 function Dining({look}:{look:AvatarLook}) {
@@ -609,8 +609,8 @@ function StudentGameBalls({sim}:{sim:InteriorCrowd}) {
 }
 function InteriorPeople({kind,rects,look}:{kind:CrowdKind;rects:Rect[];look:AvatarLook}) {
  const sim=useMemo(()=>new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:kind==='innovation'?11:kind==='eventhall'?9:kind==='recreation'?8:(['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture','competition','technology','housing','community','innovation','eventhall','activitycenter'] as string[]).includes(kind)?6:kind==='math'?12:kind==='admin'?8:kind==='library'?10:5),[kind,rects])
- useEffect(()=>()=>{indoorState.npcPositions=[]},[])
- useFrame((_,dt)=>{sim.step(Math.min(dt,.05),[indoorState.x,indoorState.z]);indoorState.npcPositions=sim.agents.filter(a=>!a.out).map(a=>a.position)})
+ useEffect(()=>()=>{indoorState.npcPositions=[];indoorState.npcIds=[];indoorState.talkingNpc=null},[])
+ useFrame((_,dt)=>{sim.step(Math.min(dt,.05),[indoorState.x,indoorState.z],indoorState.talkingNpc,indoorState.moving);const present=sim.agents.filter(a=>!a.out);indoorState.npcPositions=[...present.map(a=>a.position),...(kind==='bus'?[[-2.1,-9.4] as [number,number]]:[])];indoorState.npcIds=[...present.map(a=>a.id),...(kind==='bus'?[-200]:[])]})
  return <>{sim.agents.map(agent=><InteriorAgent key={agent.id} agent={agent} look={look} sim={sim}/>)}{kind==='student'&&<StudentGameBalls sim={sim}/>}</>
 }
 export function DetailedRoom({kind,look,event=0}:{kind:InteriorKind;look:AvatarLook;event?:number}) {

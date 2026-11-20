@@ -176,6 +176,7 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
     throwing.current = (activityState.mode === 'disc' || activityState.mode === 'rock') && performance.now() < activityState.throwUntil ? 1 : 0
     if(activityState.mode==='rock'&&performance.now()<activityState.throwUntil&&performance.now()-slapSwing.current>330)slapSwing.current=performance.now()
     busCaller.riding = player.busRide?.index ?? -1
+    busCaller.heading=player.heading;busCaller.moving=player.moving
     if (indoorState.active) { busCaller.x = NaN; busCaller.z = NaN } else { busCaller.x = player.x; busCaller.z = player.z }
     if (indoorState.active) { if(player.busRide){const bus=busPositions[player.busRide.index];if(bus){player.x=bus.x;player.z=bus.z}} keys.current.clear(); player.moving = false; return }
     const k = keys.current

@@ -24,3 +24,6 @@
 .chat-more{align-self:flex-start;margin:8px 12px 0;border:0;background:none;color:#6c6553;font:800 12px inherit;font-family:inherit;cursor:pointer;padding:2px 4px}
 .phone-players>button,.phone-players .social-card button{border:0;border-radius:10px;background:#f3c346;color:#17271f;padding:9px 12px;margin:4px;font:700 14px inherit;cursor:pointer}.phone-players>small{display:block;color:#697970;margin-bottom:12px}.phone-players .social-card{background:#eef1e5;padding:12px;margin-top:12px;border-radius:12px}.phone-players .social-messages{max-height:160px;overflow:auto}.phone-players form{display:flex;gap:8px}.phone-players input{flex:1;min-width:0;padding:9px;border:1px solid #b7c4b4;border-radius:8px}
 .phone-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}.phone-photo-grid article{padding:8px;background:white;border:1px solid #e4dfd1;border-radius:10px}.phone-photo-grid img{width:100%;height:auto;border-radius:4px}.phone-photo-grid p{margin:4px 0}.phone-photo-grid a{display:inline-block;color:#285c43;font-weight:800;font-size:12px;margin-right:8px}
+/* Drei labels render above ordinary UI unless hidden while a dialog is open. */
+body:has(.life-modal-back) .student-label,body:has(.chat) .student-label{visibility:hidden!important}
+.visitor-chat{z-index:130}

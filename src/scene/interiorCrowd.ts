@@ -78,8 +78,9 @@ export class InteriorCrowd {
   a.stuckFor=0
  }
  private path(a:IndoorAgent,player:Point){const goal=this.activities[a.activity].position;const occupied=[player,...this.agents.filter(b=>b!==a&&!b.out).map(b=>b.position)];a.route=indoorPath(a.position,goal,this.obstacles,occupied);if(!a.route.length)a.route=indoorPath(a.position,goal,this.obstacles)}
- step(dt:number,player:Point){
+ step(dt:number,player:Point,pauseId:number|null=null,approaching=false){
   for(const a of this.agents){
+   if(a.id===pauseId){a.walk=false;continue}
    if(a.out){
     a.timer-=dt
     if(a.timer>0||Math.hypot(a.position[0]-player[0],a.position[1]-player[1])<.9||this.agents.some(b=>b!==a&&!b.out&&Math.hypot(a.position[0]-b.position[0],a.position[1]-b.position[1])<.8))continue
@@ -99,7 +100,8 @@ export class InteriorCrowd {
    }
    const [x,z]=a.route[0],dx=x-a.position[0],dz=z-a.position[1],distance=Math.hypot(dx,dz)
    if(distance<.04){a.route.shift();continue}
-   const step=Math.min(distance,dt*1.25),next:Point=[a.position[0]+dx/distance*step,a.position[1]+dz/distance*step]
+   const proximity=approaching?Math.hypot(a.position[0]-player[0],a.position[1]-player[1]):Infinity;if(proximity<1.6){a.walk=false;continue}const pace=proximity<3?.45:1
+   const step=Math.min(distance,dt*1.25*pace),next:Point=[a.position[0]+dx/distance*step,a.position[1]+dz/distance*step]
    if(!clearPoint(...next,this.obstacles)){a.walk=false;a.stuckFor+=dt;if(a.stuckFor>1)this.chooseAnother(a,player);continue}
    const blocker=this.agents.find(b=>b!==a&&!b.out&&Math.hypot(next[0]-b.position[0],next[1]-b.position[1])<.68)
    if(blocker||Math.hypot(next[0]-player[0],next[1]-player[1])<.75){

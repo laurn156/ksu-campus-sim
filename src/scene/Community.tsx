@@ -10,9 +10,11 @@ import type { Profile } from '../ui/Welcome'
 import { STUDENTS, scheduleFor, type StudentProfile, type StudentId } from '../life/students'
 import { makePathNetwork } from './Scrappy'
 import { centroid } from '../campus'
+import { indoorState } from './indoorState'
+import { approachSpeed } from './approachBehavior'
 
 /** companion: a student currently walking with the player (lunch, studying, hanging out). */
-export const community: { students:{id:StudentId;name:string;x:number;z:number;line:string}[];talking:StudentId|null;companion:StudentId|null } = { students:[],talking:null,companion:null }
+export const community: { students:{id:StudentId;name:string;x:number;z:number;line:string}[];talking:StudentId|null;companion:StudentId|null;ambient:{x:number;z:number}[];patio:{x:number;z:number}[];ambientTalking:number|null } = { students:[],talking:null,companion:null,ambient:[],patio:[],ambientTalking:null }
 export function CampusStudents({ campus, minute }: {campus:Campus;minute:number}) {
   const collider=useMemo(()=>new Collider(campus.buildings),[campus])
   const network=useMemo(()=>makePathNetwork(campus,collider),[campus,collider])
@@ -52,18 +54,19 @@ function LifeStudent({profile,campus,minute,index,network,start}:{profile:Studen
       return
     }
     if(following.current){following.current=false;lastDestination.current='';route.current=[];setRepath(v=>v+1)}
-    const next=conversing||wait.current>0?undefined:route.current[0]
+    const pace=approachSpeed(position.current[0],position.current[1],player.x,player.z,player.heading,player.moving,!indoorState.active&&!player.view,4.5,11)
+    const next=conversing||wait.current>0||pace===0?undefined:route.current[0]
     if(conversing&&ref.current)ref.current.rotation.y=Math.atan2(player.x-position.current[0],player.z-position.current[1])
     if(next!==undefined){const [tx,tz]=network.nodes[next],dx=tx-position.current[0],dz=tz-position.current[1],d=Math.hypot(dx,dz)
       if(d<.15)route.current.shift()
-      else {const step=Math.min(d,dt*1.8);position.current[0]+=dx/d*step;position.current[1]+=dz/d*step;if(ref.current)ref.current.rotation.y=Math.atan2(dx,dz)}
+      else {const step=Math.min(d,dt*1.8*pace);position.current[0]+=dx/d*step;position.current[1]+=dz/d*step;if(ref.current)ref.current.rotation.y=Math.atan2(dx,dz)}
     }
     walk.current=THREE.MathUtils.lerp(walk.current,next!==undefined?.7:0,Math.min(1,dt*6))
     if(ref.current)ref.current.position.set(position.current[0],0,position.current[1])
     const entry=community.students.find(s=>s.id===profile.id)
     if(entry){entry.x=position.current[0];entry.z=position.current[1]}else community.students.push({id:profile.id,name:profile.name,x:position.current[0],z:position.current[1],line:'Hello!'})
   })
-  return <group ref={ref} onClick={event=>{event.stopPropagation();if(near)window.dispatchEvent(new CustomEvent('open-student',{detail:profile.id}))}} position={[...position.current.slice(0,1),0,position.current[1]] as [number,number,number]}><Character color={profile.color} headwear={index%2?'cap':'none'} face="happy" top="tee" topColor="#f4f0e6" bottom="shorts" shoes="sneakers" walk={walk} scale={1.15}/>{near&&<Html position={[0,2,0]} center distanceFactor={18}><button className="student-label" onClick={event=>{event.stopPropagation();window.dispatchEvent(new CustomEvent('open-student',{detail:profile.id}))}}>{profile.name}</button></Html>}</group>
+  return <group ref={ref} onClick={event=>{event.stopPropagation();if(near)window.dispatchEvent(new CustomEvent('open-student',{detail:profile.id}))}} position={[...position.current.slice(0,1),0,position.current[1]] as [number,number,number]}><Character color={profile.color} headwear={index%2?'cap':'none'} face="happy" top="tee" topColor="#f4f0e6" bottom="shorts" shoes="sneakers" walk={walk} scale={1.15}/></group>
 }
 
 /** Background walkers are instanced, keeping draw calls low even on a large campus. */
@@ -118,6 +121,7 @@ function AmbientStudents({campus}:{campus:Campus}) {
     }
     return {states,candidates,neighbors}
   },[campus])
+  useEffect(()=>{community.ambient=walkers.states;return()=>{community.ambient=[];community.ambientTalking=null}},[walkers])
   const head=useRef<THREE.InstancedMesh>(null), body=useRef<THREE.InstancedMesh>(null)
   const left=useRef<THREE.InstancedMesh>(null),right=useRef<THREE.InstancedMesh>(null)
   const arms=useRef<THREE.InstancedMesh>(null), bareLegs=useRef<THREE.InstancedMesh>(null)
@@ -147,7 +151,9 @@ function AmbientStudents({campus}:{campus:Campus}) {
         const newPath=walkers.candidates[person.segment],newGoal=person.target===0?newPath.a:newPath.b
         dx=newGoal[0]-person.x;dz=newGoal[1]-person.z;distance=Math.hypot(dx,dz)
       }
-      if(distance>0){const step=Math.min(distance,Math.min(delta,0.05)*(1.05+(i%5)*0.09));person.x+=dx/distance*step;person.z+=dz/distance*step}
+      const pace=community.ambientTalking===i?0:approachSpeed(person.x,person.z,player.x,player.z,player.heading,player.moving,!indoorState.active&&!player.view,4.5,11)
+      if(distance>0&&pace>0){const step=Math.min(distance,Math.min(delta,0.05)*(1.05+(i%5)*0.09)*pace);person.x+=dx/distance*step;person.z+=dz/distance*step}
+      if(pace===0){dx=player.x-person.x;dz=player.z-person.z}
       helper.position.set(person.x,0,person.z)
       helper.rotation.set(0,Math.atan2(dx,dz),0);helper.scale.setScalar(1);helper.updateMatrix();base.copy(helper.matrix)
       part.makeTranslation(0,1.13,0);head.current!.setMatrixAt(i,part.premultiply(base))
@@ -162,7 +168,7 @@ function AmbientStudents({campus}:{campus:Campus}) {
       helper.position.set(0,.64,-.235);helper.rotation.set(0,0,0);helper.scale.setScalar(i%3===0?1:0);helper.updateMatrix()
       part.copy(helper.matrix).premultiply(base);backpacks.current!.setMatrixAt(i,part)
       part.makeTranslation(0,0.62,0);body.current!.setMatrixAt(i,part.premultiply(base))
-      const swing=Math.sin(clock.elapsedTime*6+i)*0.05
+      const swing=pace===0?0:Math.sin(clock.elapsedTime*6+i)*0.05
       for(const [j,side] of [-1,1].entries()) {
         helper.position.set(side*.12,.20,swing*side);helper.rotation.set(0,0,0);helper.scale.set(1,studentVariant(i)%4===0?.7:1,1);helper.updateMatrix()
         part.copy(helper.matrix).premultiply(base);(j===0?left.current!:right.current!).setMatrixAt(i,part)

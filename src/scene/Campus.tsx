@@ -10,6 +10,7 @@ import { Props } from './Props'
 import { Buses } from './Buses'
 import { visibleTreePositions } from './treeRegistry'
 import { Scrappy } from './Scrappy'
+import { community } from './Community'
 import { Traffic } from './Traffic'
 import { Landmarks } from './Landmarks'
 import { discGolfSpots, discGolfTreesToRemove } from './discGolf'
@@ -294,6 +295,7 @@ function StingersPatioGuests({campus}:{campus:Campus}){
    return seats.slice(0,i%2===0?2:1)
   })
  },[campus])
+ useEffect(()=>{community.patio=guests;return()=>{community.patio=[]}},[guests])
  return <>{guests.map((guest,i)=><PatioGuest key={i} {...guest} index={i}/>)}</>
 }
 
