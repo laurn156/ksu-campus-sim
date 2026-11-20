@@ -7,7 +7,7 @@ import { community } from '../scene/Community'
 import { landmarkSpots } from '../scene/Landmarks'
 import { STUDENTS, scheduleFor, moodFor, type StudentId } from './students'
 import { isMemoryQuestion, level, npcOpener, relation, stageProgress, UNLOCK, type Outing, type SocialAction } from './simulation'
-import { optionalDialogue, type DialogueTurn } from './dialogue'
+import { fallbackOptions, optionalDialogue, TONE_ACTION, type DialogueTurn, type ReplyOptions } from './dialogue'
 import type { LifeController } from './useLife'
 import './life.css'
 
@@ -26,7 +26,7 @@ function timeLabel(minutes:number){const h=Math.floor(minutes/60),m=Math.floor(m
 export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeController;playerName:string;onEdit:()=>void}) {
   const [closest,setClosest]=useState<StudentId|null>(null),[talking,setTalking]=useState<StudentId|null>(null),[menu,setMenu]=useState<'relationships'|'schedule'|'stories'|'character'|null>(null)
   const [message,setMessage]=useState(''),[feedback,setFeedback]=useState(''),[invitation,setInvitation]=useState<{id:StudentId;line:string;suggest?:SocialAction}|null>(null)
-  const [open,setOpen]=useState<Category|null>('Friendly'),[suggest,setSuggest]=useState<SocialAction|null>(null)
+  const [open,setOpen]=useState<Category|null>('Friendly'),[suggest,setSuggest]=useState<SocialAction|null>(null),[replies,setReplies]=useState<ReplyOptions|null>(null),[more,setMore]=useState(false)
   const [thinking,setThinking]=useState(false), request=useRef<AbortController|null>(null), lastInvite=useRef(Date.now()-60000)
   const [lines,setLines]=useState<Line[]>([]), logs=useRef<Partial<Record<StudentId,Line[]>>>({}), history=useRef<Partial<Record<StudentId,DialogueTurn[]>>>({})
   const [plan,setPlan]=useState<Plan|null>(null), planRef=useRef<Plan|null>(null), [now,setNow]=useState(Date.now())
@@ -39,8 +39,9 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
   const toast=(text:string)=>{setFeedback(text);setTimeout(()=>setFeedback(f=>f===text?'':f),4500)}
   const startTalk=(id:StudentId,opener?:{line:string;suggest?:SocialAction})=>{
     const rel=relation(state.current,id)
-    if(!logs.current[id]?.length)logs.current[id]=[{who:'npc',text:opener?.line??(rel.met?`Hey ${playerName}! Good to see you again.`:'Hi! I don’t think we’ve met.')}]
+    if(!logs.current[id]?.length)logs.current[id]=[{who:'npc',text:opener?.line??(rel.met?['Oh, hey.','Hey, what’s up?','Hey! How’s it going?','Oh hi. What’s new?'][rel.interactions%4]:'Hi! I don’t think we’ve met.')}]
     else if(opener)logs.current[id]=[...logs.current[id]!,{who:'npc',text:opener.line}]
+    const npcP=STUDENTS.find(s=>s.id===id)!;setReplies(fallbackOptions(npcP,'neutral',rel.met,rel.interactions));setMore(false)
     setLines(logs.current[id]!);setSuggest(opener?.suggest??null);setTalking(id);setOpen(opener?.suggest?(CATEGORIES.find(c=>c.items.some(i=>i.id===opener.suggest))?.label??'Friendly'):'Friendly')
   }
   const endTalk=()=>{request.current?.abort();setThinking(false);setTalking(null);setSuggest(null)}
@@ -113,16 +114,17 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
   },[campus,life.record])
   const cancelPlan=()=>{const p=planRef.current;if(!p)return;const name=STUDENTS.find(s=>s.id===p.id)!.name;if(p.phase!=='playing')life.record(p.id,'you bailing on our plans',-3);finishPlan(`You bailed on ${name}. −3`)}
 
-  const interact=(action:SocialAction,text='')=>{
+  const interact=(action:SocialAction,text='',shown?:string)=>{
     if(!npc||thinking)return
     request.current?.abort()
     const before=level(relation(life.state,npc.id).score)
     const result=life.interact(npc.id,action,text)
     const after=relation(result.state,npc.id), o=result.outcome
-    const playerLine=action==='custom'?text:LABEL[action]??action
-    say(npc.id,{who:'you',text:playerLine});setSuggest(null);setMessage('')
+    const playerLine=shown??(action==='custom'?text:LABEL[action]??action)
+    say(npc.id,{who:'you',text:playerLine});setSuggest(null);setMessage('');setReplies(null)
     const previous=history.current[npc.id]??[]
-    const finish=(spoken:string)=>{
+    const finish=(spoken:string,options?:ReplyOptions|null)=>{
+      setReplies(options??fallbackOptions(npc,o.reaction,true,after.interactions*7+o.delta))
       history.current[npc.id]=[...previous,{role:'user' as const,content:playerLine},{role:'assistant' as const,content:spoken}].slice(-8)
       say(npc.id,{who:'npc',text:spoken})
       if(o.delta)say(npc.id,{who:'note',text:`${o.delta>0?'+':'−'}${Math.abs(o.delta)} friendship`,tone:o.delta>0?'good':'bad'})
@@ -132,7 +134,7 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
     }
     if(action==='custom'&&isMemoryQuestion(text)){finish(result.reply);return}
     const controller=new AbortController();request.current=controller;setThinking(true)
-    void optionalDialogue(npc,result.state,action,text,playerName,result.reply,previous,controller.signal,o).then(reply=>{if(!controller.signal.aborted)finish(reply||result.reply)})
+    void optionalDialogue(npc,result.state,action,text,playerName,result.reply,previous,controller.signal,o).then(ai=>{if(!controller.signal.aborted)finish(ai?.reply||result.reply,ai?.options)})
   }
 
   const mood=npc&&r?moodFor(npc,life.state.minute,r.score):''
@@ -148,9 +150,11 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
       <header><div><h2>{npc.name}</h2><small>{npc.major} · {mood}</small></div><button onClick={endTalk} aria-label="End conversation">✕</button></header>
       <div className="chat-rel"><span className={'stage'+(r.score<=-15?' rival':'')}>{level(r.score)}</span><div className="bar"><i style={{width:Math.round(stageProgress(r.score)*100)+'%'}}/></div></div>
       <div className="chat-log" ref={scroll}>{lines.map((l,i)=><p key={i} className={'line '+l.who+(l.tone?' '+l.tone:'')}>{l.text}</p>)}{thinking&&<p className="line npc typing"><span/><span/><span/></p>}</div>
-      {suggest&&<button className="chat-suggest" onClick={()=>interact(suggest)}>💬 {LABEL[suggest]}</button>}
-      <div className="chat-cats">{CATEGORIES.map(c=><button key={c.label} aria-expanded={open===c.label} onClick={()=>setOpen(open===c.label?null:c.label)}>{c.icon} {c.label}</button>)}</div>
-      {open&&<div className="chat-actions">{CATEGORIES.find(c=>c.label===open)!.items.map(a=>{const need=UNLOCK[a.id],locked=need!==undefined&&r.score<need;return <button key={a.id} disabled={locked||thinking} title={locked?`Unlocks at ${level(need!)}`:undefined} onClick={()=>interact(a.id)}>{locked?'🔒 ':''}{a.label}</button>})}</div>}
+      {suggest&&!thinking&&<button className="chat-suggest" onClick={()=>interact(suggest)}>💬 {LABEL[suggest]}</button>}
+      {replies&&!thinking&&<div className="chat-replies">{(['warm','playful','blunt'] as const).map(tone=><button key={tone} className={tone} onClick={()=>{const said=replies[tone];interact(r.met?TONE_ACTION[tone]:'introduce',r.met?said:'',said)}}><span aria-hidden="true">{tone==='warm'?'😊':tone==='playful'?'😜':'😐'}</span>{replies[tone]}</button>)}</div>}
+      <button className="chat-more" aria-expanded={more} onClick={()=>setMore(!more)}>{more?'Hide actions ▴':'More actions ▾'}</button>
+      {more&&<div className="chat-cats">{CATEGORIES.map(c=><button key={c.label} aria-expanded={open===c.label} onClick={()=>setOpen(open===c.label?null:c.label)}>{c.icon} {c.label}</button>)}</div>}
+      {more&&open&&<div className="chat-actions">{CATEGORIES.find(c=>c.label===open)!.items.map(a=>{const need=UNLOCK[a.id],locked=need!==undefined&&r.score<need;return <button key={a.id} disabled={locked||thinking} title={locked?`Unlocks at ${level(need!)}`:undefined} onClick={()=>interact(a.id)}>{locked?'🔒 ':''}{a.label}</button>})}</div>}
       <form onSubmit={e=>{e.preventDefault();if(message.trim())interact('custom',message)}}><input aria-label="Say something" maxLength={240} placeholder={`Say something to ${npc.name}…`} value={message} onChange={e=>setMessage(e.target.value)}/><button type="submit" disabled={thinking||!message.trim()}>Send</button></form>
     </section>}
     {menu&&<div className="life-modal-back"><section className="life-phone" role="dialog" aria-modal="true" aria-label="Campus phone"><header><div><small>CAMPUSVERSE</small><h2>Your phone</h2></div><button onClick={()=>setMenu(null)}>✕</button></header><nav>{(['relationships','schedule','stories','character'] as const).map(t=><button key={t} aria-pressed={menu===t} onClick={()=>setMenu(t)}>{t}</button>)}</nav>

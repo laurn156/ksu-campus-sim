@@ -81,7 +81,7 @@ export function talk(state:LifeState,id:StudentId,action:SocialAction,text='',pl
   }
   else if(!prev.met && action!=='custom'){reply=`Hi! I’m ${npc.name}. Before we get into that, what should I call you?`;delta=1}
   else if((UNLOCK[action]??-99)>prev.score){reply=pick(['Uh, we don’t really know each other that well yet.','That’s a little much. We just met.','Let’s maybe hang out more first?'],seed);delta=-1;reaction='negative'}
-  else if(repeated && !mean){reply=pick([`You asked me that already, ${playerName}.`,'Didn’t we just do this?','Ha, again? Let’s talk about something else.'],seed);delta=action==='compliment'?-2:0;reaction='neutral'}
+  else if(repeated && !mean && !custom){reply=pick([`You asked me that already, ${playerName}.`,'Didn’t we just do this?','Ha, again? Let’s talk about something else.'],seed);delta=action==='compliment'?-2:0;reaction='neutral'}
   else if(invite){
     // Acceptance depends on friendship, personality, mood and what they're busy with.
     const busy=/class|studio|exam/.test(scheduleFor(npc,state.minute).label)&&action!=='study'
@@ -133,6 +133,8 @@ export function talk(state:LifeState,id:StudentId,action:SocialAction,text='',pl
       :`It’s good to see you, ${playerName}. I’ve been ${s}.`
     if(action==='secret')remember('sharing a secret')
   }
+  // A reply option the player picked (their own words, played as warm/playful/blunt): react to the tone.
+  if(custom&&['chat','joke','disagree'].includes(action)&&prev.met)reply=reaction==='positive'?pick(['Ha, fair enough.','Okay, I like that.','Right? That’s what I’m saying.','Ha. Yeah.'],seed):reaction==='negative'?pick(['Wow. Okay.','That’s kind of harsh.','Hm. Alright then.'],seed):pick(['Yeah, maybe.','Hm, I guess.','Fair.'],seed)
   if(topic && !memories.includes(topic))memories.push(topic)
   // Small storylines advance only through supported interactions and on a later day.
   const startsStory = prev.met && (id==='imani' && (topic==='robotics'||action==='interests') || id==='nico' && action==='challenge' || id==='devon' && (action==='study'||action==='day') || id==='tess' && (action==='clubs'||action==='drama') || id==='marisol' && (action==='joke'||action==='story') || id==='jordan' && action==='interests' || id==='riley' && action==='disagree')
