@@ -204,7 +204,7 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
       else { player.x=bus.x; player.z=bus.z; snap.current=true }
     }
     if (k.has('q') && !activityState.locked) player.yaw += dt * 1.6
-    if (k.has('e') && !activityState.mode && !activityState.locked && !activityState.near) player.yaw -= dt * 1.6
+    if (k.has('r') && !activityState.mode && !activityState.locked && !activityState.near) player.yaw -= dt * 1.6
     // camera-relative movement: "forward" points away from the camera
     const fwd = new THREE.Vector2(-Math.sin(player.yaw), -Math.cos(player.yaw))
     const right = new THREE.Vector2(-fwd.y, fwd.x)

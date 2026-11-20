@@ -49,7 +49,7 @@ function Move({look,rects,startZ=9}:{look:AvatarLook;rects:Rect[];startZ?:number
  useFrame((_,raw)=>{
   const dt=Math.min(raw,.05),k=combinedKeys(keys.current)
   if(indoorState.activity||indoorState.talkingNpc!==null)keys.current.clear()
-  if(k.has('q'))orbit.current.yaw+=dt*1.6;if(k.has('e'))orbit.current.yaw-=dt*1.6
+  if(k.has('q'))orbit.current.yaw+=dt*1.6;if(k.has('r'))orbit.current.yaw-=dt*1.6
   let x=Number(k.has('d')||k.has('arrowright'))-Number(k.has('a')||k.has('arrowleft')),z=Number(k.has('s')||k.has('arrowdown'))-Number(k.has('w')||k.has('arrowup'))
   const n=Math.hypot(x,z)
   if(n){pan.current={x:0,y:0};x/=n;z/=n;const speed=(k.has('shift')?6:3.5)*dt;const blocked=(px:number,pz:number)=>collision(px,pz,rects)||indoorState.npcPositions.some(([ax,az])=>Math.hypot(px-ax,pz-az)<.75);if(!blocked(pos.current.x+x*speed,pos.current.z))pos.current.x+=x*speed;if(!blocked(pos.current.x,pos.current.z+z*speed))pos.current.z+=z*speed;if(body.current)body.current.rotation.y=Math.atan2(x,z)}

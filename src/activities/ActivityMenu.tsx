@@ -20,15 +20,15 @@ function near(campus:Campus,at:Pt,radii=[4,5,6]):Target|null{
 }
 function building(campus:Campus,code:string):Target|null{const b=campus.buildings.find(x=>x.code===code||x.id===code);return b?{...approach(campus,b.poly),buildingId:b.id}:null}
 const items:Item[]=[
- {name:'Bathtub Race',kind:'MINIGAME',description:'Race through checkpoints on Alumni Field.',instructions:'Press E near the starting area, then select Start race.',target:c=>{const p=bathtubCourse(c)[0];return p?near(c,p):null}},
- {name:'Disc Golf',kind:'MINIGAME',description:'Aim and throw at a basket.',instructions:'Press E near a basket to start.',target:c=>{const p=discGolfSpots(c)[0];return p?near(c,p):null}},
- {name:'Drive the Big Owl Bus',kind:'MINIGAME',description:'Drive the shuttle and serve campus stops.',instructions:'Press E near the bus to start driving.',target:c=>{const b=busPositions.filter(Boolean).reduce<(typeof busPositions)[number]|null>((best,p)=>!best||Math.hypot(p.x-player.x,p.z-player.z)<Math.hypot(best.x-player.x,best.z-player.z)?p:best,null);return b?near(c,[b.x,b.z],[6,7,8]):null}},
- {name:'Slap the Rock Battle',kind:'MINIGAME',description:'Slap the rock as fast as you can and beat your best score.',instructions:'Press E near Slap the Rock.',target:c=>{const p=landmarkSpots(c).find(x=>x.name==='Slap the Rock');return p?near(c,p.at,[2.5,3,4]):null}},
- {name:'Hooty Hoo Hunt',kind:'MINIGAME',description:'Find the hidden letters across campus.',instructions:'Press E at the Hooty Hoo Hunt sign.',target:c=>{const p=huntPositions(c)[0];return p?near(c,p):null}},
+ {name:'Bathtub Race',kind:'MINIGAME',description:'Race through checkpoints on Alumni Field.',instructions:'Press F near the starting area, then select Start race.',target:c=>{const p=bathtubCourse(c)[0];return p?near(c,p):null}},
+ {name:'Disc Golf',kind:'MINIGAME',description:'Aim and throw at a basket.',instructions:'Press F near a basket to start.',target:c=>{const p=discGolfSpots(c)[0];return p?near(c,p):null}},
+ {name:'Drive the Big Owl Bus',kind:'MINIGAME',description:'Drive the shuttle and serve campus stops.',instructions:'Press F near the bus to start driving.',target:c=>{const b=busPositions.filter(Boolean).reduce<(typeof busPositions)[number]|null>((best,p)=>!best||Math.hypot(p.x-player.x,p.z-player.z)<Math.hypot(best.x-player.x,best.z-player.z)?p:best,null);return b?near(c,[b.x,b.z],[6,7,8]):null}},
+ {name:'Slap the Rock Battle',kind:'MINIGAME',description:'Slap the rock as fast as you can and beat your best score.',instructions:'Press F near Slap the Rock.',target:c=>{const p=landmarkSpots(c).find(x=>x.name==='Slap the Rock');return p?near(c,p.at,[2.5,3,4]):null}},
+ {name:'Hooty Hoo Hunt',kind:'MINIGAME',description:'Find the hidden letters across campus.',instructions:'Press F at the Hooty Hoo Hunt sign.',target:c=>{const p=huntPositions(c)[0];return p?near(c,p):null}},
  {name:'Attend a Class',kind:'LEARN',description:'Choose any subject and topic for a lesson.',instructions:'Choose a subject and topic.',target:()=>({x:player.x,z:player.z,yaw:player.yaw})},
  {name:'Campus Photo Booth',kind:'FUN',description:'Snap selfies and group photos with fun backdrops, poses and props.',instructions:'Pick a backdrop, strike a pose and take a photo.',target:()=>({x:player.x,z:player.z,yaw:player.yaw})},
- {name:'Fix the Vending Machine',kind:'ENGINEERING',description:'Reconnect the wires and get a snack machine working.',instructions:'Approach the out-of-order vending machine and press E.',target:c=>building(c,'1556621556')},
- {name:'Robot Arm Tic-Tac-Toe',kind:'ENGINEERING',description:'Play tic-tac-toe against a robotic arm.',instructions:'Approach the robotic arm and press E.',target:c=>building(c,'1556621556')},
+ {name:'Fix the Vending Machine',kind:'ENGINEERING',description:'Reconnect the wires and get a snack machine working.',instructions:'Approach the out-of-order vending machine and press F.',target:c=>building(c,'1556621556')},
+ {name:'Robot Arm Tic-Tac-Toe',kind:'ENGINEERING',description:'Play tic-tac-toe against a robotic arm.',instructions:'Approach the robotic arm and press F.',target:c=>building(c,'1556621556')},
 ]
 export function ActivityMenu({campus}:{campus:Campus}){
  const [open,setOpen]=useState(false),[message,setMessage]=useState('')

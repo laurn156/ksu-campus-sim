@@ -205,7 +205,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
       )}
       <Minimap campus={campus} onOpen={()=>setMapOpen(true)} />
       <div className="controls">
-        <b>WASD</b> walk · <b>Shift</b> run · <b>drag</b> look · <b>middle drag / Shift+drag</b> pan · <b>WASD</b> recenter · <b>Q/E</b> turn · <b>wheel</b> zoom · <b>M</b> mute
+        <b>WASD</b> walk · <b>Shift</b> run · <b>drag</b> look · <b>middle drag / Shift+drag</b> pan · <b>WASD</b> recenter · <b>Q/R</b> turn · <b>wheel</b> zoom · <b>M</b> mute
       </div>
       <div className="osm">{campus.attribution} · Aerial imagery: USDA NAIP (public domain)</div>
     </>

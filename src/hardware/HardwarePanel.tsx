@@ -19,7 +19,7 @@ export function HardwarePanel({allowed}:{allowed:boolean}){
   hardware.sample=s;hardware.updated=performance.now();setSample(s);setReceived(Date.now());const k=hardware.keys;k.clear();const mode=activityState.mode
   if(!activityState.locked&&!document.querySelector('[aria-modal="true"]')){if(s.x<350)k.add('a');if(s.x>675)k.add('d');if(s.y<350)k.add('w');if(s.y>675)k.add('s')}
   const prev=last.current
-  if(s.joy&&!prev.joy){if(mode==='busdrive')press('e','KeyE');else if(!mode&&!activityState.locked){const talk=document.querySelector('.nearby-player-prompt');press(talk?'t':'e',talk?'KeyT':'KeyE')}else if(mode==='hunt')press('e','KeyE')}
+  if(s.joy&&!prev.joy){if(mode==='busdrive')press('b','KeyB');else if(!mode&&!activityState.locked){const talk=document.querySelector('.nearby-player-prompt');press(talk?'t':'f',talk?'KeyT':'KeyF')}else if(mode==='hunt')press('f','KeyF')}
   prev.joy=s.joy
  }
  const start=async()=>{
