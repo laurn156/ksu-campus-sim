@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { useEffect, useState } from 'react'
-import { distToSeg, type Building, type Campus } from '../campus'
+import { type Building, type Campus } from '../campus'
+import { nearbyInterior } from './nearbyInterior'
 import { player, type AvatarLook } from './Player'
 import { busPositions } from './Buses'
 import './interiors.css'
@@ -30,7 +31,7 @@ function Room({building,look}:{building:Building;look:AvatarLook}) {
 export function BuildingInteriors({campus,look,peers=[]}:{campus:Campus;look:AvatarLook;peers?:Peer[]}) {
  const [near,setNear]=useState<Building|null>(null),[inside,setInside]=useState<Building|null>(null)
  const [nearUits,setNearUits]=useState(false),[insideUits,setInsideUits]=useState(false),[insideBus,setInsideBus]=useState(false)
- useEffect(()=>{const id=setInterval(()=>{if(indoorState.active||player.view||player.busRide){setNear(null);setNearUits(false);return}setNearUits(Math.hypot(player.x+135.2,player.z+49.5)<7);let best:Building|null=null,dist=10;for(const b of campus.buildings)for(let i=0,j=b.poly.length-1;i<b.poly.length;j=i++){const d=distToSeg(player.x,player.z,b.poly[j],b.poly[i]);if(d<dist){dist=d;best=b}}setNear(old=>old?.id===best?.id?old:best)},200);return()=>clearInterval(id)},[campus])
+ useEffect(()=>{const id=setInterval(()=>{if(indoorState.active||player.view||player.busRide){setNear(null);setNearUits(false);return}setNearUits(Math.hypot(player.x+135.2,player.z+49.5)<7);const best=nearbyInterior(campus.buildings,player.x,player.z);setNear(old=>old?.id===best?.id?old:best)},200);return()=>clearInterval(id)},[campus])
  useEffect(()=>()=>{indoorState.active=false;indoorState.location='campus'},[])
  const enter=()=>{const b=nearUits?(campus.buildings.find(b=>b.code==='H')??near):near;if(!b)return;indoorState.location=nearUits?'building:uits':'building:'+b.id;indoorState.x=0;indoorState.z=nearUits?6:9;indoorState.active=true;setInsideUits(nearUits);setInside(b)}
  const exit=()=>{if(insideBus&&player.busRide){const bus=busPositions[player.busRide.index];if(bus){player.x=bus.x+Math.cos(bus.h)*3.2;player.z=bus.z-Math.sin(bus.h)*3.2}player.busRide=null};indoorState.active=false;indoorState.location='campus';setInside(null);setInsideUits(false);setInsideBus(false)}
