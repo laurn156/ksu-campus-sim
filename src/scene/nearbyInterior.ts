@@ -1,8 +1,9 @@
 import { distToSeg, isCampusBuilding, type Building } from '../campus.ts'
 
 // Buildings that have no playable interior even though they are campus buildings.
-const noInterior=new Set(['T'])
-const enterable=(b:Building)=>!noInterior.has(b.code)&&(isCampusBuilding(b)||b.kind==='greenhouse')
+// Codes and ids: Wilder (T), Science Lab Annex, and the K3 pump house with the owl mural.
+const noInterior=new Set(['T','1134398612','517434198'])
+const enterable=(b:Building)=>!noInterior.has(b.code)&&!noInterior.has(b.id)&&(isCampusBuilding(b)||b.kind==='greenhouse')
 
 /** Some mapped building pieces belong to a single playable interior. */
 const interiorOwner:Record<string,string>={
