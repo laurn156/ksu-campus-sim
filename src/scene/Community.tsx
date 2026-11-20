@@ -11,7 +11,8 @@ import { STUDENTS, scheduleFor, type StudentProfile, type StudentId } from '../l
 import { makePathNetwork } from './Scrappy'
 import { centroid } from '../campus'
 
-export const community: { students:{id:StudentId;name:string;x:number;z:number;line:string}[];talking:StudentId|null } = { students:[],talking:null }
+/** companion: a student currently walking with the player (lunch, studying, hanging out). */
+export const community: { students:{id:StudentId;name:string;x:number;z:number;line:string}[];talking:StudentId|null;companion:StudentId|null } = { students:[],talking:null,companion:null }
 export function CampusStudents({ campus, minute }: {campus:Campus;minute:number}) {
   const collider=useMemo(()=>new Collider(campus.buildings),[campus])
   const network=useMemo(()=>makePathNetwork(campus,collider),[campus,collider])
@@ -24,6 +25,7 @@ function LifeStudent({profile,campus,minute,index,network,start}:{profile:Studen
   useEffect(()=>{const timer=setInterval(()=>setNear(Math.hypot(position.current[0]-player.x,position.current[1]-player.z)<7),300);return()=>clearInterval(timer)},[])
   const ref=useRef<THREE.Group>(null),walk=useRef(0), position=useRef<[number,number]>([start[0]+Math.sin(index*1.26)*3.5,start[1]+Math.cos(index*1.26)*3.5]), wait=useRef(index===0?14:4)
   const route=useRef<number[]>([]), lastDestination=useRef(''), scheduled=scheduleFor(profile,minute)
+  const [repath,setRepath]=useState(0), following=useRef(false)
   useEffect(()=>{
     if(!network.largest.length || lastDestination.current===scheduled.code)return
     lastDestination.current=scheduled.code
@@ -33,10 +35,23 @@ function LifeStudent({profile,campus,minute,index,network,start}:{profile:Studen
     const from=nearest(x,z),to=nearest(tx,tz),queue=[from],parent=new Int32Array(network.nodes.length).fill(-1);parent[from]=from
     for(let q=0;q<queue.length&&parent[to]<0;q++)for(const n of network.edges[queue[q]])if(parent[n]<0){parent[n]=queue[q];queue.push(n)}
     const path:number[]=[];if(parent[to]>=0){let n=to;while(n!==from){path.unshift(n);n=parent[n]}path.unshift(from)}route.current=path
-  },[scheduled.code,network,campus])
+  },[scheduled.code,network,campus,repath])
   useFrame((_,raw)=>{
     const dt=Math.min(raw,.05); wait.current=Math.max(0,wait.current-dt)
     const conversing=community.talking===profile.id
+    // Walking with the player: keep a step behind and to the side; catch up (or hop over) if left far behind.
+    if(community.companion===profile.id&&!conversing){
+      following.current=true
+      const back=player.heading+Math.PI,gx=player.x+Math.sin(back)*1.6+Math.cos(back)*1.1,gz=player.z+Math.cos(back)*1.6-Math.sin(back)*1.1
+      const dx=gx-position.current[0],dz=gz-position.current[1],d=Math.hypot(dx,dz)
+      if(d>30){position.current=[gx,gz]}
+      else if(d>.25){const step=Math.min(d,dt*(d>4?10:5.5));position.current[0]+=dx/d*step;position.current[1]+=dz/d*step;if(ref.current)ref.current.rotation.y=Math.atan2(dx,dz)}
+      walk.current=THREE.MathUtils.lerp(walk.current,d>.25?.75:0,Math.min(1,dt*6))
+      if(ref.current)ref.current.position.set(position.current[0],0,position.current[1])
+      const e=community.students.find(s=>s.id===profile.id);if(e){e.x=position.current[0];e.z=position.current[1]}
+      return
+    }
+    if(following.current){following.current=false;lastDestination.current='';route.current=[];setRepath(v=>v+1)}
     const next=conversing||wait.current>0?undefined:route.current[0]
     if(conversing&&ref.current)ref.current.rotation.y=Math.atan2(player.x-position.current[0],player.z-position.current[1])
     if(next!==undefined){const [tx,tz]=network.nodes[next],dx=tx-position.current[0],dz=tz-position.current[1],d=Math.hypot(dx,dz)
