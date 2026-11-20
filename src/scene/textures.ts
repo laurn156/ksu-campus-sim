@@ -77,6 +77,23 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
   },
   // The library's entrance has an uninterrupted brick facade.
   librarybrick: (g) => { brick(g, [150, 79, 66], 19) },
+  // Johnson Library: muted gray-brown brick (reference aerials).
+  librarybrown: (g) => {
+    brick(g, [176, 140, 120], 23)
+    g.fillStyle = 'rgba(205,195,182,.35)'; g.fillRect(0, 0, W, H) // weathered, light mortar wash
+  },
+  // Shore Innovation Center: dark chocolate brick.
+  innovationbrick: (g) => { brick(g, [118, 74, 58], 29) },
+  // Student Center upper storey: teal clerestory glazing between brick piers under a white roof band.
+  studentclerestory: (g) => {
+    brick(g, [158, 74, 52], 11)
+    g.fillStyle = '#eef0ea'; g.fillRect(0, 0, W, Math.round(H * .18))
+    for (let x = 0; x < W; x += 32) {
+      g.fillStyle = '#4f8f97'; g.fillRect(x + 7, Math.round(H * .3), 22, Math.round(H * .42))
+      g.fillStyle = '#86bcc2'; g.fillRect(x + 8, Math.round(H * .31), 9, Math.round(H * .18))
+      g.fillStyle = '#e5e3db'; g.fillRect(x + 6, Math.round(H * .72), 24, 3); g.fillRect(x + 17, Math.round(H * .3), 2, Math.round(H * .42))
+    }
+  },
   // classic campus red brick with stone sill band (Student Center, Library, Howell/Norton, Wilder)
   redbrick: (g) => {
     brick(g, [158, 74, 52], 7)

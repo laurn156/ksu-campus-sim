@@ -686,21 +686,6 @@ function Stairs({ a, b, width = 3.4, rise = 1.4 }: { a: Pt; b: Pt; width?: numbe
   )
 }
 
-/** Domed skylight on the Library roof. */
-function LibraryDome({ at, y }: { at: Pt; y: number }) {
-  return (
-    <group position={[at[0], y, at[1]]}>
-      <mesh position={[0, 0.4, 0]} material={concrete}>
-        <cylinderGeometry args={[3.4, 3.4, 0.8, 24]} />
-      </mesh>
-      <mesh position={[0, 0.8, 0]}>
-        <sphereGeometry args={[3, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color="#cfe1ea" roughness={0.2} metalness={0.3} />
-      </mesh>
-    </group>
-  )
-}
-
 /** Open white bell tower on the brick base at the library's curved end. */
 function LibraryBellTower() {
   const beamGeometry=useMemo(()=>{
@@ -811,7 +796,7 @@ export function Landmarks({ campus }: { campus: Campus }) {
       {campus.canopies.filter((b) => b.id !== '559995482' && b.id !== '559995483').map((b) => (
         <FootprintCanopy key={b.id} poly={b.poly} />
       ))}
-      {placed.lib && <><LibraryDome at={centroid(placed.lib.poly)} y={placed.lib.h} /><LibraryBellTower /></>}
+      {placed.lib && <LibraryBellTower />}
       {campus.features.filter((f) => !(f.kind === 'bench' && f.x >= -205 && f.x <= -177 && f.z >= 57 && f.z <= 63)).map((f, i) =>
         f.kind === 'bench' ? <Bench key={i} x={f.x} z={f.z} dir={f.dir} /> : f.kind === 'fountain' ? <Fountain key={i} x={f.x} z={f.z} /> : f.kind === 'shelter' ? <Shelter key={i} x={f.x} z={f.z} /> : null,
       )}
