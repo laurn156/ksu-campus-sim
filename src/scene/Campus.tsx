@@ -11,6 +11,7 @@ import { Buses } from './Buses'
 import { Scrappy } from './Scrappy'
 import { Traffic } from './Traffic'
 import { Landmarks } from './Landmarks'
+import { discGolfSpots, discGolfTreesToRemove } from './discGolf'
 
 let aerialTex: THREE.Texture | null = null
 /** The public-domain aerial photo, loaded once and shared (ground + roofs). */
@@ -2298,7 +2299,8 @@ function Trees({ campus }: { campus: Campus }) {
           if (pointInPoly(jx, jz, a.poly)) tryAdd(jx, jz, a.kind === 'wood' ? 1 + rnd() * 0.6 : 0.9 + rnd() * 0.5)
         }
     }
-    const n = spots.length
+    const removed = new Set(discGolfTreesToRemove(campus, spots, discGolfSpots(campus)))
+    const n = spots.length - removed.size
     const trunkGeo = new THREE.CylinderGeometry(0.22, 0.32, 3, 6)
     trunkGeo.translate(0, 1.5, 0)
     const crownGeo = new THREE.IcosahedronGeometry(2.6, 1)
@@ -2309,12 +2311,16 @@ function Trees({ campus }: { campus: Campus }) {
     const m = new THREE.Matrix4()
     const q = new THREE.Quaternion()
     const greens = ['#4f7f3a', '#5d8f43', '#6a9a4b', '#46733a', '#7aa653'].map((c) => new THREE.Color(c))
+    let treeIndex = 0
     spots.forEach(([x, z, sc], i) => {
       q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rnd() * Math.PI * 2)
       m.compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(sc, sc * (0.9 + rnd() * 0.3), sc))
-      trunks.setMatrixAt(i, m)
-      crowns.setMatrixAt(i, m)
-      crowns.setColorAt(i, greens[Math.floor(rnd() * greens.length)])
+      const color = greens[Math.floor(rnd() * greens.length)]
+      if (removed.has(i)) return
+      trunks.setMatrixAt(treeIndex, m)
+      crowns.setMatrixAt(treeIndex, m)
+      crowns.setColorAt(treeIndex, color)
+      treeIndex++
     })
     trunks.castShadow = crowns.castShadow = true
     crowns.receiveShadow = true

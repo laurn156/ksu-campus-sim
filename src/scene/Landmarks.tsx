@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import * as THREE from 'three'
 import { centroid, Collider, distToSeg, pointInPoly, type Area, type Campus, type Pt } from '../campus'
 import { discGolfSpots } from './discGolf'
@@ -750,21 +751,30 @@ function mathStairs(campus: Campus): { a: Pt; b: Pt } | null {
   return { a, b: [a[0] + ux * 9, a[1] + uz * 9] }
 }
 
-/** A low-poly disc-golf target with a gold band, hanging chains and a catching basket. */
-function DiscGolfBasket({at}:{at:Pt}){
- const chain=useMemo(()=>Array.from({length:12},(_,i)=>{
-  const angle=i*Math.PI/6,top=new THREE.Vector3(Math.cos(angle)*.4,1.84,Math.sin(angle)*.4),bottom=new THREE.Vector3(Math.cos(angle)*.2,.86,Math.sin(angle)*.2)
-  const direction=top.clone().sub(bottom)
-  return {position:top.add(bottom).multiplyScalar(.5),quaternion:new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),direction.clone().normalize()),length:direction.length()}
- }),[])
- return <group position={[at[0],0,at[1]]}>
-  <mesh position={[0,.92,0]} castShadow><cylinderGeometry args={[.045,.06,1.84,10]}/><meshStandardMaterial color="#a8b2b3" metalness={.45} roughness={.5}/></mesh>
-  <mesh position={[0,1.9,0]} castShadow><cylinderGeometry args={[.46,.46,.17,16,1,true]}/><meshStandardMaterial color={GOLD} side={THREE.DoubleSide}/></mesh>
-  {chain.map((c,i)=><mesh key={i} position={c.position} quaternion={c.quaternion}><cylinderGeometry args={[.014,.014,c.length,6]}/><meshStandardMaterial color="#c4cccc" metalness={.45} roughness={.55}/></mesh>)}
-  {[.67,.92].map(y=><mesh key={y} position={[0,y,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.49,.025,6,16]}/><meshStandardMaterial color="#bec7c8" metalness={.4}/></mesh>)}
-  {Array.from({length:12},(_,i)=>{const a=i*Math.PI/6;return <mesh key={i} position={[Math.cos(a)*.49,.8,Math.sin(a)*.49]}><cylinderGeometry args={[.016,.016,.25,6]}/><meshStandardMaterial color="#bec7c8" metalness={.4}/></mesh>})}
-  {Array.from({length:6},(_,i)=><mesh key={i} position={[0,.67,0]} rotation={[0,i*Math.PI/6,Math.PI/2]}><cylinderGeometry args={[.012,.012,.98,6]}/><meshStandardMaterial color="#bec7c8" metalness={.4}/></mesh>)}
- </group>
+/** Instance the gold bands and combined metalwork to keep a full course inexpensive to draw. */
+function DiscGolfBaskets({spots}:{spots:Pt[]}){
+ const parts=useMemo(()=>{
+  const metal:THREE.BufferGeometry[]=[]
+  const post=new THREE.CylinderGeometry(.045,.06,1.84,10);post.translate(0,.92,0);metal.push(post)
+  for(let i=0;i<12;i++){
+   const a=i*Math.PI/6,top=new THREE.Vector3(Math.cos(a)*.4,1.84,Math.sin(a)*.4),bottom=new THREE.Vector3(Math.cos(a)*.2,.86,Math.sin(a)*.2)
+   const direction=top.clone().sub(bottom),chain=new THREE.CylinderGeometry(.014,.014,direction.length(),6)
+   chain.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),direction.normalize()));const midpoint=top.add(bottom).multiplyScalar(.5);chain.translate(midpoint.x,midpoint.y,midpoint.z);metal.push(chain)
+   const bar=new THREE.CylinderGeometry(.016,.016,.25,6);bar.translate(Math.cos(a)*.49,.8,Math.sin(a)*.49);metal.push(bar)
+  }
+  for(const y of [.67,.92]){const ring=new THREE.TorusGeometry(.49,.025,6,16);ring.rotateX(Math.PI/2);ring.translate(0,y,0);metal.push(ring)}
+  for(let i=0;i<6;i++){const bar=new THREE.CylinderGeometry(.012,.012,.98,6);bar.rotateZ(Math.PI/2);bar.rotateY(i*Math.PI/6);bar.translate(0,.67,0);metal.push(bar)}
+  const geometry=mergeGeometries(metal);metal.forEach(g=>g.dispose())
+  const band=new THREE.CylinderGeometry(.46,.46,.17,16,1,true);band.translate(0,1.9,0)
+  const metalMaterial=new THREE.MeshStandardMaterial({color:'#bec7c8',metalness:.4,roughness:.5})
+  const goldMaterial=new THREE.MeshStandardMaterial({color:GOLD,side:THREE.DoubleSide})
+  const frame=new THREE.InstancedMesh(geometry,metalMaterial,spots.length),tops=new THREE.InstancedMesh(band,goldMaterial,spots.length),matrix=new THREE.Matrix4()
+  spots.forEach(([x,z],i)=>{matrix.makeTranslation(x,0,z);frame.setMatrixAt(i,matrix);tops.setMatrixAt(i,matrix)})
+  frame.castShadow=true;tops.castShadow=true
+  return {frame,tops,geometry,band,metalMaterial,goldMaterial}
+ },[spots])
+ useEffect(()=>()=>{parts.geometry.dispose();parts.band.dispose();parts.metalMaterial.dispose();parts.goldMaterial.dispose()},[parts])
+ return <group><primitive object={parts.frame}/><primitive object={parts.tops}/></group>
 }
 
 export function Landmarks({ campus }: { campus: Campus }) {
@@ -803,7 +813,7 @@ export function Landmarks({ campus }: { campus: Campus }) {
       {placed.letters && <KsuLetters at={placed.letters} yaw={placed.lettersYaw} />}
       {placed.globe && <GlobePlaza at={[placed.globe.x, placed.globe.z]} />}
       <MathCourtyard />
-      {placed.discGolf.map((at,i)=><DiscGolfBasket key={i} at={at}/>)}
+      <DiscGolfBaskets spots={placed.discGolf}/>
       <TentRow from={placed.tents.from} to={placed.tents.corner} />
       <TentRow from={placed.tents.corner} to={placed.tents.to} />
       <CoveredWalk from={placed.walk.from} to={placed.walk.to} />
