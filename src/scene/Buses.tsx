@@ -17,9 +17,10 @@ function busTexture() {
   g.fillStyle = '#e5b51c'
   g.beginPath(); g.moveTo(20, 190); g.lineTo(300, 45); g.lineTo(460, 50); g.lineTo(205, 204); g.fill()
   g.fillStyle = '#f2c52e'; g.font = 'bold 28px sans-serif'; g.fillText('KENNESAW STATE UNIVERSITY', 420, 30)
-  g.fillStyle = '#f4f4f1'; g.font = 'italic bold 94px sans-serif'; g.fillText('BIG', 510, 182)
-  g.font = 'italic bold 46px sans-serif'; g.fillText('OWL BUS', 510, 225)
   g.fillStyle = '#292d2d'; for (let x = 65; x < 990; x += 145) { g.fillRect(x, 48, 125, 80); g.strokeStyle = '#777'; g.lineWidth = 4; g.strokeRect(x, 48, 125, 80) }
+  // Keep the logo below the window band and draw it last so no window covers its top.
+  g.fillStyle = '#f4f4f1'; g.font = 'italic bold 76px sans-serif'; g.fillText('BIG', 510, 188)
+  g.font = 'italic bold 46px sans-serif'; g.fillText('OWL BUS', 510, 230)
   const texture = new THREE.CanvasTexture(c); texture.colorSpace = THREE.SRGBColorSpace
   return texture
 }
