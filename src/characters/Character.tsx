@@ -24,8 +24,9 @@ export interface CharacterProps {
   bottom?: 'none' | 'shorts' | 'skirt' | 'pants'
   bottomColor?: string
   jerseyNumber?: string
-  shoes?: 'none' | 'sneakers' | 'black'
+  shoes?: 'none' | 'sneakers' | 'black' | 'boots' | 'flipflops'
   bag?: 'none' | 'black' | 'cream' | 'brown'
+  bagStyle?: 'backpack' | 'sling'
   backpack?: boolean
   /** world-space point the right hand reaches toward (in this character's parent space) */
   reach?: React.MutableRefObject<THREE.Vector3 | null>
@@ -263,14 +264,22 @@ function HeadwearMesh({ kind, body, accent }: { kind: Headwear; body: string; ac
   }
 }
 
+/** Flat rounded-rectangle frame outline (w x h), facing +z. */
+function frameShape(w: number, h: number, r: number, t: number) {
+  const rect = (hw: number, hh: number, rr: number) => { const p = new THREE.Path(); p.moveTo(-hw + rr, -hh); p.lineTo(hw - rr, -hh); p.quadraticCurveTo(hw, -hh, hw, -hh + rr); p.lineTo(hw, hh - rr); p.quadraticCurveTo(hw, hh, hw - rr, hh); p.lineTo(-hw + rr, hh); p.quadraticCurveTo(-hw, hh, -hw, hh - rr); p.lineTo(-hw, -hh + rr); p.quadraticCurveTo(-hw, -hh, -hw + rr, -hh); return p }
+  const outer = new THREE.Shape(rect(w / 2, h / 2, r).getPoints(8)), inner = rect(w / 2 - t, h / 2 - t, Math.max(0.004, r - t))
+  outer.holes.push(inner)
+  return new THREE.ExtrudeGeometry(outer, { depth: 0.012, bevelEnabled: false, curveSegments: 8 })
+}
 function Glasses({ style }: { style: Accessory }) {
+  // Square: soft rounded squares. Rectangular: wide, slim rounded frames (like classic wayfarers).
+  const frame = useMemo(() => style === 'square' ? frameShape(0.15, 0.13, 0.04, 0.02) : style === 'rectangle' ? frameShape(0.17, 0.1, 0.035, 0.02) : null, [style])
   return (
     <group>
       {([-1, 1] as const).map((s) => (
-        <mesh key={s} position={onHead(s * 0.3, 0.06, 1.02)} rotation={[0, s * 0.3, style === 'square' || style === 'rectangle' ? Math.PI / 4 : 0]} scale={style === 'rectangle' ? [1.2,0.8,1] : [1,1,1]} material={ink}>
-          <torusGeometry args={[0.075, 0.012, 8, style === 'square' || style === 'rectangle' ? 4 : 24]} />
-          {style === 'sunglasses' && <mesh position={[0,0,-0.006]}><circleGeometry args={[0.064,24]} /><meshBasicMaterial color="#25252b" /></mesh>}
-        </mesh>
+        <group key={s} position={onHead(s * 0.3, 0.06, 1.02)} rotation={[0, s * 0.3, 0]}>
+          {frame ? <mesh geometry={frame} material={ink} position={[0, 0, -0.006]} /> : <mesh material={ink}><torusGeometry args={[0.075, 0.012, 8, 24]} /></mesh>}
+        </group>
       ))}
       <mesh position={onHead(0, 0.08, 1.03)} rotation={[0, 0, Math.PI / 2]} material={ink}>
         <capsuleGeometry args={[0.008, 0.06, 4, 6]} />
@@ -315,12 +324,29 @@ function Backpack({ color, trim, back, front }: { color: string; trim: string; b
   </group>
 }
 
+/** Sling bag: one strap from the right shoulder diagonally across the chest, with a small pouch on the back. */
+function SlingBag({ color, trim, back, side }: { color: string; trim: string; back: number; side: number }) {
+  const front = back
+  const strap = useMemo(() => new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+    [0.06,0.5,-back-0.04],[0.15,0.7,-back*0.7],[0.16,0.785,-0.02],[0.11,0.7,front+0.008],[-0.06,0.56,front+0.012],[-0.2,0.46,front*0.75],[-side-0.012,0.43,0],[-0.2,0.43,-back*0.8],[-0.12,0.42,-back-0.04],
+  ].map(([x,y,z]) => new THREE.Vector3(x,y,z))), 48, 0.018, 8, false), [back, front, side])
+  return <group>
+    <mesh geometry={strap} castShadow><meshStandardMaterial color={trim} roughness={0.95} /></mesh>
+    <group position={[-0.03,0.47,-back-0.055]} rotation={[0,0,-0.42]}>
+      <RoundedBox args={[0.3,0.17,0.1]} radius={0.045} smoothness={5} castShadow><meshStandardMaterial color={color} roughness={0.85} /></RoundedBox>
+      <mesh position={[0,0.035,-0.052]}><boxGeometry args={[0.24,0.01,0.006]} /><meshStandardMaterial color={trim} /></mesh>
+      <mesh position={[0.1,0.035,-0.057]}><boxGeometry args={[0.022,0.035,0.01]} /><meshStandardMaterial color="#c9ced0" metalness={0.4} roughness={0.4} /></mesh>
+    </group>
+    <mesh position={[0.02,0.655,front+0.018]} rotation={[0,0,0.75]}><boxGeometry args={[0.06,0.035,0.012]} /><meshStandardMaterial color="#c9ced0" metalness={0.4} roughness={0.4} /></mesh>
+  </group>
+}
+
 export function Character({
   color = 'cream',
   headwear = 'headband',
   face = 'dots',
   accessory = 'none',
-  top = 'none', topColor = '#29292c', bottom = 'none', bottomColor = '#4e526b', jerseyNumber = '12', backpack = false, shoes = 'none', bag = 'none',
+  top = 'none', topColor = '#29292c', bottom = 'none', bottomColor = '#4e526b', jerseyNumber = '12', backpack = false, shoes = 'none', bag = 'none', bagStyle = 'backpack',
   variant = 'normal',
   reach,
   swingAt,
@@ -358,10 +384,10 @@ export function Character({
   // Their middle section is a straight cylinder so printed graphics can wrap it exactly.
   const hoodieTop = top === 'hoodie' || top === 'ksu-hoodie'
   const pocketColor = useMemo(() => '#' + new THREE.Color(topColor).multiplyScalar(0.86).getHexString(), [topColor])
-  const shirtR = hoodieTop ? 0.315 : 0.30, shirtZ = 0.86
+  const shirtR = hoodieTop ? 0.28 : 0.265, shirtZ = 0.86
   const shirtProfile = useMemo(() => {
     const r = shirtR, hem = hoodieTop ? 0.27 : 0.30
-    return [[0,hem],[r-0.06,hem],[r-0.01,hem+0.03],[r,hem+0.10],[r,0.60],[r-0.015,0.68],[r-0.055,0.735],[0.16,0.772],[0,0.772]].map(([x,y]) => new THREE.Vector2(x,y))
+    return [[0,hem],[r-0.045,hem],[r-0.008,hem+0.03],[r,hem+0.10],[r,0.60],[r-0.012,0.68],[r-0.045,0.735],[0.15,0.772],[0,0.772]].map(([x,y]) => new THREE.Vector2(x,y))
   }, [shirtR, hoodieTop])
   const root = useRef<THREE.Group>(null)
   const torso = useRef<THREE.Group>(null)
@@ -450,8 +476,23 @@ export function Character({
         {[-1, 1].map((s, i) => (
           <group key={s} ref={(g) => void (legs.current[i] = g)} position={[s * 0.108, 0.27, 0]}>
             <mesh position={[0,-0.105,0]} scale={[1,0.95,0.94]} castShadow material={body}><capsuleGeometry args={[0.105,0.10,10,20]} /></mesh>
-            {(bottom === 'shorts' || bottom === 'pants') && <mesh position={[0,bottom === 'pants' ? -0.09 : -0.02,0]} scale={[1,1,1.03]} castShadow><capsuleGeometry args={[bottom === 'pants' ? 0.112 : 0.12,bottom === 'pants' ? 0.14 : 0.045,10,20]} /><meshStandardMaterial color={bottomColor} roughness={0.95}/></mesh>}
-            {shoes !== 'none' && <group position={[0,-0.255,0.045]}>
+            {/* Relaxed straight-leg fit: a little wider at the hem than the hip, never puffed out. */}
+            {bottom === 'pants' && <><mesh position={[0,-0.085,0]} castShadow><cylinderGeometry args={[0.116,0.124,0.24,20]} /><meshStandardMaterial color={bottomColor} roughness={0.95}/></mesh><mesh position={[0,-0.2,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[0.118,0.012,8,24]} /><meshStandardMaterial color={bottomColor} roughness={0.97}/></mesh></>}
+            {bottom === 'shorts' && <><mesh position={[0,-0.035,0]} castShadow><cylinderGeometry args={[0.118,0.13,0.15,20]} /><meshStandardMaterial color={bottomColor} roughness={0.95}/></mesh><mesh position={[0,-0.11,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[0.124,0.011,8,24]} /><meshStandardMaterial color={bottomColor} roughness={0.97}/></mesh></>}
+            {shoes === 'boots' && <group position={[0,-0.255,0.035]}>
+              <mesh position={[0,0.075,-0.01]} castShadow><cylinderGeometry args={[0.112,0.118,0.15,20]} /><meshStandardMaterial color="#7a5236" roughness={0.9}/></mesh>
+              <mesh position={[0,0.035,0.035]} scale={[1,0.6,1.3]} castShadow><sphereGeometry args={[0.115,24,16]} /><meshStandardMaterial color="#7a5236" roughness={0.9}/></mesh>
+              <mesh position={[0,-0.008,0.02]} scale={[1.06,0.2,1.35]}><sphereGeometry args={[0.115,24,16]}/><meshStandardMaterial color="#3a2a20" roughness={0.95}/></mesh>
+              <mesh position={[0,0.15,-0.01]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[0.116,0.012,8,24]} /><meshStandardMaterial color="#5c3c27" /></mesh>
+              {[0.05,0.09].map(y=><mesh key={y} position={[0,y,0.112]}><boxGeometry args={[0.07,0.008,0.01]} /><meshStandardMaterial color="#e8d8b8" /></mesh>)}
+            </group>}
+            {shoes === 'flipflops' && <group position={[0,-0.27,0.045]}>
+              <mesh position={[0,0,0]} scale={[1,0.12,1.35]}><sphereGeometry args={[0.115,24,12]} /><meshStandardMaterial color="#2f6fb0" roughness={0.8}/></mesh>
+              {/* Thong strap: a band wrapping the front of the foot just above the sole, with a toe post. */}
+              <mesh position={[0,0.1,-0.045]} rotation={[Math.PI/2+0.6,0,0]}><torusGeometry args={[0.108,0.014,8,28,Math.PI]} /><meshStandardMaterial color="#f2c52e" roughness={0.7} /></mesh>
+              <mesh position={[0,0.022,0.044]}><cylinderGeometry args={[0.012,0.012,0.045,8]} /><meshStandardMaterial color="#f2c52e" roughness={0.7} /></mesh>
+            </group>}
+            {(shoes === 'sneakers' || shoes === 'black') && <group position={[0,-0.255,0.045]}>
               <mesh position={[0,0.035,0]} scale={[1,0.55,1.28]} castShadow><sphereGeometry args={[0.115,24,16]} /><meshStandardMaterial color={shoes === 'black' ? '#282a2a' : '#f2efe9'} roughness={0.85}/></mesh>
               <mesh position={[0,-0.005,0]} scale={[1.05,0.22,1.3]}><sphereGeometry args={[0.115,24,16]}/><meshStandardMaterial color="#dedbd3" roughness={0.95}/></mesh>
               <mesh position={[0,0.085,0.065]} scale={[1,0.15,0.4]}><sphereGeometry args={[0.07,16,12]}/><meshStandardMaterial color="#ddd9d0" /></mesh>
@@ -475,13 +516,14 @@ export function Character({
         </group>}
         {hoodieTop && <group>
           {/* Hood resting on the shoulders: a thick rolled collar plus the gathered hood on the upper back. */}
-          <mesh position={[0,0.765,-0.015]} rotation={[Math.PI/2,0,0]} scale={[1,0.92,1.1]}><torusGeometry args={[0.2,0.072,14,40]} /><meshStandardMaterial color={topColor} roughness={0.95}/></mesh>
+          <mesh position={[0,0.765,-0.015]} rotation={[Math.PI/2,0,0]} scale={[1,0.92,1.1]}><torusGeometry args={[0.185,0.066,14,40]} /><meshStandardMaterial color={topColor} roughness={0.95}/></mesh>
           <mesh position={[0,0.7,-0.26]} scale={[1.05,0.85,0.5]} castShadow><sphereGeometry args={[0.2,24,18]} /><meshStandardMaterial color={topColor} roughness={0.95}/></mesh>
           {/* Kangaroo pocket wraps the front of the hoodie. */}
           <Print r={shirtR+0.004} z={shirtZ} y={0.395} h={0.13} arc={0.85} color={pocketColor} />
           {[-0.05,0.05].map(x => <group key={x}><mesh position={[x,0.66,shirtR*shirtZ*0.985]} rotation={[0.18,0,0]}><capsuleGeometry args={[0.007,0.09,4,8]} /><meshStandardMaterial color="#efe8d8" /></mesh><mesh position={[x,0.6,shirtR*shirtZ+0.01]}><sphereGeometry args={[0.012,8,6]} /><meshStandardMaterial color="#d8cfbd" /></mesh></group>)}
         </group>}
-        {(backpack || bag !== 'none') && <Backpack color={bag === 'cream' ? '#e8dfca' : bag === 'black' ? '#2c2e30' : '#8a6248'} trim={bag === 'cream' ? '#c9bba3' : bag === 'black' ? '#1b1c1d' : '#5f4332'} back={top === 'none' ? 0.2 : shirtR*shirtZ} front={top === 'none' ? 0.2 : shirtR*shirtZ} />}
+        {(backpack || bag !== 'none') && bagStyle === 'sling' && <SlingBag color={bag === 'cream' ? '#e8dfca' : bag === 'black' ? '#2c2e30' : '#8a6248'} trim={bag === 'cream' ? '#c9bba3' : bag === 'black' ? '#1b1c1d' : '#5f4332'} back={top === 'none' ? 0.2 : shirtR*shirtZ} side={top === 'none' ? 0.255 : shirtR} />}
+        {(backpack || bag !== 'none') && bagStyle !== 'sling' && <Backpack color={bag === 'cream' ? '#e8dfca' : bag === 'black' ? '#2c2e30' : '#8a6248'} trim={bag === 'cream' ? '#c9bba3' : bag === 'black' ? '#1b1c1d' : '#5f4332'} back={top === 'none' ? 0.2 : shirtR*shirtZ} front={top === 'none' ? 0.2 : shirtR*shirtZ} />}
         <Arm side={-1} body={body} top={top} topColor={topColor} armRef={rArm} />
         <Arm side={1} body={body} top={top} topColor={topColor} armRef={lArm} />
         {/* head */}

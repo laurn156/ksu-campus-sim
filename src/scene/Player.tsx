@@ -25,8 +25,9 @@ export interface AvatarLook {
   bottom: 'none' | 'shorts' | 'skirt' | 'pants'
   bottomColor: string
   jerseyNumber: string
-  shoes: 'none' | 'sneakers' | 'black'
+  shoes: 'none' | 'sneakers' | 'black' | 'boots' | 'flipflops'
   bag: 'none' | 'black' | 'cream' | 'brown'
+  bagStyle?: 'backpack' | 'sling'
   backpack: boolean
 }
 
