@@ -1,12 +1,15 @@
 .menu{position:fixed;inset:0;overflow:hidden;font-family:'Nunito','Trebuchet MS',system-ui,sans-serif;color:#1d2422}
 .menu-bg{position:absolute;inset:0;background:linear-gradient(#cfe3f0,#e7ecd9)}
 .menu-bg canvas{display:block}
-.menu-panel{position:absolute;left:clamp(16px,5vw,72px);top:50%;transform:translateY(-50%);width:min(380px,calc(100vw - 32px));padding:28px 28px 22px;border-radius:28px;background:rgba(255,251,240,.9);box-shadow:0 18px 50px #2a2a1a33,inset 0 0 0 2px #fff;backdrop-filter:blur(6px);text-align:center;animation:menu-in .5s ease-out}
+.menu-panel{position:absolute;left:clamp(16px,4vw,64px);top:50%;transform:translateY(-50%);width:min(clamp(380px,49vw,1000px),calc(100vw - 32px));box-sizing:border-box;padding:clamp(28px,3.4vw,52px) clamp(28px,4vw,64px) 26px;border-radius:28px;background:rgba(255,251,240,.9);box-shadow:0 18px 50px #2a2a1a33,inset 0 0 0 2px #fff;backdrop-filter:blur(6px);text-align:center;animation:menu-in .5s ease-out}
 .menu-owl,.card-owl{font-size:44px;line-height:1;margin-bottom:4px;animation:owl-bob 2.6s ease-in-out infinite}
-.menu-title{margin:0;font-size:clamp(46px,6vw,64px);font-weight:900;letter-spacing:.02em;color:#ffc629;-webkit-text-stroke:2.5px #1d2422;paint-order:stroke fill;text-shadow:0 5px 0 #1d2422}
+.menu-title{margin:0;font-size:clamp(46px,7vw,112px);line-height:1;font-weight:900;letter-spacing:.02em;color:#ffc629;-webkit-text-stroke:2.5px #1d2422;paint-order:stroke fill;text-shadow:0 5px 0 #1d2422}
 .menu-sub{margin:8px auto 18px;display:inline-block;padding:6px 16px;border-radius:999px;background:#1d2422;color:#fff7dc;font-weight:800;font-size:14px}
 .menu-back{margin:-6px 0 14px;font-size:15px}
-.menu-buttons{display:grid;gap:12px}
+.menu-buttons{display:grid;gap:14px;max-width:clamp(320px,30vw,560px);margin:0 auto}
+@media(min-width:1600px){.menu-btn{font-size:21px;padding:16px 26px}.menu-btn.primary{font-size:28px;padding:20px 30px}}
+.menu-sub{font-size:clamp(14px,1.3vw,18px)!important}
+.menu-owl{font-size:clamp(44px,4.5vw,64px)!important}
 .menu-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:999px;padding:13px 22px;font:inherit;font-weight:900;font-size:17px;cursor:pointer;background:#fffdf6;color:#1d2422;box-shadow:0 4px 0 #cfc6ad,0 6px 14px #0000001a;transition:transform .12s,box-shadow .12s}
 .menu-btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 #cfc6ad,0 10px 18px #0000001f}
 .menu-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #cfc6ad}
@@ -52,5 +55,5 @@ kbd{display:inline-block;min-width:22px;padding:2px 8px;margin-right:8px;border-
 .greeting{animation-name:greet-in}@keyframes greet-in{from{opacity:0;transform:translate(-50%,14px)}}
 @keyframes fade-in{from{opacity:0}}
 @keyframes toast{0%{opacity:0;transform:translate(-50%,10px)}8%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,6px)}}
-@media(max-width:700px){.menu-panel{top:auto;bottom:16px;transform:none;padding:20px}.menu-title{font-size:44px}.menu-btn.primary{font-size:19px;padding:13px}.choose-grid,.howto-grid,.menu-card.ready{grid-template-columns:1fr}.choose-preview{height:200px}.menu-card.ready .ready-preview{height:180px}@keyframes menu-in{from{opacity:0}}}
+@media(max-width:700px){.menu-panel{top:auto;bottom:16px;transform:none;padding:20px;width:calc(100vw - 32px)}.menu-title{font-size:44px}.menu-btn.primary{font-size:19px;padding:13px}.choose-grid,.howto-grid,.menu-card.ready{grid-template-columns:1fr}.choose-preview{height:200px}.menu-card.ready .ready-preview{height:180px}@keyframes menu-in{from{opacity:0}}}
 @media(prefers-reduced-motion:reduce){.menu *,.greeting,.controls-toast{animation-duration:.01s!important;animation-iteration-count:1!important}}
