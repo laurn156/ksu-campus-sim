@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { centroid, Collider, distToSeg, pointInPoly, type Area, type Campus, type Pt } from '../campus'
+import { discGolfSpots } from './discGolf'
 
 // Hand-placed campus landmarks (from KSU's interactive map, used as reference) plus OpenStreetMap
 // features: Slap the Rock, the KSU letters at Hornet Village, the Globe plaza and tent canopies,
@@ -749,6 +750,23 @@ function mathStairs(campus: Campus): { a: Pt; b: Pt } | null {
   return { a, b: [a[0] + ux * 9, a[1] + uz * 9] }
 }
 
+/** A low-poly disc-golf target with a gold band, hanging chains and a catching basket. */
+function DiscGolfBasket({at}:{at:Pt}){
+ const chain=useMemo(()=>Array.from({length:12},(_,i)=>{
+  const angle=i*Math.PI/6,top=new THREE.Vector3(Math.cos(angle)*.4,1.84,Math.sin(angle)*.4),bottom=new THREE.Vector3(Math.cos(angle)*.2,.86,Math.sin(angle)*.2)
+  const direction=top.clone().sub(bottom)
+  return {position:top.add(bottom).multiplyScalar(.5),quaternion:new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),direction.clone().normalize()),length:direction.length()}
+ }),[])
+ return <group position={[at[0],0,at[1]]}>
+  <mesh position={[0,.92,0]} castShadow><cylinderGeometry args={[.045,.06,1.84,10]}/><meshStandardMaterial color="#a8b2b3" metalness={.45} roughness={.5}/></mesh>
+  <mesh position={[0,1.9,0]} castShadow><cylinderGeometry args={[.46,.46,.17,16,1,true]}/><meshStandardMaterial color={GOLD} side={THREE.DoubleSide}/></mesh>
+  {chain.map((c,i)=><mesh key={i} position={c.position} quaternion={c.quaternion}><cylinderGeometry args={[.014,.014,c.length,6]}/><meshStandardMaterial color="#c4cccc" metalness={.45} roughness={.55}/></mesh>)}
+  {[.67,.92].map(y=><mesh key={y} position={[0,y,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[.49,.025,6,16]}/><meshStandardMaterial color="#bec7c8" metalness={.4}/></mesh>)}
+  {Array.from({length:12},(_,i)=>{const a=i*Math.PI/6;return <mesh key={i} position={[Math.cos(a)*.49,.8,Math.sin(a)*.49]}><cylinderGeometry args={[.016,.016,.25,6]}/><meshStandardMaterial color="#bec7c8" metalness={.4}/></mesh>})}
+  {Array.from({length:6},(_,i)=><mesh key={i} position={[0,.67,0]} rotation={[0,i*Math.PI/6,Math.PI/2]}><cylinderGeometry args={[.012,.012,.98,6]}/><meshStandardMaterial color="#bec7c8" metalness={.4}/></mesh>)}
+ </group>
+}
+
 export function Landmarks({ campus }: { campus: Campus }) {
   const placed = useMemo(() => {
     const collider = new Collider(campus.buildings)
@@ -775,7 +793,8 @@ export function Landmarks({ campus }: { campus: Campus }) {
     const walk = { from: [-240, -135] as Pt, to: [-205, -158] as Pt }
     const stairs = mathStairs(campus)
     const lib = campus.buildings.find((b) => b.code === 'C')
-    return { rock, letters, lettersYaw, globe, tents, walk, stairs, lib }
+    const discGolf = discGolfSpots(campus)
+    return { rock, letters, lettersYaw, globe, tents, walk, stairs, lib, discGolf }
   }, [campus])
   const flags = campus.features.filter((f) => f.kind === 'flagpole')
   return (
@@ -784,6 +803,7 @@ export function Landmarks({ campus }: { campus: Campus }) {
       {placed.letters && <KsuLetters at={placed.letters} yaw={placed.lettersYaw} />}
       {placed.globe && <GlobePlaza at={[placed.globe.x, placed.globe.z]} />}
       <MathCourtyard />
+      {placed.discGolf.map((at,i)=><DiscGolfBasket key={i} at={at}/>)}
       <TentRow from={placed.tents.from} to={placed.tents.corner} />
       <TentRow from={placed.tents.corner} to={placed.tents.to} />
       <CoveredWalk from={placed.walk.from} to={placed.walk.to} />
@@ -830,6 +850,8 @@ export function landmarkSpots(campus: Campus): { name: string; at: Pt; r: number
   }
   if (campus.buildings.some((b) => b.id === '517434198')) out.push({ name: 'Owl Mural · K3', at: [-187.2, 104.1], r: 7 })
   if (campus.buildings.some((b) => b.code === 'H')) out.push({ name: 'UITS Entrance', at: [-135.2, -49.5], r: 6 })
+  const discGolf = discGolfSpots(campus)
+  if (discGolf.length) out.push({ name: 'Disc Golf', at: discGolf[0], r: 12 })
   const field = campus.areas.find((a) => a.name === 'S. Walter Kelly Sr. Memorial Field')
   if (field) out.push({ name: 'S. Walter Kelly Baseball Field', at: [-9, 328], r: 12 })
   return out
