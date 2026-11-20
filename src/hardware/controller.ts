@@ -1,4 +1,4 @@
-/** Hardware input is local-only. It is cleared before leaving the private solo session. */
+/** Hardware input belongs to this player and is cleared when the controller disconnects. */
 export type Sample={v:number;x:number;y:number;joy:number;b1:number;b2:number;cm:number;tilt:number;gyro:number;light:number}
 export const hardware={enabled:false,keys:new Set<string>(),sample:null as Sample|null,neutral:0,lightEnabled:false,updated:0}
 export function clearHardware(){hardware.enabled=false;hardware.keys.clear();hardware.sample=null;hardware.updated=0}

@@ -1,6 +1,6 @@
 # Nest Life ELEGOO controller: wiring and setup
 
-This is the **single-player** controller wiring. Power the Mega off and unplug USB while wiring. Each signal uses a different pin. The photoresistor and LEDs are optional for initial individual tests; leave RFID and LCD1602 disconnected.
+This is the optional controller wiring for Nest Life. Power the Mega off and unplug USB while wiring. Each signal uses a different pin. The photoresistor and LEDs are optional for initial individual tests; leave RFID and LCD1602 disconnected.
 
 ## Parts
 
@@ -100,4 +100,4 @@ Upload [the controller firmware](../hardware/elegoo/NestLifeController.ino) at 1
 
 ## Integration approach
 
-The game presently joins the shared guest campus automatically. To satisfy the explicit isolation requirement, the controller must run in a private solo session with the online connection closed **before** hardware input is accepted; it must release keys and close serial before rejoining shared campus. Hardware must never drive a multiplayer contest or transmit movement while connected to the shared world. The game continues to work with keyboard and mouse. Only the existing activity handlers will receive context-specific inputs; no new game economy or additional minigames are required.
+The controller can be toggled on or off during normal campus play. Its inputs control only the local player; normal movement and activity events are synchronized through the existing multiplayer system. Keyboard and mouse remain available. On Linux, the development server starts a local USB bridge when available. The joystick-only sketch can be used to test movement before wiring the remaining components.

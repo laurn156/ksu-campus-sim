@@ -11,5 +11,5 @@ assert(combinedKeys(new Set(['d'])).has('d'))
 hardware.updated=performance.now()-1000
 assert(!combinedKeys(new Set(['d'])).has('w'),'stale data cannot hold movement')
 hardware.keys.add('a');clearHardware()
-assert(!combinedKeys(new Set()).has('a'),'switching to multiplayer clears hardware')
+assert(!combinedKeys(new Set()).has('a'),'disconnecting clears hardware')
 console.log('Hardware frame validation, keyboard coexistence and input fail-safe passed')
