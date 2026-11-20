@@ -1,6 +1,6 @@
 import type { Obstacle } from './diningSimulation.ts'
-export type SpecialKind='crawford'|'engineering'|'academic'|'design1'|'design2'|'atrium'|'civil'|'soils'|'textile'|'architecture'|'competition'|'technology'|'housing'|'community'
-export type StationKind='microscope'|'computer'|'research'|'robot'|'electronics'|'mechanical'|'desk'|'study'|'cad'|'printer'|'prototype'|'cnc'|'laser'|'assembly'|'testing'|'storage'|'chess'|'sandwich'|'survey'|'structure'|'bridge'|'soil'|'sieve'|'press'|'sewing'|'loom'|'fabric'|'draft'|'model'|'materials'|'audience'|'drone'|'aircraft'|'rov'|'tank'|'plc'|'conveyor'|'reception'|'pcb'|'dressform'|'vexfield'|'combat'|'toolbench'|'vexbench'|'waiting'|'lockers'|'tv'|'foosball'
+export type SpecialKind='crawford'|'engineering'|'academic'|'design1'|'design2'|'atrium'|'civil'|'soils'|'textile'|'architecture'|'competition'|'technology'|'housing'|'community'|'innovation'|'eventhall'|'activitycenter'
+export type StationKind='microscope'|'computer'|'research'|'robot'|'electronics'|'mechanical'|'desk'|'study'|'cad'|'printer'|'prototype'|'cnc'|'laser'|'assembly'|'testing'|'storage'|'chess'|'sandwich'|'survey'|'structure'|'bridge'|'soil'|'sieve'|'press'|'sewing'|'loom'|'fabric'|'draft'|'model'|'materials'|'audience'|'drone'|'aircraft'|'rov'|'tank'|'plc'|'conveyor'|'reception'|'pcb'|'dressform'|'vexfield'|'combat'|'toolbench'|'vexbench'|'waiting'|'lockers'|'tv'|'foosball'|'hand'|'humanoid'|'poolgame'|'pinggame'|'booth'
 export interface Station {x:number;z:number;kind:StationKind;label:string}
 const s=(x:number,z:number,kind:StationKind,label:string):Station=>({x,z,kind,label})
 export const specialStations:Record<SpecialKind,Station[]>={
@@ -17,6 +17,9 @@ export const specialStations:Record<SpecialKind,Station[]>={
  technology:[s(-10,-7,'plc','PLC CONTROL'),s(-6,-7,'conveyor','AUTOMATION'),s(5,-7,'electronics','ELECTRONICS'),s(9,-7,'computer','INSTRUMENTATION'),s(-8,4,'cnc','CNC MACHINING'),s(7,4,'testing','METROLOGY'),s(-4.5,7,'robot','ROBOT CELL'),s(4.5,7,'printer','3D PRINTING')],
  housing:[s(-10,-7,'computer','RESIDENCE LIFE'),s(-6,-7,'computer','ROOM ASSIGNMENTS'),s(5,-7,'study','MEETING ROOM'),s(9,-7,'storage','RECORDS'),s(-8,4,'reception','FRONT DESK'),s(7,4,'study','APPOINTMENTS'),s(-6,8.2,'waiting','WAITING AREA'),s(4.5,8,'lockers','PACKAGE PICKUP')],
  community:[s(-10,-7,'study','STUDY TABLE'),s(-6,-7,'chess','BOARD GAMES'),s(5,-7,'foosball','FOOSBALL'),s(9,-7,'storage','EVENT SUPPLIES'),s(-7.5,3.4,'tv','TV LOUNGE'),s(7,4,'study','CRAFT TABLE'),s(-4.5,8.4,'study','STUDY NOOK'),s(4.5,7,'chess','GAMES')],
+ innovation:[s(-10,-7,'humanoid','HUMANOID'),s(-6,-7,'hand','ROBOTIC HAND'),s(5,-7,'drone','DRONE RESEARCH'),s(9,-7,'robot','ROBOTIC ARM'),s(-8,4,'printer','PROTOTYPING'),s(7,4,'electronics','ELECTRONICS'),s(-4.5,7,'study','COLLABORATION'),s(4.5,7,'cad','STARTUP STUDIO')],
+ eventhall:[s(-10,-7,'booth','EXHIBIT'),s(-6,-7,'booth','EXHIBIT'),s(5,-7,'booth','EXHIBIT'),s(9,-7,'booth','EXHIBIT'),s(-8,4,'booth','EXHIBIT'),s(7,4,'booth','EXHIBIT'),s(-4.5,7,'reception','CHECK IN'),s(4.5,7,'study','JUDGING')],
+ activitycenter:[s(-10,-7,'study','STUDY'),s(-6,-7,'chess','CHESS'),s(5,-7,'poolgame','POOL'),s(9,-7,'pinggame','PING PONG'),s(-8,4,'study','LOUNGE'),s(7,4,'study','EVENTS'),s(-4.5,7,'study','SNACKS'),s(4.5,7,'study','COMMUNITY')],
  architecture:[s(-11,-7,'draft','STUDIO A'),s(-7.5,-7,'draft','STUDIO B'),s(-4,-7,'draft','STUDIO C'),s(5,-7,'cad','DIGITAL DESIGN'),s(9,-7,'laser','LASER CUTTER'),s(-8,4.5,'model','STUDIO PROJECTS'),s(7,4.5,'model','THESIS MODELS'),s(-4.5,8,'materials','MATERIAL LIBRARY'),s(4.5,8,'printer','3D PRINTING')],
 }
 // Divider openings form a central corridor between the front and rear sections.
@@ -31,7 +34,7 @@ const walls:Record<SpecialKind,Obstacle[]>={
  soils:[[-8,-1,12,.25],[8,-1,12,.25]],
  textile:[[-9,-1,10,.25],[9,-1,10,.25]],
  architecture:[[-9,-1,10,.25],[9,-1,10,.25]],
- competition:[[-9,-1,10,.25],[9,-1,10,.25]], technology:[[-9,-1,10,.25],[9,-1,10,.25]], housing:[[-9,-1,10,.25],[9,-1,10,.25]], community:[[-9,-1,10,.25],[9,-1,10,.25]],
+ competition:[[-9,-1,10,.25],[9,-1,10,.25]], technology:[[-9,-1,10,.25],[9,-1,10,.25]], housing:[[-9,-1,10,.25],[9,-1,10,.25]], community:[[-9,-1,10,.25],[9,-1,10,.25]], innovation:[[-9,-1,10,.25],[9,-1,10,.25]], eventhall:[], activitycenter:[[-9,-1,10,.25],[9,-1,10,.25]],
 }
 export function specialWalls(kind:SpecialKind):Obstacle[]{return walls[kind]}
 export function specialObstacles(kind:SpecialKind):Obstacle[]{
@@ -47,6 +50,6 @@ export function specialObstacles(kind:SpecialKind):Obstacle[]{
   const compact=station==='desk'||station==='computer'&&(kind==='academic'||kind==='atrium')
   return [[x,z,compact?1.5:2.6,compact?1.1:1.5]]
  })
- return [...walls[kind],...footprints,...(kind==='architecture'?[[0,3.4,3.2,2.2] as Obstacle]:[]),[-12.9,-1.8,.8,.8],[12.9,-1.8,.8,.8],...(kind==='design2'?specialStations.design2.filter(s=>s.kind==='audience').map(({x,z}):Obstacle=>[x,z+.62,.8,.2]):[]),...(kind==='engineering'?[[0,2.7,3.2,2] as Obstacle]:[]),...((kind==='community'||kind==='housing')?[[-11,7,2,1.2],[11,7,2,1.2]] as Obstacle[]:[]),...(kind==='competition'?[[0,3,2.6,1.7],[-13.15,8.6,.7,2]] as Obstacle[]:[]),...(kind==='design1'?[[-11,7,2,1.2],[11,7,2,1.2]] as Obstacle[]:[]),...(kind==='design2'?[[-3,-9.8,.9,.7]] as Obstacle[]:[]),...(kind==='academic'?[[-11,7,2,1.2],[11,7,2,1.2],[-12,-10,1,.8],[12,-10,1,.8]] as Obstacle[]:[])]
+ return [...walls[kind],...footprints,...(kind==='architecture'?[[0,3.4,3.2,2.2] as Obstacle]:[]),[-12.9,-1.8,.8,.8],[12.9,-1.8,.8,.8],...(kind==='design2'?specialStations.design2.filter(s=>s.kind==='audience').map(({x,z}):Obstacle=>[x,z+.62,.8,.2]):[]),...(kind==='engineering'?[[0,2.7,3.2,2] as Obstacle]:[]),...((kind==='community'||kind==='housing'||kind==='activitycenter')?[[-11,7,2,1.2],[11,7,2,1.2]] as Obstacle[]:[]),...(kind==='innovation'?[[0,2.7,3.2,2]] as Obstacle[]:[]),...(kind==='competition'?[[0,3,2.6,1.7],[-13.15,8.6,.7,2]] as Obstacle[]:[]),...(kind==='design1'?[[-11,7,2,1.2],[11,7,2,1.2]] as Obstacle[]:[]),...(kind==='design2'?[[-3,-9.8,.9,.7]] as Obstacle[]:[]),...(kind==='academic'?[[-11,7,2,1.2],[11,7,2,1.2],[-12,-10,1,.8],[12,-10,1,.8]] as Obstacle[]:[])]
 }
 export const seatedStation=(kind:StationKind)=>['computer','desk','cad','study','chess','sewing','draft','audience','pcb','waiting','tv'].includes(kind)

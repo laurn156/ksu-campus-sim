@@ -8,9 +8,13 @@ import './interiors.css'
 import { indoorState } from './indoorState'
 import { DetailedRoom, type InteriorKind } from './DetailedInteriors'
 import { OnlinePlayers, type Peer } from '../connect/World'
+import { supabase } from '../connect/client'
 
 function interiorKind(b: Building): InteriorKind {
   const n=(b.name+' '+b.short+' '+b.kind).toLowerCase()
+  if (b.id==='1556621556'||n.includes('shore innovation')) return 'innovation'
+  if (b.code==='S2'||n.includes('gymnasium')) return 'eventhall'
+  if (n.includes('columns activity center')) return 'activitycenter'
   if (b.code==='A') return 'student'
   if (b.code==='B') return 'admin'
   if (b.code==='D') return 'math'
@@ -32,7 +36,7 @@ function interiorKind(b: Building): InteriorKind {
   if (b.code==='P60'||/parking|deck|garage parking/.test(n)) return 'parking'
   if (n.includes('greenhouse')) return 'greenhouse'
   if (n.includes('hornet hub') || b.id==='1504299650' || b.code==='O' || n.includes('competition')) return 'garage'
-  if (b.code==='S1'||b.code==='S2'||n.includes('recreation')||n.includes('gymnasium')) return 'recreation'
+  if (b.code==='S1'||n.includes('recreation')) return 'recreation'
   if (b.code==='C'||n.includes('library')) return 'library'
   if (/dormitory|apartments|residence|hornet village|courtyard|commons|columns/.test(n)) return 'dorm'
   if (b.code==='X'||/dining|stingers/.test(n)) return 'dining'
@@ -41,7 +45,21 @@ function interiorKind(b: Building): InteriorKind {
   return 'classroom'
 }
 function Room({building,look}:{building:Building;look:AvatarLook}) {
- return <DetailedRoom kind={interiorKind(building)} look={look}/>
+ const kind=interiorKind(building),[event,setEvent]=useState<number|null>(kind==='eventhall'?null:0)
+ useEffect(()=>{
+  if(kind!=='eventhall')return
+  const client=supabase,token=crypto.randomUUID();let active=true,joined=false
+  if(!client){setEvent(0);return}
+  const visit=async(leaving=false)=>client.rpc('campus_gym_event_visit',{visit_token:token,leaving})
+  void visit().then(({data,error})=>{
+   if(!active){if(!error)void visit(true);return}
+   if(error||typeof data!=='number'){setEvent(0);return}
+   joined=true;setEvent(data)
+  }).catch(()=>{if(active)setEvent(0)})
+  const timer=setInterval(()=>{if(joined)void visit()},15000)
+  return()=>{active=false;clearInterval(timer);if(joined)void visit(true)}
+ },[kind])
+ return event===null?null:<DetailedRoom kind={kind} look={look} event={event}/>
 }
 export function BuildingInteriors({campus,look,peers=[]}:{campus:Campus;look:AvatarLook;peers?:Peer[]}) {
  const [near,setNear]=useState<Building|null>(null),[inside,setInside]=useState<Building|null>(null)

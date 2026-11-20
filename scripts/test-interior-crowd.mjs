@@ -5,7 +5,7 @@ import { adminObstacles, mathObstacles, libraryObstacles } from '../src/scene/ac
 import { clearPoint } from '../src/scene/diningSimulation.ts'
 const partition=[[-8,-2,12,.25],[8,-2,12,.25]]
 const obstacles={
- ...Object.fromEntries(['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture','competition','technology','housing','community'].map(kind=>[kind,specialObstacles(kind)])),
+ ...Object.fromEntries(['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture','competition','technology','housing','community','innovation','eventhall','activitycenter'].map(kind=>[kind,specialObstacles(kind)])),
  student:[[-5,-1,.3,8],[-5,8.1,.3,3.8],[5,-5,.3,7],[5,5.6,.3,8.8],[-11,-8,4,1.5],[-11,-3.8,4,1.5],[-11,.5,4,1.5],[-10,5,2,2],[-10,9,2,2],[0,-6,3,2],[0,-1,3,2],[0,4,3,2],[9,-6,3,2],[9,-1,3,2],[10,5,2,1.5],[-2,9,2.5,1],[-8.7,7,1.3,1.3],[12,8,1,1]],
  classroom:[...[-4,-1,2,5].flatMap(z=>[-8,-4,0,4,8].map(x=>[x,z,1.4,1.1])),[0,-9,8,1]],
  library:libraryObstacles,
@@ -15,14 +15,14 @@ const obstacles={
  lab:[...partition,...[-9,-5,5,9].map(x=>[x,-7,2,1.5]),...[-8,0,8].map(x=>[x,3,2,1.5]),[-12,-9,1.5,1.5],[12,-9,1.5,1.5]],
  garage:[...partition,[-7,-7,5,3],[-11,-4,1,1],...[6,10].map(x=>[x,-7,2,1.5]),[-8,5,2,1.5],[11,7,1.5,1.5],[5,5,2,1.5]],
  greenhouse:[...[-7,7].map(x=>[x,7,2,1.5]),...[-9,-5,5,9].map(x=>[x,-7,2,1.5]),...[-8,0,8].map(x=>[x,3,2,1.5]),[-11,8,1.5,1.5],[11,8,1.5,1.5]],
- recreation:[...[4,7,10].map(x=>[x,-6,1.3,2.3]),...[4,7].map(x=>[x,5,2,1.2]),[11,4,.5,8]],
+ recreation:[...[-9,-5].map(x=>[x,-6,1.3,1.4]),...[-9,-5].map(x=>[x,3,2,1]),...[4,7,10].map(x=>[x,-6,1.3,2.3]),...[4,7].map(x=>[x,5,2,1.2]),[11,4,.5,8]],
  office:[...partition,...[-9,-5,5,9].map(x=>[x,-7,2,1.4]),[-8,5,2.2,1.5],[7,5,2.5,1.5],[7,7,1.6,1.2],[11,9,1.5,1.5]],
  bus:[...[-1.5,1.5].flatMap(x=>[-8,0,8].map(z=>[x,z,.12,.12])),...[-3.25,3.25].map(x=>[x,0,.4,24]),...[-7,-3,1,5].flatMap(z=>[-2.85,2.85].map(x=>[x,z,.55,1.15])),[-2.25,-10,1.5,2]],
  uits:[...[-10.5,10.5].map(x=>[x,0,.18,20]),[0,-9.8,21,.2],...[-6,0].map(x=>[x,-6.6,4,1.2]),[7,-7.5,4,1.3],[9,-3.2,1.5,1.2],[9,1,1.5,1.2]],
  parking:[...[-9,-4,4,9].map(x=>[x+1.8,-6,2,4]),[2,5,1,1]],
 }
 for(const [kind,rects] of Object.entries(obstacles)){
- const sim=new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:kind==='math'?12:kind==='admin'?8:kind==='library'?8:['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture','competition','technology','housing','community'].includes(kind)?6:5)
+ const sim=new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:kind==='math'?12:kind==='admin'?8:kind==='library'?8:['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture','competition','technology','housing','community','innovation','eventhall','activitycenter'].includes(kind)?6:5)
  const player=kind==='uits'?[0,6]:[0,9]
  assert(sim.agents.length>=4,`${kind}: insufficient people on entry`)
  assert(sim.agents.some(a=>a.position[0]<0)&&sim.agents.some(a=>a.position[0]>0),`${kind}: people not spread out`)
