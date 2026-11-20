@@ -8,7 +8,7 @@ import { busCaller, busPositions } from './Buses'
 import { indoorState } from './indoorState'
 
 /** Shared, mutable player state (read by the HUD / minimap without re-rendering React every frame). */
-export const player = { x: 0, z: 0, heading: 0, yaw: 0.6, pitch: 1.0, moving: false, tp: null as null | { x: number; z: number; yaw: number }, travelOrigin: null as null | { x: number; z: number }, view: null as null | { x:number; z:number; yaw:number }, viewChanged: false, busRide: null as null | { index: number; until: number }, rides: 0, speedMultiplier: 1 }
+export const player = { x: 0, z: 0, heading: 0, yaw: 0.6, pitch: 1.0, moving: false, tp: null as null | { x: number; z: number; yaw: number; buildingId?:string }, travelOrigin: null as null | { x: number; z: number }, travelBuilding: null as string | null, view: null as null | { x:number; z:number; yaw:number; buildingId?:string }, viewChanged: false, busRide: null as null | { index: number; until: number }, rides: 0, speedMultiplier: 1 }
 
 const WALK = 5 // m/s (a brisk, game-paced walk)
 const RUN = 9.5
@@ -90,6 +90,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
         if (d !== undefined) dist.current = d
       }
     player.travelOrigin = null
+    player.travelBuilding = null
     player.view = null
     const [x, z, yaw] = spawnPoint(campus)
     player.x = x
@@ -153,6 +154,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
       // teleport (from the "Go to" menu): jump there and snap the camera
       pan.current.set(0, 0)
       player.travelOrigin = { x: player.tp.x, z: player.tp.z }
+      player.travelBuilding = player.tp.buildingId ?? null
       player.busRide = null
       player.x = player.tp.x
       player.z = player.tp.z
@@ -161,6 +163,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
       player.tp = null
       snap.current = true
     }
+    if (player.travelOrigin && Math.hypot(player.x-player.travelOrigin.x,player.z-player.travelOrigin.z)>12) player.travelBuilding = null
     if (player.travelOrigin && Math.hypot(player.x-player.travelOrigin.x,player.z-player.travelOrigin.z)>80) player.travelOrigin = null
     if (player.busRide) {
       const bus = busPositions[player.busRide.index]

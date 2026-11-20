@@ -36,7 +36,7 @@ for(const [kind,rects] of Object.entries(obstacles)){
   for(let i=0;i<sim.agents.length;i++)for(let j=i+1;j<sim.agents.length;j++){assert.notEqual(sim.agents[i].activity,sim.agents[j].activity,`${kind}: duplicated activity reservation`);if(!sim.agents[i].out&&!sim.agents[j].out)assert(Math.hypot(sim.agents[i].position[0]-sim.agents[j].position[0],sim.agents[i].position[1]-sim.agents[j].position[1])>=.60,`${kind}: characters overlap`)}
  }
  assert(visited.every(s=>s.size>=2),`${kind}: an agent never changed activity`)
- const expected={crawford:'research:study',engineering:'robot:study',academic:'write:study',design1:'cad:print',design2:'build:test',atrium:'write:study',civil:'research:test',soils:'research:fabricate',textile:'fabricate:build',architecture:'cad:build'}
+ const expected={crawford:'research:study',engineering:'robot:study',academic:'write:study',design1:'cad:build',design2:'seat:cad',atrium:'write:study',civil:'research:test',soils:'research:fabricate',textile:'fabricate:build',architecture:'cad:build'}
  if(expected[kind])assert(roleTransitions.has(expected[kind]),`${kind}: expected station sequence ${expected[kind]} did not complete`)
  if(kind==='library')assert(carriedBook,'library: nobody carried a book from a shelf')
  if(kind==='greenhouse')assert(carriedWater,'greenhouse: nobody carried a watering can between stations')

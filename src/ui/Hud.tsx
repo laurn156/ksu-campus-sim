@@ -83,11 +83,11 @@ export function Minimap({ campus, onOpen }: { campus: Campus; onOpen: () => void
 }
 
 /** "Go to" menu: jump straight to any campus building or landmark. */
-function GoTo({ campus, onView }: { campus: Campus; onView: (target:{x:number;z:number;yaw:number})=>void }) {
+function GoTo({ campus, onView }: { campus: Campus; onView: (target:{x:number;z:number;yaw:number;buildingId?:string})=>void }) {
   const places = useMemo(() => {
     const bs = campus.buildings
       .filter(isCampusBuilding)
-      .map((b) => ({ label: `${b.code ? b.code + ' · ' : ''}${b.short || b.name}`, go: () => approach(campus, b.poly) }))
+      .map((b) => ({ label: `${b.code ? b.code + ' · ' : ''}${b.short || b.name}`, go: () => ({...approach(campus, b.poly),buildingId:b.id}) }))
       .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))
     const collider = new Collider(campus.buildings)
     const near = (x: number, z: number) => {
@@ -97,7 +97,7 @@ function GoTo({ campus, onView }: { campus: Campus; onView: (target:{x:number;z:
       }
       return { x, z: z + 12, yaw: 0 }
     }
-    const lm = landmarkSpots(campus).map((l) => ({ label: `★ ${l.name}`, go: () => near(l.at[0], l.at[1]) }))
+    const lm = landmarkSpots(campus).map((l) => ({ label: `★ ${l.name}`, go: () => ({...near(l.at[0], l.at[1]),buildingId:l.name==='Greenhouse'?campus.buildings.find(b=>b.kind==='greenhouse')?.id:undefined}) }))
     const moving = [
       { label: '★ Big Owl Bus', go: () => { const b = busPositions.filter(Boolean).reduce((best, p) => Math.hypot(p.x-player.x,p.z-player.z) < Math.hypot(best.x-player.x,best.z-player.z) ? p : best, busPositions.find(Boolean) ?? { x: -90, z: -311 }); return near(b.x, b.z) } },
       { label: '★ Scrappy the Owl', go: () => near(scrappy.x, scrappy.z) },
@@ -148,14 +148,14 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
   const [mapOpen,setMapOpen] = useState(false)
   const [viewing,setViewing] = useState(false)
   const savedYaw=useRef(0)
-  const viewLocation=(target:{x:number;z:number;yaw:number})=>{
+  const viewLocation=(target:{x:number;z:number;yaw:number;buildingId?:string})=>{
     if(!player.view) savedYaw.current=player.yaw
     player.view=target;player.yaw=target.yaw;player.viewChanged=true;setViewing(true)
   }
   const returnToPlayer=()=>{player.view=null;player.yaw=savedYaw.current;player.viewChanged=true;setViewing(false)}
   const travelToView=()=>{
     if(!player.view) return
-    player.tp={x:player.view.x,z:player.view.z,yaw:player.view.yaw}
+    player.tp={x:player.view.x,z:player.view.z,yaw:player.view.yaw,buildingId:player.view.buildingId}
     player.view=null;player.viewChanged=true;setViewing(false)
   }
   useEffect(()=>()=>{player.view=null},[])
