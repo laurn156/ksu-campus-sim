@@ -23,6 +23,7 @@ import { LifeUI } from './life/LifeUI'
 import { Welcome, type Profile } from './ui/Welcome'
 import { MainMenu, HowToPlay } from './ui/MainMenu'
 import { Onboarding, CampusGreeting } from './ui/Onboarding'
+import { PhotoBooth, type BoothFriend } from './activities/PhotoBooth'
 import { PRESETS, cleanName, draftProfile, loadNestProfile, saveNestProfile, type NestProfile } from './ui/nestProfile'
 import './ui/ui.css'
 
@@ -64,6 +65,9 @@ async function joinOnline(p: NestProfile): Promise<User> {
   }
   return user
 }
+
+// Classmates who can join booth photos when no other real players are around.
+const CLASSMATES: BoothFriend[] = ['Maya', 'Jordan', 'Priya', 'Leo', 'Sam', 'Ava'].map((name, i) => ({ name, look: PRESETS[i].look }))
 
 type Screen = 'menu' | 'onboard' | 'customize' | 'joining' | 'play'
 export default function App() {
@@ -161,7 +165,7 @@ function LifeSession({campus,profile,onEdit,onMenu}:{campus:Campus;profile:NestP
       <color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/>
       <hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={look} name={profile.displayName}/><CampusStudents campus={campus} minute={life.state.minute}/><ActivityWorld campus={campus}/><VehicleWorld campus={campus}/>
     </Canvas>
-    <CampusActivities campus={campus} identity={profile.playerId}/><VehicleActivities campus={campus}/><SlapRockActivity campus={campus} identity={profile.playerId}/><BuildingInteriors campus={campus} look={look}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onMenu}/><ActivityMenu campus={campus}/><ClassroomActivity globalLauncher/><LifeUI campus={campus} life={life} playerName={profile.displayName} onEdit={onEdit}/>
+    <CampusActivities campus={campus} identity={profile.playerId}/><VehicleActivities campus={campus}/><SlapRockActivity campus={campus} identity={profile.playerId}/><BuildingInteriors campus={campus} look={look}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onMenu}/><ActivityMenu campus={campus}/><PhotoBooth look={look} name={profile.displayName} friends={CLASSMATES}/><ClassroomActivity globalLauncher/><LifeUI campus={campus} life={life} playerName={profile.displayName} onEdit={onEdit}/>
   </>
 }
 
@@ -172,5 +176,5 @@ function OnlineCampus({campus,user,profile,onEdit,onMenu}:{campus:Campus;user:Us
  const offline=useOfflinePlayers(campus,user.id,world.onlineIds,world.status==='Connected')
  const peers=[...world.peers,...offline].filter(p=>!social.blocked.includes(p.id))
  const life=useLife(user.id,profile.displayName)
- return <><Canvas shadows="percentage" camera={{position:[0,40,40],fov:45,near:.5,far:3000}} dpr={[1,2]}><color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/><hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={look} name={profile.displayName}/><CampusStudents campus={campus} minute={life.state.minute}/><ActivityWorld campus={campus}/><VehicleWorld campus={campus}/><OnlinePlayers peers={peers.filter(p=>p.location==='campus')}/></Canvas><CampusActivities campus={campus} identity={user.id}/><VehicleActivities campus={campus}/><SlapRockActivity campus={campus} identity={profile.playerId}/><BuildingInteriors campus={campus} look={look} peers={peers}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onMenu}/><ActivityMenu campus={campus}/><ClassroomActivity globalLauncher/><LifeUI campus={campus} life={life} playerName={profile.displayName} onEdit={onEdit}/><ConnectChat world={world}/><SocialPanel userId={user.id} peers={peers} onlineIds={world.onlineIds} social={social} wave={world.wave} allowRoaming={!user.is_anonymous}/></>
+ return <><Canvas shadows="percentage" camera={{position:[0,40,40],fov:45,near:.5,far:3000}} dpr={[1,2]}><color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/><hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={look} name={profile.displayName}/><CampusStudents campus={campus} minute={life.state.minute}/><ActivityWorld campus={campus}/><VehicleWorld campus={campus}/><OnlinePlayers peers={peers.filter(p=>p.location==='campus')}/></Canvas><CampusActivities campus={campus} identity={user.id}/><VehicleActivities campus={campus}/><SlapRockActivity campus={campus} identity={profile.playerId}/><BuildingInteriors campus={campus} look={look} peers={peers}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onMenu}/><ActivityMenu campus={campus}/><PhotoBooth look={look} name={profile.displayName} friends={[...peers.filter(p=>p.online!==false).slice(0,6).map(p=>({name:p.name,look:p.look})),...CLASSMATES]}/><ClassroomActivity globalLauncher/><LifeUI campus={campus} life={life} playerName={profile.displayName} onEdit={onEdit}/><ConnectChat world={world}/><SocialPanel userId={user.id} peers={peers} onlineIds={world.onlineIds} social={social} wave={world.wave} allowRoaming={!user.is_anonymous}/></>
 }

@@ -91,9 +91,6 @@ export function Scrappy({ campus }: { campus: Campus }) {
   const rightLeg = useRef<THREE.Group>(null)
   const route = useRef<number[]>([])
   const current = useRef(-1)
-  const face = useMemo(makeFace, [])
-  const shirt = useMemo(makeShirt, [])
-  const shortsLogo = useMemo(makeShortsLogo, [])
   const collider = useMemo(() => new Collider(campus.buildings), [campus])
   const network = useMemo(() => makePathNetwork(campus, collider), [campus, collider])
   useFrame(({ clock }, raw) => {
@@ -127,7 +124,16 @@ export function Scrappy({ campus }: { campus: Campus }) {
     if (leftLeg.current) leftLeg.current.rotation.x=swing
     if (rightLeg.current) rightLeg.current.rotation.x=-swing
   })
-  return <group ref={group} scale={1.35}>
+  return <group ref={group} scale={1.35}><ScrappyFigure legRefs={[leftLeg,rightLeg]} /></group>
+}
+
+/** Scrappy's body on its own (no walking), for the campus mascot and photo-booth appearances. */
+export function ScrappyFigure({ legRefs }: { legRefs?: [React.RefObject<THREE.Group | null>, React.RefObject<THREE.Group | null>] }) {
+  const face = useMemo(makeFace, [])
+  const shirt = useMemo(makeShirt, [])
+  const shortsLogo = useMemo(makeShortsLogo, [])
+  const [leftLeg, rightLeg] = legRefs ?? [undefined, undefined]
+  return <group>
     {/* Black furry legs, gold shorts and broad gold-soled sneakers. */}
     <group>
       {[-0.23,0.23].map((x, i) => <group ref={i === 0 ? leftLeg : rightLeg} key={x} position={[x,0,0]}>
