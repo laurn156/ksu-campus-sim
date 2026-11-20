@@ -20,7 +20,9 @@ function Block({p,s,c}:{p:V;s:V;c:string}) {return <mesh position={p} castShadow
 function Label({text,p,size=.45,color='#273b37',rotY=0}:{text:string;p:V;size?:number;color?:string;rotY?:number}) {return <Text position={p} rotation={[0,rotY,0]} fontSize={size} color={color} anchorX="center" anchorY="middle" maxWidth={8}>{text}</Text>}
 function Ball({p,color,r=.1}:{p:V;color:string;r?:number}) {return <mesh position={p}><sphereGeometry args={[r,10,8]}/><meshStandardMaterial color={color}/></mesh>}
 function WallWindow({x,z=-11.8}:{x:number;z?:number}) {return <group><Block p={[x,2.4,z]} s={[3,2.5,.12]} c="#82aeb6"/>{[-1.5,0,1.5].map(a=><Block key={a} p={[x+a,2.4,z+.1]} s={[.12,2.6,.16]} c="#e9eee6"/>)}<Block p={[x,2.4,z+.1]} s={[3,.12,.16]} c="#e9eee6"/></group>}
-function Architecture({student}:{student:boolean}) {return <><Block p={[0,-.12,0]} s={[28,.24,24]} c="#d8d0bb"/><DiningWall p={[0,2.1,-11.95]} s={[28,4.2,.2]} color="#e9e7db">{[-10,-5,0,5,10].map(x=><WallWindow key={x} x={x}/>)}</DiningWall><DiningWall p={[-13.95,2.1,0]} s={[.2,4.2,24]} color="#e2e0d3"/><DiningWall p={[13.95,2.1,0]} s={[.2,4.2,24]} color="#e2e0d3"/><Block p={[-11,1.6,11.8]} s={[3.4,3.2,.15]} c="#83aeb1"/><Block p={[-11,1.6,11.69]} s={[.1,3.2,.2]} c="#ebece0"/><Label text="EXIT" p={[-11,3.5,11.6]} size={.3}/>{student&&<><DiningWall p={[-5,1.7,-1]} s={[.25,3.4,8]} color="#c8bda7"/><DiningWall p={[-5,1.7,8.1]} s={[.25,3.4,3.8]} color="#c8bda7"/><DiningWall p={[5,1.7,-5]} s={[.25,3.4,7]} color="#c8bda7"/><DiningWall p={[5,1.7,5.6]} s={[.25,3.4,8.8]} color="#c8bda7"/><Label text="FOOD COURT" p={[-9,3.5,-11.7]}/><Label text="GAME ROOM" p={[9,3.5,-11.7]}/></>}</>}
+// Area titles are mounted boards above the window line so the frames never cut through the lettering.
+function AreaSign({x,text,color}:{x:number;text:string;color:string}) {return <group position={[x,3.93,-11.8]}><Block p={[0,0,0]} s={[3.4,.46,.08]} c={color}/><Block p={[0,-.19,.045]} s={[3.2,.03,.01]} c="#e7c35a"/><Label text={text} p={[0,.02,.05]} size={.27} color="#fbf6e8"/></group>}
+function Architecture({student}:{student:boolean}) {return <><Block p={[0,-.12,0]} s={[28,.24,24]} c="#d8d0bb"/><DiningWall p={[0,2.1,-11.95]} s={[28,4.2,.2]} color="#e9e7db">{[-10,-5,0,5,10].map(x=><WallWindow key={x} x={x}/>)}</DiningWall><DiningWall p={[-13.95,2.1,0]} s={[.2,4.2,24]} color="#e2e0d3"/><DiningWall p={[13.95,2.1,0]} s={[.2,4.2,24]} color="#e2e0d3"/><Block p={[-11,1.6,11.8]} s={[3.4,3.2,.15]} c="#83aeb1"/><Block p={[-11,1.6,11.69]} s={[.1,3.2,.2]} c="#ebece0"/><Label text="EXIT" p={[-11,3.5,11.6]} size={.3}/>{student&&<><DiningWall p={[-5,1.7,-1]} s={[.25,3.4,8]} color="#c8bda7"/><DiningWall p={[-5,1.7,8.1]} s={[.25,3.4,3.8]} color="#c8bda7"/><DiningWall p={[5,1.7,-5]} s={[.25,3.4,7]} color="#c8bda7"/><DiningWall p={[5,1.7,5.6]} s={[.25,3.4,8.8]} color="#c8bda7"/><AreaSign x={-8.5} text="FOOD COURT" color="#9b3f35"/><AreaSign x={8.5} text="GAME ROOM" color="#2f5d73"/></>}</>}
 const studentWalls:Rect[]=[[-5,-1,.3,8],[-5,8.1,.3,3.8],[5,-5,.3,7],[5,5.6,.3,8.8]]
 const studentFurniture:Rect[]=[[-11,-8,4,1.5],[-11,-3.8,4,1.5],[-11,.5,4,1.5],[-10,5,2,2],[-10,9,2,2],[0,-6,3,2],[0,-1,3,2],[0,4,3,2],[9,-6,3,2],[9,-1,3,2],[10,5,2,1.5],[-2,9,2.5,1],[-8.7,7,1.3,1.3],[12,8,1,1]]
 const desks:Rect[]=[];for(const z of [-4,-1,2,5])for(const x of [-8,-4,0,4,8])desks.push([x,z,1.4,1.1])
@@ -56,8 +58,21 @@ function Move({look,rects,startZ=9}:{look:AvatarLook;rects:Rect[];startZ?:number
  })
  return <group ref={body}><Character {...look} walk={walk} scale={1.15}/></group>
 }
-function Pool(){return <group><Block p={[9,.8,-6]} s={[3.1,.35,1.8]} c="#624332"/><Block p={[9,1,-6]} s={[2.8,.08,1.5]} c="#387153"/>{[-1.3,0,1.3].map(x=>[-.7,.7].map(z=><Ball key={`${x}:${z}`} p={[9+x,1.08,-6+z]} color="#242820" r={.13}/>))}{[-1,1].map(x=>[-.6,.6].map(z=><Block key={`${x}:${z}`} p={[9+x,.4,-6+z]} s={[.22,.8,.22]} c="#564638"/>))}</group>}
-function PingPong(){return <group><Block p={[9,.8,-1]} s={[3,.16,1.6]} c="#426e91"/><Block p={[9,1,-1]} s={[.04,.35,1.6]} c="#e6e6dd"/>{[-1.2,1.2].map(x=>[-.6,.6].map(z=><Block key={`${x}:${z}`} p={[9+x,.4,-1+z]} s={[.13,.8,.13]} c="#444e4b"/>))}<mesh position={[8.5,.93,-.8]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[.25,12]}/><meshStandardMaterial color="#c65b4b"/></mesh></group>}
+// Game tables are sized to the characters: the playing surface sits at hand height (~0.78).
+function Pool(){const wood='#5b3a28',rail='#2f6b4b';return <group position={[9,0,-6]}>
+ {[-1.3,1.3].flatMap(x=>[-.62,.62].map(z=><Block key={`${x}:${z}`} p={[x,.28,z]} s={[.2,.56,.2]} c={wood}/>))}
+ <Block p={[0,.62,0]} s={[3.2,.22,1.9]} c={wood}/><Block p={[0,.735,0]} s={[2.9,.02,1.6]} c="#2f7d55"/>
+ {[-1,1].map(d=><group key={d}><Block p={[0,.79,d*.86]} s={[3.2,.1,.18]} c={wood}/><Block p={[0,.78,d*.76]} s={[2.8,.07,.06]} c={rail}/><Block p={[d*1.51,.79,0]} s={[.18,.1,1.9]} c={wood}/><Block p={[d*1.41,.78,0]} s={[.06,.07,1.5]} c={rail}/></group>)}
+ {[-1.4,0,1.4].flatMap(x=>[-.74,.74].map(z=><mesh key={`${x}:${z}`} position={[x,.748,z]}><cylinderGeometry args={[.1,.1,.02,14]}/><meshStandardMaterial color="#141716"/></mesh>))}
+ {[-.7,.7].flatMap(x=>[-1,1].map(d=><Ball key={`${x}:${d}`} p={[x,.845,d*.86]} color="#e9dcb8" r={.025}/>))}
+ <Block p={[0,.746,.0]} s={[.02,.002,1.5]} c="#3d8d63"/>
+ </group>}
+function PingPong(){return <group position={[9,0,-1]}>
+ {[-1.15,1.15].flatMap(x=>[-.6,.6].map(z=><Block key={`${x}:${z}`} p={[x,.36,z]} s={[.1,.72,.1]} c="#3b4644"/>))}<Block p={[0,.4,0]} s={[2.2,.06,.06]} c="#3b4644"/>
+ <Block p={[0,.74,0]} s={[2.8,.06,1.5]} c="#2f6290"/>
+ {[-1,1].map(d=><group key={d}><Block p={[0,.772,d*.73]} s={[2.8,.004,.04]} c="#f2f1ea"/><Block p={[d*1.38,.772,0]} s={[.04,.004,1.5]} c="#f2f1ea"/></group>)}<Block p={[0,.772,0]} s={[2.8,.004,.02]} c="#f2f1ea"/>
+ <mesh position={[0,.83,0]}><boxGeometry args={[.015,.11,1.6]}/><meshStandardMaterial color="#f4f3ea" transparent opacity={.75}/></mesh><Block p={[0,.89,0]} s={[.03,.02,1.62]} c="#f7f6ef"/>{[-.81,.81].map(z=><Block key={z} p={[0,.83,z]} s={[.05,.15,.05]} c="#2c3332"/>)}
+ </group>}
 function StudentTable({z,index}:{z:number;index:number}) {return <group>
  <DiningModel name="tablecross" p={[0,0,z]} scale={2.75}/>
  {[-1,1].map(side=><DiningModel key={side} name="chaircushion" p={[side*1.85,0,z]} r={side<0?Math.PI/2:-Math.PI/2} scale={2.05}/>)}
@@ -78,7 +93,7 @@ function Student({look:_look}:{look:AvatarLook}) {return <>
  <DiningModel name="pottedplant" p={[-13,0,10]} scale={2}/><DiningModel name="trashcan" p={[-6.5,0,3]} scale={1.65}/>
  <Pool/><PingPong/><DiningModel name="loungechair" p={[10,0,5]} scale={1.9}/>
  <group><Block p={[12,.8,8]} s={[1.05,1.6,.85]} c="#283b44"/><Block p={[12,1.75,8]} s={[1.1,.32,.9]} c="#d8a82f"/><Label text="ARCADE" p={[12,1.76,7.52]} size={.19} color="#25362f"/><Block p={[12,1.25,7.55]} s={[.86,.72,.09]} c="#121f2a"/><Block p={[12,1.25,7.49]} s={[.72,.56,.04]} c="#508f9a"/><Label text="SPACE OWLS" p={[12,1.26,7.45]} size={.12} color="#ffe091"/><Block p={[12,.78,7.43]} s={[1,.14,.48]} c="#3c5a63"/><Ball p={[11.75,.9,7.35]} color="#e5684e" r={.08}/>{[0,.2,.4].map(dx=><Ball key={dx} p={[12+dx,.89,7.35]} color="#efc44b" r={.06}/>)}<Block p={[12,.35,7.54]} s={[.3,.22,.04]} c="#141e21"/></group>
- <Block p={[-2,.55,9]} s={[2.5,1.1,1]} c="#987a5c"/><Block p={[-2,1.13,9]} s={[2.65,.12,1.1]} c="#ded2b9"/><Label text="INFORMATION" p={[-2,1.55,8.44]} size={.23}/><DiningModel name="laptop" p={[-2,1.2,9]} scale={1.1}/>
+ <Block p={[-2,.55,9]} s={[2.5,1.1,1]} c="#987a5c"/><Block p={[-2,1.13,9]} s={[2.65,.12,1.1]} c="#ded2b9"/><Block p={[-2.75,1.32,9.3]} s={[.06,.3,.06]} c="#5d544a"/><Block p={[-2.75,1.62,9.3]} s={[1.7,.36,.06]} c="#2f4d47"/><Label text="INFORMATION" p={[-2.75,1.62,9.265]} size={.2} color="#f6efdc" rotY={Math.PI}/><Label text="INFORMATION" p={[-2.75,1.62,9.335]} size={.2} color="#f6efdc"/><DiningModel name="laptop" p={[-2,1.2,9]} scale={1.1}/>
  </>}
 
 function Classroom({look:_look}:{look:AvatarLook}) {return <><Architecture student={false}/><Block p={[0,2.3,-11.7]} s={[10,2.4,.18]} c="#fcfcf3"/><Label text={'∫ x² dx = x³ / 3 + C\nf(x) = ax² + bx + c\nsin² θ + cos² θ = 1'} p={[0,2.4,-11.55]} size={.37}/><Block p={[9,2.4,-11.7]} s={[4,2.4,.16]} c="#f7f7ed"/><Label text="PROJECTOR" p={[9,2.4,-11.55]} size={.25}/><Block p={[0,3.8,-3]} s={[.8,.25,.5]} c="#f6f4ea"/><Model name="desk" p={[-10,0,-9]} scale={1.4}/><Model name="computerscreen" p={[-10,1.05,-9]} scale={.8}/>{desks.map(([x,z],i)=><group key={`${x}:${z}`}><Model name="desk" p={[x,0,z]} scale={1.05}/><Model name="chairdesk" p={[x,0,z+1]} scale={1}/>{i%3===0?<Model name="laptop" p={[x,1,z]} scale={.7}/>:<Model name="books" p={[x,1,z]} scale={.65}/ >}</group>)}<mesh position={[-12,3.25,-11.7]}><circleGeometry args={[.48,20]}/><meshStandardMaterial color="#fdfbf0"/></mesh><Label text="◷" p={[-12,3.25,-11.55]} size={.7}/></>}
@@ -331,7 +346,16 @@ function InteriorDetails({kind}:{kind:CrowdKind}) {return <><RoomFinish kind={ki
 
 // Riders face the front of the bus (-z), so the backrest sits behind them on the +z side.
 function BusSeat({x,z}:{x:number;z:number}) {return <group><Block p={[x,.32,z]} s={[.9,.55,1.05]} c="#405964"/><Block p={[x,.64,z]} s={[.95,.2,1.05]} c="#b7974d"/><Block p={[x,1.13,z+.47]} s={[.95,1.1,.22]} c="#4d6871"/></group>}
-function BusDriver({look}:{look:AvatarLook}) {const seated=useRef(1),drive=useRef(1);return <group position={[-2.1,.35,-9.4]} rotation={[0,Math.PI,0]}><Character {...look} color="blue" top="tee" topColor="#4b6261" scale={1.15} sit={seated} sitLift={.112} eat={drive}/></group>}
+function BusDriver({look}:{look:AvatarLook}) {const seated=useRef(1),drive=useRef(1);return <group position={[-2.1,0,-9.4]} rotation={[0,Math.PI,0]}><Character {...look} color="blue" top="tee" topColor="#4b6261" scale={1.15} sit={seated} sitLift={.112} eat={drive}/></group>}
+// Driver's station: pedestal seat (backrest behind the driver) facing a low dashboard and wheel, windshield kept clear.
+function DriverStation(){return <group>
+ <Block p={[-2.1,.28,-9.35]} s={[.25,.5,.25]} c="#2b3537"/><Block p={[-2.1,.08,-9.35]} s={[.7,.06,.7]} c="#2b3537"/>
+ <Block p={[-2.1,.64,-9.35]} s={[.9,.2,.85]} c="#33464d"/><Block p={[-2.1,1.18,-8.9]} s={[.9,1.05,.16]} c="#33464d"/><Block p={[-2.1,1.82,-8.92]} s={[.55,.3,.14]} c="#2a3b41"/>
+ {[-1,1].map(d=><Block key={d} p={[-2.1+d*.5,.85,-9.3]} s={[.08,.08,.6]} c="#2a3b41"/>)}
+ <Block p={[-2.2,.62,-10.85]} s={[1.6,1.24,.9]} c="#3a474a"/><Block p={[-2.2,1.27,-10.75]} s={[1.6,.06,1.1]} c="#2c3638"/><Block p={[-2.35,1.31,-10.55]} s={[.7,.03,.3]} c="#6fa8a0"/>
+ <Block p={[-2.15,1.02,-10.2]} s={[.08,.08,.5]} c="#222b2d"/>
+ <mesh position={[-2.15,1.1,-9.95]} rotation={[-Math.PI/2+.55,0,0]}><torusGeometry args={[.3,.045,8,24]}/><meshStandardMaterial color="#1c2426"/></mesh>
+ </group>}
 function BusInterior({look}:{look:AvatarLook}){return <>
  <BusDriver look={look}/>
  <Block p={[0,-.1,0]} s={[7,.2,24]} c="#868d87"/><Block p={[0,.02,0]} s={[2.6,.04,23.5]} c="#c5c9c0"/>
@@ -340,7 +364,7 @@ function BusInterior({look}:{look:AvatarLook}){return <>
  <DiningWall p={[0,1.9,-11.9]} s={[7,3.8,.18]} color="#d8ddd3"><Block p={[0,2.15,-11.78]} s={[6.2,2.1,.1]} c="#9cc3c8"/></DiningWall>
  {[-7,-3,1,5].flatMap(z=>[-2.12,2.12].map(x=><BusSeat key={`${x}:${z}`} x={x} z={z}/>))}
  {[-1.5,1.5].map(x=><group key={x}><Block p={[x,3.2,0]} s={[.08,.08,20]} c="#dfc66d"/>{[-8,0,8].map(z=><Block key={z} p={[x,1.65,z]} s={[.08,3.1,.08]} c="#dfc66d"/>)}</group>)}
- <Block p={[-2.25,.65,-9.6]} s={[1.1,1.3,1.4]} c="#41535a"/><Block p={[-2.2,1.15,-10.5]} s={[1.5,.3,.65]} c="#485558"/><mesh position={[-2.2,1.48,-10.1]} rotation={[Math.PI/2-.4,0,0]}><torusGeometry args={[.4,.06,6,20]}/><meshStandardMaterial color="#222f32"/></mesh>
+ <DriverStation/>
  <Block p={[-1.15,.6,-8.7]} s={[.12,1.2,.12]} c="#5a6768"/><Block p={[-1.15,1.3,-8.7]} s={[.4,.3,.28]} c="#3c4a4b"/><Block p={[-1.15,1.3,-8.55]} s={[.3,.2,.02]} c="#a9d8c5"/><Label text="TAP ID" p={[-1.15,1.3,-8.53]} size={.08} color="#203030"/>
  <Block p={[0,3.48,-11.74]} s={[4.2,.36,.1]} c="#273c39"/><Label text="BIG OWL BUS  •  STUDENT CENTER  •  LIBRARY" p={[0,3.48,-11.68]} size={.15} color="#f4d475"/>
  <DiningWall p={[0,1.9,11.9]} s={[7,3.8,.18]} color="#d8ddd3"><Block p={[0,2.4,11.79]} s={[4,1.3,.08]} c="#87aeb3"/><Block p={[0,3.35,11.76]} s={[2.1,.3,.06]} c="#a84237"/><Label text="EMERGENCY EXIT" p={[0,3.35,11.72]} size={.15} color="#fff7e8" rotY={Math.PI}/></DiningWall>
@@ -418,7 +442,11 @@ function InteriorAgent({agent,look,sim}:{agent:IndoorAgent;look:AvatarLook;sim:I
  useFrame(({clock},dt)=>{
   const activity=sim.activities[agent.activity],active=arrived()&&!agent.walk,role=active?activity.role:undefined
   if(group.current){group.current.visible=!agent.out;group.current.position.set(agent.position[0],0,agent.position[1]);group.current.rotation.y=agent.heading}
-  if(prop.current){prop.current.visible=role==='pool'||role==='ping'||role==='water'||!!agent.carry||role==='notes'||role==='repair'||role==='help';prop.current.rotation.x=role==='pool'?-.08:Math.sin(clock.elapsedTime*3+agent.id)*.55;prop.current.position.z=role==='pool'?.35+Math.sin(clock.elapsedTime*2+agent.id)*.2:.35;prop.current.children[0].visible=role==='pool';prop.current.children[1].visible=role==='ping';prop.current.children[2].visible=role==='water'||agent.carry==='water';prop.current.children[3].visible=role==='notes'||role==='repair'||role==='help'||agent.carry==='laptop'||agent.carry==='book'}
+  if(prop.current){prop.current.visible=role==='pool'||role==='ping'||role==='water'||!!agent.carry||role==='notes'||role==='repair'||role==='help';if(role==='pool'){
+    // Cue held level over the rail, tip angled down at the cue ball: slow draw back, quick stroke forward.
+    const cycle=(clock.elapsedTime*.6+agent.id*.37)%1,draw=cycle<.8?cycle/.8:1-(cycle-.8)/.2
+    prop.current.position.set(.12,.9,.05-draw*.22);prop.current.rotation.x=.05
+   }else{prop.current.position.set(.3,.75,.35);prop.current.rotation.x=Math.sin(clock.elapsedTime*3+agent.id)*.55}prop.current.children[0].visible=role==='pool';prop.current.children[1].visible=role==='ping';prop.current.children[2].visible=role==='water'||agent.carry==='water';prop.current.children[3].visible=role==='notes'||role==='repair'||role==='help'||agent.carry==='laptop'||agent.carry==='book'}
   walk.current=THREE.MathUtils.lerp(walk.current,agent.walk?.75:0,Math.min(1,dt*8));sit.current=THREE.MathUtils.lerp(sit.current,agent.seated?1:0,Math.min(1,dt*5));eat.current=role==='eat'?1:0;work.current=role==='pool'||role==='ping'||role==='water'||role==='plant'||role==='notes'||role==='staff'||role==='repair'||role==='study'||role==='read'||role==='write'||role==='teach'||role==='meeting'?1:0
  })
  return <group ref={group} position={[agent.position[0],0,agent.position[1]]} rotation={[0,agent.heading,0]}><Character {...look} color={colors[agent.id%colors.length]} top="tee" topColor={['#d6a939','#63867b','#b96555','#586f91','#92768e'][agent.id%5]} scale={1.15} walk={walk} sit={sit} sitLift={.112} eat={eat} work={work}/><group ref={prop} visible={false} position={[.3,.75,.35]}><mesh rotation={[Math.PI/2,0,0]} position={[0,0,.65]}><cylinderGeometry args={[.025,.035,1.6,7]}/><meshStandardMaterial color="#ba9268"/></mesh><group><mesh rotation={[-Math.PI/2,0,0]} position={[0,.03,.22]}><circleGeometry args={[.23,12]}/><meshStandardMaterial color="#c74739" side={THREE.DoubleSide}/></mesh><Block p={[0,0,0]} s={[.06,.06,.32]} c="#856746"/></group><group><Block p={[0,0,.1]} s={[.35,.32,.32]} c="#8da698"/><Block p={[0,.23,.1]} s={[.2,.14,.14]} c="#78978a"/><Block p={[0,.04,.34]} s={[.1,.1,.35]} c="#8da698"/></group><group><Block p={[0,0,.15]} s={[.42,.08,.55]} c="#495c59"/><Block p={[0,.07,.16]} s={[.35,.04,.46]} c="#e1e6d8"/></group></group></group>
@@ -426,10 +454,10 @@ function InteriorAgent({agent,look,sim}:{agent:IndoorAgent;look:AvatarLook;sim:I
 function StudentGameBalls({sim}:{sim:InteriorCrowd}) {
  const ping=useRef<THREE.Mesh>(null),pool=useRef<THREE.Group>(null)
  useFrame(({clock})=>{const t=clock.elapsedTime;const active=(role:'pool'|'ping')=>sim.agents.some(a=>{const goal=sim.activities[a.activity];return goal.role===role&&!a.route.length&&Math.hypot(a.position[0]-goal.position[0],a.position[1]-goal.position[1])<.18})
-  if(ping.current){const moving=active('ping');ping.current.position.set(9+(moving?Math.sin(t*3)*1.1:0),1.06+(moving?Math.abs(Math.sin(t*3))*.42:0),-1)}
+  if(ping.current){const moving=active('ping');ping.current.position.set(9+(moving?Math.sin(t*3)*1.15:0),.81+(moving?Math.abs(Math.sin(t*3))*.38:0),-1+(moving?Math.sin(t*1.7)*.3:0))}
   if(pool.current){const moving=active('pool');pool.current.children.forEach((ball,i)=>{ball.position.x=8.45+i*.21+(moving?Math.sin(t*.9+i)*.16:0);ball.position.z=-6+(i%2)*.18+(moving?Math.cos(t*.8+i)*.13:0)})}
  })
- return <><mesh ref={ping} position={[9,1.06,-1]}><sphereGeometry args={[.08,10,8]}/><meshStandardMaterial color="#f6eee0"/></mesh><group ref={pool}>{['#f4e9d4','#db4840','#e3ba3d','#404c85','#252b27'].map((color,i)=><mesh key={i} position={[8.45+i*.21,1.12,-6+(i%2)*.18]}><sphereGeometry args={[.08,10,8]}/><meshStandardMaterial color={color}/></mesh>)}</group></>
+ return <><mesh ref={ping} position={[9,.81,-1]}><sphereGeometry args={[.045,10,8]}/><meshStandardMaterial color="#f6eee0"/></mesh><group ref={pool}>{['#f4e9d4','#db4840','#e3ba3d','#404c85','#252b27'].map((color,i)=><mesh key={i} position={[8.45+i*.21,.81,-6+(i%2)*.18]}><sphereGeometry args={[.065,12,10]}/><meshStandardMaterial color={color}/></mesh>)}</group></>
 }
 function InteriorPeople({kind,rects,look}:{kind:CrowdKind;rects:Rect[];look:AvatarLook}) {
  const sim=useMemo(()=>new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:kind==='math'?12:kind==='admin'?8:kind==='library'?8:5),[kind,rects])
