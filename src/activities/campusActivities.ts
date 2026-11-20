@@ -54,6 +54,17 @@ export function discTrajectory(lie:Pt,angle:number,power:number,wind:Pt){
  return points
 }
 
+/** Find actual contact with the chain area, sweeping between frames to avoid tunneling. */
+export function discBasketContact(from:{x:number;y:number;z:number},to:{x:number;y:number;z:number},basket:Pt){
+ const steps=Math.max(1,Math.ceil(Math.hypot(to.x-from.x,to.y-from.y,to.z-from.z)/.08))
+ for(let i=1;i<=steps;i++){
+  const t=i/steps,x=from.x+(to.x-from.x)*t,y=from.y+(to.y-from.y)*t,z=from.z+(to.z-from.z)*t
+  // The modeled chain assembly tapers from radius .4 at the top to .2 at the bottom.
+  if(y>=.86&&y<=1.84&&Math.hypot(x-basket[0],z-basket[1])<=.2+(y-.86)*.2/.98)return {x,y,z}
+ }
+ return null
+}
+
 /** A disc skips once or twice, then skids to rest rather than stopping in mid-air. */
 export function stepDiscLanding(state:{x:number;y:number;z:number;vx:number;vy:number;vz:number},dt:number){
  const next={...state};next.x+=next.vx*dt;next.z+=next.vz*dt;next.y+=next.vy*dt;next.vy-=7*dt

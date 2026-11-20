@@ -12,7 +12,7 @@ export function busStops(path:Pt[],x:number,z:number):Pt[] {
  let closest=0;for(let i=1;i<path.length;i++)if(Math.hypot(path[i][0]-x,path[i][1]-z)<Math.hypot(path[closest][0]-x,path[closest][1]-z))closest=i
  const forward=closest<path.length/2,first=forward?path.slice(closest):path.slice(0,closest+1).reverse(),back=forward?path.slice(0,-1).reverse():path.slice(1),ordered=first.concat(back)
  const stops:Pt[]=[];let last:Pt=[x,z],distance=0
- for(const p of ordered){distance+=Math.hypot(p[0]-last[0],p[1]-last[1]);last=p;if(distance>=75){stops.push(p);distance=0;if(stops.length===3)break}}
+ for(const p of ordered){distance+=Math.hypot(p[0]-last[0],p[1]-last[1]);last=p;if(distance>=90){stops.push(p);distance=0;if(stops.length===3)break}}
  return stops.length===3?stops:[]
 }
 export type BusRun={car:RaceCar;stops:Pt[];stopHeadings:number[];next:number;doors:boolean;wait:number;passengers:number;finished:boolean;elapsed:number;pickedUp:number;collisions:number;impactCooldown:number;pedestrianHits:number;arrivals:number[];lateStops:number}
@@ -34,7 +34,7 @@ export function toggleBusDoors(run:BusRun):'opened'|'closed'|'moving'|'away' {
  run.doors=true;run.wait=0;return 'opened'
 }
 
-/** The route schedule gives 40 seconds per stop, including boarding time. */
-export function stopDeadline(index:number){return (index+1)*40}
+/** The route schedule gives 55 seconds per stop, including boarding time. */
+export function stopDeadline(index:number){return (index+1)*55}
 /** Reward completed pickups while encouraging careful, efficient driving. */
 export function busScore(run:BusRun){return Math.max(0,run.pickedUp*100-(run.collisions-(run.pedestrianHits||0))*25-(run.pedestrianHits||0)*50-Math.floor(run.elapsed/10)*5-(run.lateStops||0)*75)}

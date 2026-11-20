@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
-import { busStops, driveBus, toggleBusDoors, busScore, insideBusStop, STOP_WIDTH, STOP_LENGTH } from '../src/activities/busDrive.ts'
+import { busStops, driveBus, toggleBusDoors, busScore, insideBusStop, STOP_WIDTH, STOP_LENGTH, stopDeadline } from '../src/activities/busDrive.ts'
 const path=Array.from({length:36},(_,i)=>[i*10,0]), stops=busStops(path,0,0)
 assert.equal(stops.length,3)
+assert(stops[0][0]>=90 && stops[1][0]-stops[0][0]>=90, "stops are at least 90 units apart along the route")
+assert.equal(stopDeadline(0),55);assert.equal(stopDeadline(2),165)
 assert(insideBusStop(6,12,[0,0],0),'edge of the visible stop must be eligible')
 assert(!insideBusStop(6.01,12,[0,0],0),'outside the side must not be eligible')
 assert(insideBusStop(12,6,[0,0],Math.PI/2),'rectangle rotates with the roadway')
@@ -16,7 +18,7 @@ for(let i=0;i<41;i++)driveBus(run,new Set(),.05,()=>false)
 assert.equal(toggleBusDoors(run),'closed');assert.equal(run.next,1);assert.equal(run.passengers,3);assert.equal(run.pickedUp,3)
 for(let j=1;j<stops.length;j++){[run.car.x,run.car.z]=stops[j];assert.equal(toggleBusDoors(run),'opened');for(let i=0;i<41;i++)driveBus(run,new Set(),.05,()=>false);toggleBusDoors(run)}
 assert(run.finished);assert.equal(run.pickedUp,6)
-const late={...run,car:{...run.car,x:stops[0][0],z:stops[0][1],speed:0},next:0,doors:false,finished:false,elapsed:41,arrivals:[],lateStops:0};assert.equal(toggleBusDoors(late),'opened');assert.equal(late.lateStops,1);late.wait=3;assert.equal(toggleBusDoors(late),'closed');assert.equal(busScore({...late,lateStops:0})-busScore(late),75,'late stop costs 75 points')
+const late={...run,car:{...run.car,x:stops[0][0],z:stops[0][1],speed:0},next:0,doors:false,finished:false,elapsed:56,arrivals:[],lateStops:0};assert.equal(toggleBusDoors(late),'opened');assert.equal(late.lateStops,1);late.wait=3;assert.equal(toggleBusDoors(late),'closed');assert.equal(busScore({...late,lateStops:0})-busScore(late),75,'late stop costs 75 points')
 assert.equal(busStops(path,170,0).length,3,'shuttle route can reverse to reach three stops')
 const crash={...run,car:{...run.car,speed:3},finished:false,collisions:0,impactCooldown:0,pedestrianHits:0,arrivals:[],lateStops:0};driveBus(crash,new Set(['w']),.05,()=>true);assert.equal(crash.collisions,1);driveBus(crash,new Set(['w']),.05,()=>true);assert.equal(crash.collisions,1,'one impact should not be counted every frame')
 console.log('Bus route, stopping, boarding delay, and route completion verified')

@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { Collider, pointInPoly, type Campus, type Pt } from '../campus'
 import { indoorState } from '../scene/indoorState'
 import { player } from '../scene/Player'
-import { letters, huntPositions, nearestBasket, stepDisc, stepDiscLanding, makeDiscWind, discTee, discTrajectory, discAim, discLaunch } from './campusActivities'
+import { letters, huntPositions, nearestBasket, stepDisc, stepDiscLanding, makeDiscWind, discTee, discTrajectory, discAim, discLaunch, discBasketContact } from './campusActivities'
 import { discGolfSpots } from '../scene/discGolf'
 import { activityState } from './activityState'
 import { bathtubCourse, driveRace, newRace, raceCoinPositions, collectRaceCoins, type RaceCar } from './bathtubRace'
@@ -51,13 +51,13 @@ export function ActivityWorld({campus}:{campus:Campus}){
  useFrame((_,raw)=>{const dt=Math.min(raw,.05),d=state.disc,r=state.race
   if(r&&r.phase!=='instructions'){if(r.phase==='countdown'){r.countdown-=dt;if(r.countdown<=0){r.phase='racing';notify()}}else if(r.phase==='racing'){r.elapsed+=dt;const lap=Math.min(1,Math.floor((r.car.next-1)/r.course.length)),before:Pt=[r.car.x,r.car.z];driveRace(r.car,raceKeys,dt,r.course,(x,z)=>collider.blocked(x,z,1)||!pointInPoly(x,z,campus.boundary),2);collectRaceCoins(r.coins,r.collected[lap],before,[r.car.x,r.car.z]);if(r.car.finished){r.phase='finished';notify()}}player.x=r.car.x;player.z=r.car.z;player.heading=r.car.heading;player.yaw=r.car.heading+Math.PI;if(tub.current){tub.current.position.set(r.car.x,0,r.car.z);tub.current.rotation.y=r.car.heading}if(performance.now()-last.current>120){last.current=performance.now();notify()}}
   if(state.mode==='disc'&&d){if(state.charging&&!d.flight&&!d.done){state.power=Math.min(1,state.power+dt*.55);if(performance.now()-last.current>80){last.current=performance.now();notify()}}
-   if(d.flight){const next=stepDisc(d.flight,dt,d.wind),hit=Math.hypot(next.x-d.basket[0],next.z-d.basket[1])<1.05&&next.y<2.25&&next.y>.4
+   if(d.flight){const next=stepDisc(d.flight,dt,d.wind),contact=discBasketContact(d.flight,next,d.basket),hit=contact!==null
     if(hit||next.y<=.15||collider.blocked(next.x,next.z,.8)||!pointInPoly(next.x,next.z,campus.boundary)){
-     d.outcome=hit?'hit':'miss';d.resultTime=4;if(hit)d.hits++;d.landing=hit?{...next,x:d.basket[0],z:d.basket[1],y:Math.max(.8,next.y),vx:0,vz:0,vy:-1}:{...next,y:Math.max(.16,next.y),vy:next.y<=.15?Math.abs(next.vy)*.25:next.vy};d.flight=null;player.view={x:hit?d.basket[0]:next.x,z:hit?d.basket[1]:next.z,yaw:player.yaw};notify()
+     d.outcome=hit?'hit':'miss';d.resultTime=4;if(hit)d.hits++;d.landing=hit?{...next,...contact,vx:next.vx*.12,vz:next.vz*.12,vy:-.8}:{...next,y:Math.max(.16,next.y),vy:next.y<=.15?Math.abs(next.vy)*.25:next.vy};d.flight=null;player.view={x:contact?.x??next.x,z:contact?.z??next.z,yaw:player.yaw};notify()
     }
     else {d.flight=next;player.view={x:next.x,z:next.z,yaw:player.yaw}}
    }
-   if(d.outcome){d.resultTime-=dt;if(d.landing){if(d.outcome==='miss'){const p=stepDiscLanding(d.landing,dt);if(!collider.blocked(p.x,p.z,.35)&&pointInPoly(p.x,p.z,campus.boundary))d.landing=p;else {d.landing.vx=0;d.landing.vz=0}player.view={x:d.landing.x,z:d.landing.z,yaw:player.yaw}}else d.landing.y=Math.max(.85,d.landing.y-dt*2)}if(d.resultTime<=0)nextThrow(campus)}
+   if(d.outcome){d.resultTime-=dt;if(d.landing){if(d.outcome==='miss'){const p=stepDiscLanding(d.landing,dt);if(!collider.blocked(p.x,p.z,.35)&&pointInPoly(p.x,p.z,campus.boundary))d.landing=p;else {d.landing.vx=0;d.landing.vz=0}player.view={x:d.landing.x,z:d.landing.z,yaw:player.yaw}}else {d.landing.x+=d.landing.vx*dt;d.landing.z+=d.landing.vz*dt;d.landing.vx*=Math.exp(-dt*8);d.landing.vz*=Math.exp(-dt*8);d.landing.y=Math.max(.72,d.landing.y-dt*.8)}}if(d.resultTime<=0)nextThrow(campus)}
    if(discRef.current){const p=d.flight??d.landing;discRef.current.position.set(p?.x??d.lie[0],p?.y??.16,p?.z??d.lie[1]);if(d.flight){discRef.current.rotation.y+=dt*12;discRef.current.rotation.z=Math.sin(performance.now()*.008)*.12+Math.max(-.18,Math.min(.18,d.wind[0]*.04))}else if(d.landing){discRef.current.rotation.y+=dt*Math.min(8,Math.hypot(d.landing.vx,d.landing.vz)*2);discRef.current.rotation.z*=Math.exp(-dt*4)}}
   }
  })

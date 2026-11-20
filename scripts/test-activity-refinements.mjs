@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import {discTrajectory,stepDisc,discAim,discLaunch} from '../src/activities/campusActivities.ts'
+import {discTrajectory,stepDisc,discAim,discLaunch,discBasketContact} from '../src/activities/campusActivities.ts'
 import {busPenetration,busObstacleBlocks,crossingPosition,crossingsForStops} from '../src/activities/busHazards.ts'
 import {busScore} from '../src/activities/busDrive.ts'
 import {trafficStopAction} from '../src/scene/trafficSafety.ts'
@@ -20,3 +20,8 @@ for(const distance of [8,12,16,20,24]){
  for(let i=0;i<120;i++){disc=stepDisc(disc,.05);if(disc.vy<0&&disc.y<=1)break}
  assert(Math.abs(disc.z-distance)<.5,`screen aim reaches ${distance}m without wind`)
 }
+
+assert.equal(discBasketContact({x:.8,y:1.3,z:-1},{x:.8,y:1.3,z:1},[0,0]),null,'near misses do not snap into the basket')
+const contact=discBasketContact({x:0,y:1.3,z:-1},{x:0,y:1.3,z:1},[0,0])
+assert(contact && contact.z<0 && contact.z>-.4,'a fast throw contacts the visible chains without teleporting to the center')
+assert.equal(discBasketContact({x:0,y:2.3,z:-1},{x:0,y:2.3,z:1},[0,0]),null,'throws above the basket do not count')
