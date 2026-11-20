@@ -16,7 +16,7 @@ const asset='/models/kenney-furniture/'
 const modelScale = createContext(1)
 function Model({name,p,r=0,scale=1,pack='furniture'}:{name:string;p:V;r?:number;scale?:number;pack?:'furniture'|'car'|'food'|'nature'}) {const {scene}=useGLTF(`${pack==='furniture'?asset:`/models/kenney-${pack}/`}${name}.glb`);const factor=useContext(modelScale);return <Clone object={scene} position={p} rotation={[0,r,0]} scale={scale*(pack==='furniture'?factor:1)} castShadow receiveShadow/>}
 function Block({p,s,c}:{p:V;s:V;c:string}) {return <mesh position={p} castShadow receiveShadow><boxGeometry args={s}/><meshStandardMaterial color={c}/></mesh>}
-function Label({text,p,size=.45,color='#273b37'}:{text:string;p:V;size?:number;color?:string}) {return <Text position={p} fontSize={size} color={color} anchorX="center" anchorY="middle" maxWidth={8}>{text}</Text>}
+function Label({text,p,size=.45,color='#273b37',rotY=0}:{text:string;p:V;size?:number;color?:string;rotY?:number}) {return <Text position={p} rotation={[0,rotY,0]} fontSize={size} color={color} anchorX="center" anchorY="middle" maxWidth={8}>{text}</Text>}
 function Ball({p,color,r=.1}:{p:V;color:string;r?:number}) {return <mesh position={p}><sphereGeometry args={[r,10,8]}/><meshStandardMaterial color={color}/></mesh>}
 function WallWindow({x,z=-11.8}:{x:number;z?:number}) {return <group><Block p={[x,2.4,z]} s={[3,2.5,.12]} c="#82aeb6"/>{[-1.5,0,1.5].map(a=><Block key={a} p={[x+a,2.4,z+.1]} s={[.12,2.6,.16]} c="#e9eee6"/>)}<Block p={[x,2.4,z+.1]} s={[3,.12,.16]} c="#e9eee6"/></group>}
 function Architecture({student}:{student:boolean}) {return <><Block p={[0,-.12,0]} s={[28,.24,24]} c="#d8d0bb"/><DiningWall p={[0,2.1,-11.95]} s={[28,4.2,.2]} color="#e9e7db">{[-10,-5,0,5,10].map(x=><WallWindow key={x} x={x}/>)}</DiningWall><DiningWall p={[-13.95,2.1,0]} s={[.2,4.2,24]} color="#e2e0d3"/><DiningWall p={[13.95,2.1,0]} s={[.2,4.2,24]} color="#e2e0d3"/><Block p={[-11,1.6,11.8]} s={[3.4,3.2,.15]} c="#83aeb1"/><Block p={[-11,1.6,11.69]} s={[.1,3.2,.2]} c="#ebece0"/><Label text="EXIT" p={[-11,3.5,11.6]} size={.3}/>{student&&<><DiningWall p={[-5,1.7,-1]} s={[.25,3.4,8]} color="#c8bda7"/><DiningWall p={[-5,1.7,8.1]} s={[.25,3.4,3.8]} color="#c8bda7"/><DiningWall p={[5,1.7,-5]} s={[.25,3.4,7]} color="#c8bda7"/><DiningWall p={[5,1.7,5.6]} s={[.25,3.4,8.8]} color="#c8bda7"/><Label text="FOOD COURT" p={[-9,3.5,-11.7]}/><Label text="GAME ROOM" p={[9,3.5,-11.7]}/></>}</>}
@@ -229,7 +229,7 @@ const rooms:Record<Exclude<InteriorKind,'student'|'classroom'>,Placed[]>={
  greenhouse:[...[-7,7].map(x=>piece('table',x,7,2,1.5)),...[-9,-5,5,9].map(x=>piece('table',x,-7,2,1.5)),...[-8,0,8].map(x=>piece('table',x,3,2,1.5)),piece('kitchensink',-11,8),piece('pottedplant',11,8),piece('soil',13.25,4.5,1,1.3)],
  recreation:[...[4,7,10].map(x=>piece('table',x,-6,1.3,2.3)),...[4,7].map(x=>piece('table',x,5,2,1.2)),piece('table',11,4,.5,8)],
  office:[...[-9,-5,5,9].map(x=>piece('desk',x,-7,2,1.4)),piece('desk',-8,5,2.2,1.5),piece('loungesofa',7,5,2.5,1.5),piece('tablecoffee',7,7,1.6,1.2),piece('pottedplant',11,9)],
- bus:[...[-1.5,1.5].flatMap(x=>[-8,0,8].map(z=>piece('chair',x,z,.12,.12))),...[-3.25,3.25].map(x=>piece('chair',x,0,.4,24)),...[-7,-3,1,5].flatMap(z=>[-2.85,2.85].map(x=>piece('chair',x,z,.55,1.15))),piece('desk',-2.25,-10,1.5,2)],
+ bus:[...[-1.5,1.5].flatMap(x=>[-8,0,8].map(z=>piece('chair',x,z,.12,.12))),...[-3.25,3.25].map(x=>piece('chair',x,0,.4,24)),...[-7,-3,1,5].flatMap(z=>[-2.85,2.85].map(x=>piece('chair',x,z,.55,1.15))),piece('desk',-2.25,-10,1.5,2),piece('chair',-1.15,-8.7,.4,.3)],
  uits:[...[-10.5,10.5].map(x=>piece('desk',x,0,.18,20)),piece('desk',0,-9.8,21,.2),...[-6,0].map(x=>piece('desk',x,-6.6,4,1.2)),piece('desk',7,-7.5,4,1.3),piece('desk',9.8,-3.25,1.2,2.6),piece('bookcaseopen',9,1,1.5,1.2)],
  dining:[...[-9,-5,5,9].map(x=>piece('kitchenbar',x,-8,2,1.5)),...[-8,0,8].map(x=>piece('table',x,3,1.7,1.4)),...[-8,8].map(x=>piece('table',x,8,1.7,1.4))],
  parking:[...[-9,-4,4,9].map(x=>piece('sedan',x+1.8,-6,2,4,1.5,0,'car')),piece('cone',2,5,1,1,1,0,'car')]
@@ -333,13 +333,13 @@ function BusInterior({look}:{look:AvatarLook}){return <>
  <Block p={[0,-.1,0]} s={[7,.2,24]} c="#868d87"/><Block p={[0,.02,0]} s={[2.6,.04,23.5]} c="#c5c9c0"/>
  <DiningWall p={[-3.45,1.9,0]} s={[.16,3.8,24]} color="#e3e2d5">{[-8,-4,0,4,8].map(z=><Block key={z} p={[-3.34,2.3,z]} s={[.08,1.6,2.9]} c="#86adb3"/>)}</DiningWall>
  <DiningWall p={[3.45,1.9,0]} s={[.16,3.8,24]} color="#e3e2d5">{[-8,-4,0,4,8].map(z=><Block key={z} p={[3.34,2.3,z]} s={[.08,1.6,2.9]} c="#86adb3"/>)}</DiningWall>
- <DiningWall p={[0,1.9,-11.9]} s={[7,3.8,.18]} color="#d8ddd3"><Block p={[0,2.45,-11.78]} s={[6,1.85,.1]} c="#87aeb3"/><Label text="BIG OWL BUS" p={[0,3.55,-11.65]} size={.26}/></DiningWall>
+ <DiningWall p={[0,1.9,-11.9]} s={[7,3.8,.18]} color="#d8ddd3"><Block p={[0,2.15,-11.78]} s={[6.2,2.1,.1]} c="#9cc3c8"/></DiningWall>
  {[-7,-3,1,5].flatMap(z=>[-2.12,2.12].map(x=><BusSeat key={`${x}:${z}`} x={x} z={z}/>))}
  {[-1.5,1.5].map(x=><group key={x}><Block p={[x,3.2,0]} s={[.08,.08,20]} c="#dfc66d"/>{[-8,0,8].map(z=><Block key={z} p={[x,1.65,z]} s={[.08,3.1,.08]} c="#dfc66d"/>)}</group>)}
  <Block p={[-2.25,.65,-9.6]} s={[1.1,1.3,1.4]} c="#41535a"/><Block p={[-2.2,1.15,-10.5]} s={[1.5,.3,.65]} c="#485558"/><mesh position={[-2.2,1.48,-10.1]} rotation={[Math.PI/2-.4,0,0]}><torusGeometry args={[.4,.06,6,20]}/><meshStandardMaterial color="#222f32"/></mesh>
- <Block p={[2.6,1,9]} s={[.55,2,.6]} c="#414f50"/><Block p={[2.6,1.45,8.65]} s={[.4,.35,.08]} c="#a9d8c5"/><Label text="TAP ID" p={[2.6,1.45,8.59]} size={.13}/>
- <Block p={[0,3.35,-11.65]} s={[3.4,.38,.12]} c="#273c39"/><Label text="STUDENT CENTER  •  LIBRARY  •  HOUSING" p={[0,3.35,-11.55]} size={.15} color="#f4d475"/>
- <Block p={[0,3.5,11.7]} s={[2.5,.35,.12]} c="#a84237"/><Label text="EMERGENCY EXIT" p={[0,3.5,11.6]} size={.18} color="#fff7e8"/>
+ <Block p={[-1.15,.6,-8.7]} s={[.12,1.2,.12]} c="#5a6768"/><Block p={[-1.15,1.3,-8.7]} s={[.4,.3,.28]} c="#3c4a4b"/><Block p={[-1.15,1.3,-8.55]} s={[.3,.2,.02]} c="#a9d8c5"/><Label text="TAP ID" p={[-1.15,1.3,-8.53]} size={.08} color="#203030"/>
+ <Block p={[0,3.48,-11.74]} s={[4.2,.36,.1]} c="#273c39"/><Label text="BIG OWL BUS  •  STUDENT CENTER  •  LIBRARY" p={[0,3.48,-11.68]} size={.15} color="#f4d475"/>
+ <DiningWall p={[0,1.9,11.9]} s={[7,3.8,.18]} color="#d8ddd3"><Block p={[0,2.4,11.79]} s={[4,1.3,.08]} c="#87aeb3"/><Block p={[0,3.35,11.76]} s={[2.1,.3,.06]} c="#a84237"/><Label text="EMERGENCY EXIT" p={[0,3.35,11.72]} size={.15} color="#fff7e8" rotY={Math.PI}/></DiningWall>
  </>}
 
 function Cable({points,color,r=.022}:{points:V[];color:string;r?:number}) {const curve=useMemo(()=>new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p))),[points]);return <mesh castShadow><tubeGeometry args={[curve,24,r,6,false]}/><meshStandardMaterial color={color} roughness={.6}/></mesh>}
