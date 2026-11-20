@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import {Collider,pointInPoly} from '../src/campus.ts'
-import {huntPositions, discTee,letters,nearestBasket,stepDisc,stepDiscLanding,makeDiscWind} from '../src/activities/campusActivities.ts'
+import {huntPositions, discTee,letters,huntClues,nearestBasket,stepDisc,stepDiscLanding,makeDiscWind} from '../src/activities/campusActivities.ts'
 const campus=JSON.parse(readFileSync(new URL('../public/campus.json',import.meta.url),'utf8'))
 const positions=huntPositions(campus),collider=new Collider(campus.buildings)
 assert.equal(positions.length,letters.length)
+assert.equal(huntClues.length,letters.length)
+assert(huntClues.every(clue=>clue.length>30),"each letter has a useful clue")
 for(const [x,z] of positions){assert(pointInPoly(x,z,campus.boundary));assert(!collider.blocked(x,z,1.5))}
 const basket=nearestBasket(campus,positions[0][0],positions[0][1]);assert(basket)
 const start=[basket[0]+4,basket[1]];const tees=Array.from({length:5},(_,i)=>discTee(campus,basket,i,start));for(let i=0;i<5;i++)assert(Math.abs(Math.hypot(tees[i][0]-basket[0],tees[i][1]-basket[1])-(8+i*4))<.01,'tee distances increase')

@@ -2,6 +2,17 @@ import { centroid, Collider, pointInPoly, type Campus, type Pt } from '../campus
 import { discGolfSpots } from '../scene/discGolf.ts'
 
 export const letters=['H','O','O','T','Y','H','O','O'] as const
+/** Clues follow the same building order as the letter positions. */
+export const huntClues=[
+ 'Food and friends meet under one roof; find the campus hub where students gather.',
+ 'I hold a world of stories on my shelves. Look outside the library.',
+ 'Equations and numbers fill the day; seek the building where mathematicians stay.',
+ 'Experiments and science are my trade; look near the Crawford lab.',
+ 'Code, computers and a sandwich stack: find the Atrium to get on track.',
+ 'Sketches, studios and buildings by design: the architecture building is your sign.',
+ 'Climb, lift or shoot a hoop; seek the recreation center where students regroup.',
+ 'When hunger calls, Owls gather to dine. Look outside Stingers to find mine.',
+] as const
 /** Find reachable outdoor positions near existing landmarks, never inside footprints. */
 export function huntPositions(campus:Campus):Pt[]{
  const codes=['A','C','D','E','J','N','S1','X'],collider=new Collider(campus.buildings)

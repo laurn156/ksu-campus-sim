@@ -162,7 +162,7 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
     if(activityState.mode==='bathtub'&&preRaceDistance.current===null){preRaceDistance.current=dist.current;dist.current=Math.min(dist.current,18)}
     else if(activityState.mode!=='bathtub'&&preRaceDistance.current!==null){dist.current=preRaceDistance.current;preRaceDistance.current=null}
     seated.current = activityState.mode === 'bathtub' || activityState.mode === 'busdrive' ? 1 : 0
-    throwing.current = activityState.mode === 'disc' && performance.now() < activityState.throwUntil ? 1 : 0
+    throwing.current = (activityState.mode === 'disc' || activityState.mode === 'rock') && performance.now() < activityState.throwUntil ? 1 : 0
     busCaller.riding = player.busRide?.index ?? -1
     if (indoorState.active) { busCaller.x = NaN; busCaller.z = NaN } else { busCaller.x = player.x; busCaller.z = player.z }
     if (indoorState.active) { if(player.busRide){const bus=busPositions[player.busRide.index];if(bus){player.x=bus.x;player.z=bus.z}} keys.current.clear(); player.moving = false; return }
