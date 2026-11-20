@@ -2292,7 +2292,7 @@ function Trees({ campus }: { campus: Campus }) {
       for (const p of parking) if (pointInPoly(x, z, p.poly)) return true
       return false
     }
-    const onRoad = (x:number,z:number) => (grid.get(key(x,z)) ?? []).some(([a,b,hw,isRoad])=>isRoad && distToSeg(x,z,a,b)<hw+1.3)
+    const onRoad = (x:number,z:number) => (grid.get(key(x,z)) ?? []).some(([a,b,hw,isRoad])=>isRoad && distToSeg(x,z,a,b)<hw+4.25)
     let s = 12345
     const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647)
     const spots: [number, number, number][] = [] // x, z, scale

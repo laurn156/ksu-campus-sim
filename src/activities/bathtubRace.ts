@@ -30,3 +30,12 @@ export function driveRace(car:RaceCar,keys:Set<string>,dt:number,course:Pt[],blo
  const target=course[car.next%course.length]
  if(Math.hypot(car.x-target[0],car.z-target[1])<4){car.next++;if(car.next>course.length*laps){car.finished=true;car.speed=0}}
 }
+/** Two coins per segment, kept on the track and collected separately each lap. */
+export function raceCoinPositions(course:Pt[]):Pt[]{
+ return course.flatMap((a,i)=>{const b=course[(i+1)%course.length],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz)||1
+  return [1/3,2/3].map((t,j):Pt=>[a[0]+dx*t+dz/len*(j?-.75:.75),a[1]+dz*t-dx/len*(j?-.75:.75)])})
+}
+/** Segment-based pickup avoids skipping coins at high frame rates or speeds. */
+export function collectRaceCoins(positions:Pt[],collected:boolean[],from:Pt,to:Pt,radius=1.65){
+ const found:number[]=[];positions.forEach(([x,z],i)=>{if(!collected[i]&&distToSeg(x,z,from,to)<radius){collected[i]=true;found.push(i)}});return found
+}
