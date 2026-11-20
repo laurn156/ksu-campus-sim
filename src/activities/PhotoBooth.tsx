@@ -126,7 +126,7 @@ function Backdrop({ id }: { id: ThemeId }) {
     case 'rock': return <><Sky stops={[[0, '#8fcbee'], [1, '#f2f6e6']]} /><Ground c="#79ad55" /><Tree p={[-5, 0, -6]} /><Tree p={[5.5, 0, -6.5]} s={1.2} /><Tree p={[-7.5, 0, -7]} s={.9} />
       <group scale={.8}><SlapTheRock at={[1.7, -4.7]} /></group><Sign text="SLAP THE ROCK" p={[-2.1, 1.3, -3]} w={2} h={.45} bg="#1c1e1f" fg="#f2c52e" /><Box p={[-2.1, .55, -3.05]} s={[.08, 1.1, .08]} c="#2f3332" /></>
     case 'globe': return <><Sky stops={[[0, '#9fd2ee'], [1, '#eef4f2']]} /><Ground c="#c9c6bd" /><GlobePlaza at={[0, -9]} />
-      <group position={[0, 0, -9]}><Box p={[0, 2, 0]} s={[22, 4, .3]} c="#a3533c" /><Box p={[0, 4.4, 0]} s={[22, .8, .32]} c="#dedfd8" />{[-8, -5, -2, 2, 5, 8].map(x => <Box key={x} p={[x, 2, .17]} s={[1.6, 2, .04]} c="#4f8f84" />)}</group>
+      <group position={[0, 0, -15]}><Box p={[0, 2, 0]} s={[22, 4, .3]} c="#a3533c" /><Box p={[0, 4.4, 0]} s={[22, .8, .32]} c="#dedfd8" />{[-8, -5, -2, 2, 5, 8].map(x => <Box key={x} p={[x, 2, .17]} s={[1.6, 2, .04]} c="#4f8f84" />)}</group>
       {[-3, -2.3, -1.6].map((x, i) => <group key={x} position={[x - 2, 0, -6]}><Box p={[0, 2.6, 0]} s={[.06, 5.2, .06]} c="#c9ced0" /><Box p={[.45, 4.8, 0]} s={[.8, .5, .02]} c={['#1c1e1f', '#c4473c', '#2f5d8a'][i]} /></group>)}
       <Tree p={[5, 0, -6]} s={1.2} /><Tree p={[-6.5, 0, -7]} /></>
     case 'sign': return <><Sky stops={[[0, '#8fcbee'], [1, '#f2f6e6']]} /><Ground c="#7fb35a" /><group position={[0, 1.1, 0]} scale={1.7}><KsuLetters at={[0, -3.2]} yaw={0} /></group><Box p={[0, .55, -5.4]} s={[6, 1.1, .6]} c="#3a4447" />
