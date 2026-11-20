@@ -78,12 +78,14 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
   // The library's entrance has an uninterrupted brick facade.
   librarybrick: (g) => { brick(g, [150, 79, 66], 19) },
   // Johnson Library: muted gray-brown brick (reference aerials).
-  librarybrown: (g) => {
-    brick(g, [176, 140, 120], 23)
-    g.fillStyle = 'rgba(205,195,182,.35)'; g.fillRect(0, 0, W, H) // weathered, light mortar wash
-  },
+  librarybrown: (g) => { brick(g, [168, 92, 70], 23) }, // warm red-brown brick (ground photos)
   // Shore Innovation Center: dark chocolate brick.
   innovationbrick: (g) => { brick(g, [118, 74, 58], 29) },
+  // Student Center ground floor: red brick with large teal-green windows.
+  studentbase: (g) => {
+    brick(g, [162, 78, 56], 13)
+    for (let x = 6; x < W; x += 42) { g.fillStyle = '#e2e0d6'; g.fillRect(x - 2, Math.round(H * .22) - 2, 30, Math.round(H * .58) + 4); g.fillStyle = '#4f8f84'; g.fillRect(x, Math.round(H * .22), 26, Math.round(H * .58)); g.fillStyle = '#7fb3a8'; g.fillRect(x + 2, Math.round(H * .24), 10, Math.round(H * .2)); g.fillStyle = '#e2e0d6'; g.fillRect(x + 12, Math.round(H * .22), 2, Math.round(H * .58)) }
+  },
   // Student Center upper storey: teal clerestory glazing between brick piers under a white roof band.
   studentclerestory: (g) => {
     brick(g, [158, 74, 52], 11)

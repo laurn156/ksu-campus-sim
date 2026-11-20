@@ -198,9 +198,8 @@ function studentCenterDetails() {
     box(1.35, 0.08, 0.18, '#d3d0c3', x, 1.7, 0.66)
   }
   // Brick piers and broad canopy with an arched, light metal fascia.
-  for (const x of [-7, 7]) box(1.5, 5.1, 2.4, '#9e4d38', x, 2.55, 1.25)
   // Ribbed white barrel-vault canopy projecting over the semicircular steps, on slim front columns.
-  const vaultR = 27.3, vaultHalf = Math.asin(8 / vaultR), vaultDepth = 8.6
+  const vaultR = 27.3, vaultHalf = Math.asin(8 / vaultR), vaultDepth = 4.4
   const vault = new THREE.CylinderGeometry(vaultR, vaultR, vaultDepth, 48, 1, true, Math.PI - vaultHalf, vaultHalf * 2)
   vault.rotateX(Math.PI / 2)
   add(vault, '#eceae2', 0, 6.3 - vaultR, vaultDepth / 2 - .2, 0.6)
@@ -210,7 +209,8 @@ function studentCenterDetails() {
     add(rib, '#c9c7bd', 0, 6.3 - vaultR, z, 0.6)
   }
   box(16, 0.18, vaultDepth, '#e4e2d8', 0, 4.95, vaultDepth / 2 - .2)
-  for (const x of [-7.7, 7.7]) add(new THREE.CylinderGeometry(.16, .16, 4.9, 12), '#e9e8e0', x, 2.45, vaultDepth - .6)
+  // Square brick piers hold the front corners of the canopy.
+  for (const x of [-7.2, 7.2]) { box(1.4, 5, 1.4, '#a24f38', x, 2.5, vaultDepth - .9); box(.18, .5, .1, '#f1efe6', x, 3.3, vaultDepth - .15) }
   const fascia = new THREE.Shape()
   fascia.moveTo(-8, 0); fascia.lineTo(8, 0); fascia.lineTo(8, 0.65)
   fascia.quadraticCurveTo(0, 3.0, -8, 0.65); fascia.closePath()
@@ -252,17 +252,24 @@ function studentCenterDetails() {
     rail.rotateZ(-0.18)
     add(rail, '#c8cbc5', 34.4, 1.4, z)
   }
-  // Semicircular fan of steps descending from the entrance landing (concentric half-discs, largest lowest).
+  // Landing under the canopy, then a semicircular fan of steps that spreads out well past the canopy.
+  box(16, 1.08, vaultDepth, '#bcb9ad', 0, .54, vaultDepth / 2 - .2)
+  const fanZ = vaultDepth - .2
   for (let i = 0; i < 6; i++) {
-    const top = 1.08 - i * .18, r = 3.4 + i * .9
-    const step = new THREE.CylinderGeometry(r, r, top, 64, 1, false, -Math.PI / 2, Math.PI)
-    add(step, i % 2 ? '#c2bfb2' : '#b6b3a6', 0, top / 2, 3.2)
+    const top = 1.08 - i * .18, r = 2.4 + i * .95
+    add(new THREE.CylinderGeometry(r, r, top, 64, 1, false, -Math.PI / 2, Math.PI), i % 2 ? '#c2bfb2' : '#b3b0a3', 0, top / 2, fanZ)
   }
-  box(14, 1.08, 1.4, '#b9b6a9', 0, .54, 2.6)
-  // Brick-paved plaza ring below the steps.
-  const plaza = new THREE.RingGeometry(8.9, 11.5, 64, 1, 0, Math.PI)
+  // Stainless handrails running down the fan.
+  for (const a of [-.95, -.32, .32, .95]) {
+    const dx = Math.sin(a), dz = Math.cos(a)
+    for (const r of [2.6, 4.5, 6.8]) add(new THREE.CylinderGeometry(.04, .04, .9, 8), '#c9ccc9', dx * r, 1.08 - (r - 2.4) / .95 * .18 + .45, fanZ + dz * r, .35)
+    const rail = new THREE.CylinderGeometry(.045, .045, 4.4, 8)
+    rail.rotateX(Math.PI / 2); rail.rotateX(.19); rail.rotateY(a)
+    add(rail, '#d4d7d4', dx * 4.7, 1.5, fanZ + dz * 4.7, .35)
+  }
+  const plaza = new THREE.RingGeometry(8.2, 11, 64, 1, 0, Math.PI)
   plaza.rotateX(-Math.PI / 2)
-  add(plaza, '#a8705a', 0, .03, 3.2)
+  add(plaza, '#a8705a', 0, .03, fanZ)
   return pieces
 }
 
@@ -642,17 +649,23 @@ function libraryDetails(b:Building){
   }
   // The long southwest wall looks over the courtyard toward Mathematics.
   edge(b.poly[23],b.poly[26],(box,len,place)=>{
-    box(len,.36,1.25,0,b.h-.15,.5,concrete)
-    box(len-.8,1.05,.1,0,b.h-1,.12,glass)
-    for(let x=-len/2+1;x<len/2;x+=1.25)box(.055,1.1,.16,x,b.h-1,.2,frame)
+    // Folded-plate white eave: V-shaped panels between ribs, projecting over a glass-block clerestory.
+    const bays=Math.max(3,Math.round(len/6.5)),bw=len/bays,eave=new THREE.MeshStandardMaterial({color:'#f4f4ef',emissive:'#8a8a86',roughness:.6,side:THREE.DoubleSide})
+    for(let k=0;k<bays;k++){const x0=-len/2+k*bw
+      for(const d of [-1,1]){const g=new THREE.BoxGeometry(bw/2+.05,.14,3);g.rotateZ(d*.16);out.push({geo:place(g,x0+bw/2+d*bw/4,b.h+.25-.2,1.2),mat:eave})}
+      const rib=new THREE.BoxGeometry(.28,.5,3.2);out.push({geo:place(rib,x0,b.h+.1,1.25),mat:eave})}
+    out.push({geo:place(new THREE.BoxGeometry(.28,.5,3.2),len/2,b.h+.1,1.25),mat:eave})
+    box(len-.6,1.15,.1,0,b.h-1.05,.12,material('#c9d8d6',.3))
+    for(let x=-len/2+.6;x<len/2;x+=.55)box(.04,1.15,.14,x,b.h-1.05,.18,frame)
+    box(len-.6,.04,.14,0,b.h-1.05,.18,frame)
     // Recessed-looking dark glazed doorway and deep shelter, with low brick planters.
     box(13,3.25,.16,0,1.8,.12,dark)
     for(const x of [-6.5,-4.35,-2.2,0,2.2,4.35,6.5])box(.1,3.25,.2,x,1.8,.25,frame)
     box(13,.12,.22,0,3.35,.25,frame)
-    box(14,.32,1.3,0,3.55,.75,concrete)
-    for(const x of [-2.6,2.6])box(.22,3.4,.22,x,1.7,1.25,frame)
-    for(const x of [-9,9]){box(3,1.1,2.4,x,.55,2.2,brick);box(3.15,.13,2.55,x,1.15,2.2,concrete)}
-    for(let i=0;i<3;i++)box(12,.15,1.0,0,.075+i*.15,4.9-i*.95,concrete)
+    box(15,.35,2.6,0,3.55,1.3,material('#ecebe4'))
+    for(const x of [-2.4,2.4])out.push({geo:place(new THREE.CylinderGeometry(.24,.24,3.4,16),x,1.7,2.3),mat:material('#ecebe4')})
+    for(const x of [-9.5,9.5]){box(5,1.1,3,x,.55,3,brick);box(5.15,.13,3.15,x,1.15,3,concrete)}
+    for(let i=0;i<4;i++)box(13,.15,.9,0,.075+i*.15,4.6-i*.6,material('#94503f'))
     const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128
     const ctx=canvas.getContext('2d')!;ctx.fillStyle='#f6f5ef';ctx.textAlign='center';ctx.font='bold 70px sans-serif';ctx.fillText('L. V. JOHNSON LIBRARY',512,91)
     const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace
@@ -665,6 +678,9 @@ function libraryDetails(b:Building){
     const dome=new THREE.SphereGeometry(2.2,8,5,0,Math.PI*2,0,Math.PI/2)
     out.push({geo:place(dome,0,top+.2,wellZ),mat:new THREE.MeshStandardMaterial({color:'#d7e6ea',roughness:.15,metalness:.35,flatShading:true,side:THREE.DoubleSide})})
     for(let x=-8;x<=8;x+=2.7){box(1.9,.35,1.4,x,top+.2,wellZ-8,material('#bcd2d6',.2));box(2.1,.1,1.6,x,top+.03,wellZ-8,concrete)}
+    // Silver cylindrical drum rising above the roof (reference photo by the 910 entrance).
+    out.push({geo:new THREE.CylinderGeometry(6.2,6.2,4.6,40,1,false).translate(-137.7,b.h+2.3,-71.7),mat:new THREE.MeshStandardMaterial({map:facade('studentmetal'),color:'#f2f3f1',roughness:.45,side:THREE.DoubleSide})})
+    out.push({geo:new THREE.CylinderGeometry(6.3,6.3,.2,40).translate(-137.7,b.h+4.65,-71.7),mat:concrete})
     // Stone monument stands on the lawn to the entrance's right as viewed from the courtyard.
     const signX=len/2+11,signZ=13
     box(5.5,1.8,.45,signX,.9,signZ,concrete)
@@ -1107,7 +1123,6 @@ function innovationCenterParts(b:Building) {
     }
   }
   // The service side has white stair and rooftop equipment volumes.
-  const side=edge(13);side.box(5.4,b.h,.14,-side.length*.3,b.h/2,.08,white)
   const [x0,z0,x1,z1]=bbox(b.poly),cx=(x0+x1)/2,cz=(z0+z1)/2
   // Rooftop: a large white mechanical penthouse set back from the front, ringed by rooftop units and fans.
   const la=-Math.atan2(b.poly[9][1]-b.poly[8][1],b.poly[9][0]-b.poly[8][0])
@@ -2071,8 +2086,8 @@ function Buildings({ campus }: { campus: Campus }) {
       }
       const parts: { geo: THREE.BufferGeometry; mat: THREE.MeshStandardMaterial }[] = []
       const split = (look.base || b.code === 'A') && b.code !== 'X' && b.h > FLOOR * 1.5 ? FLOOR : 0
-      if (split) parts.push({ geo: wallsGeometry(b, 0, split), mat: getWall(look.base ?? 'redbrick') })
-      parts.push({ geo: wallsGeometry(b, split, b.h), mat: getWall(b.code === 'A' ? 'studentclerestory' : b.code === 'X' ? 'redbrick' : look.wall) })
+      if (split) parts.push({ geo: wallsGeometry(b, 0, split), mat: getWall(b.code === 'A' ? 'studentbase' : (look.base ?? 'redbrick')) })
+      parts.push({ geo: wallsGeometry(b, split, b.h), mat: getWall(b.code === 'A' ? 'studentmetal' : b.code === 'X' ? 'redbrick' : look.wall) })
       if (look.roof === 'hip') {
         parts.push({ geo: hipRoofGeometry(b, 4.2), mat: new THREE.MeshStandardMaterial({ color: look.roofColor ?? '#6b6966', roughness: 0.9, flatShading: true, side: THREE.DoubleSide }) })
       } else {
