@@ -72,6 +72,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   const collider = useMemo(() => new Collider(campus.buildings), [campus])
   const body = useRef<THREE.Group>(null)
   const walk = useRef(0)
+  const seated = useRef(0)
   const keys = useRef(new Set<string>())
   const dist = useRef(30)
   const snap = useRef(false)
@@ -146,6 +147,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05)
+    seated.current = activityState.mode === 'bathtub' ? 1 : 0
     busCaller.riding = player.busRide?.index ?? -1
     if (indoorState.active) { busCaller.x = NaN; busCaller.z = NaN } else { busCaller.x = player.x; busCaller.z = player.z }
     if (indoorState.active) { if(player.busRide){const bus=busPositions[player.busRide.index];if(bus){player.x=bus.x;player.z=bus.z}} keys.current.clear(); player.moving = false; return }
@@ -171,7 +173,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
       if (!bus || performance.now()>player.busRide.until) player.busRide=null
       else { player.x=bus.x; player.z=bus.z; snap.current=true }
     }
-    if (k.has('q')) player.yaw += dt * 1.6
+    if (k.has('q') && !activityState.locked) player.yaw += dt * 1.6
     if (k.has('e') && !activityState.mode && !activityState.locked && !activityState.near) player.yaw -= dt * 1.6
     // camera-relative movement: "forward" points away from the camera
     const fwd = new THREE.Vector2(-Math.sin(player.yaw), -Math.cos(player.yaw))
@@ -234,7 +236,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   return (
     <group>
       <group ref={body}>
-        <Character {...look} walk={walk} scale={1.15} />
+        <Character {...look} walk={walk} sit={seated} sitLift={.112} scale={1.15} />
       </group>
     </group>
   )

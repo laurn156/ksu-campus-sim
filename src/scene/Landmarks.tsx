@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import * as THREE from 'three'
 import { centroid, Collider, distToSeg, pointInPoly, type Area, type Campus, type Pt } from '../campus'
 import { discGolfSpots } from './discGolf'
+import { bathtubCourse } from '../activities/bathtubRace'
 
 // Hand-placed campus landmarks (from KSU's interactive map, used as reference) plus OpenStreetMap
 // features: Slap the Rock, the KSU letters at Hornet Village, the Globe plaza and tent canopies,
@@ -860,6 +861,8 @@ export function landmarkSpots(campus: Campus): { name: string; at: Pt; r: number
   }
   if (campus.buildings.some((b) => b.id === '517434198')) out.push({ name: 'Owl Mural · K3', at: [-187.2, 104.1], r: 7 })
   if (campus.buildings.some((b) => b.code === 'H')) out.push({ name: 'UITS Entrance', at: [-135.2, -49.5], r: 6 })
+  const race = bathtubCourse(campus)
+  if (race.length) out.push({ name: 'Bathtub Race', at: race[0], r: 8 })
   const discGolf = discGolfSpots(campus)
   if (discGolf.length) out.push({ name: 'Disc Golf', at: discGolf[0], r: 12 })
   const field = campus.areas.find((a) => a.name === 'S. Walter Kelly Sr. Memorial Field')
