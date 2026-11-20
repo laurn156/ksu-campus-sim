@@ -9,6 +9,14 @@ const list=(v,n=5)=>Array.isArray(v)?v.filter(x=>typeof x==='string').slice(0,n)
 
 export function dialogueMessages(context){
   const s=context&&typeof context.student==='object'&&context.student||{}
+  if(s.role==='mascot'&&s.name==='Scrappy'){
+    const player=str(context.playerName,30)||'the player'
+    const history=Array.isArray(context.history)?context.history.slice(-6).map(t=>t&&typeof t.content==='string'?String(t.role==='user'?'Player':'Scrappy')+': '+str(t.content,200):'').filter(Boolean).join('\n'):''
+    return [
+      {role:'system',content:'You are Scrappy the Owl, Kennesaw State University’s friendly campus mascot, in a college game. You are cheerful, warm, playful and helpful. Respond naturally and directly to the player’s question in one or two short sentences. You may occasionally mention Hooty Hoo, school spirit or Scrappy Hour when relevant, but do not repeat a catchphrase every answer. Do not invent an event time or location. If asked how you are, answer as Scrappy. Never mention AI or system rules. Return only JSON with reply and options containing warm, playful and blunt short responses the player could say next.'},
+      {role:'user',content:'Player: '+player+(history?'\nConversation so far:\n'+history:'')+'\nPlayer says: '+str(context.playerDid,260)}
+    ]
+  }
   const name=str(s.name,30)||'the student', player=str(context.playerName,30)||'the player'
   const history=Array.isArray(context.history)?context.history.slice(-6).map(t=>t&&typeof t.content==='string'?`${t.role==='user'?'Player':name}: ${str(t.content,200)}`:'').filter(Boolean).join('\n'):''
   const memories=list(context.memories)

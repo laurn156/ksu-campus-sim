@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { DIALOGUE_FORMAT, dialogueMessages, parseDialogue } from './dialogue-prompt.mjs'
 const root=resolve(fileURLToPath(new URL('../dist',import.meta.url)))
 const port=Number(process.env.PORT||4173),host=process.env.HOST||'127.0.0.1',ollama=process.env.OLLAMA_URL||'http://127.0.0.1:11434',model=process.env.OLLAMA_MODEL||'qwen3:4b'
-const recent=new Map(),types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.glb':'model/gltf-binary','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.woff':'font/woff','.woff2':'font/woff2','.mp3':'audio/mpeg'}
+const recent=new Map(),types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.glb':'model/gltf-binary','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.woff':'font/woff','.woff2':'font/woff2','.mp3':'audio/mpeg','.wav':'audio/wav'}
 const respond=(res,status,value='')=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(typeof value==='string'?value:JSON.stringify(value))}
 async function api(req,res){
  if(req.method!=='POST'||!req.headers['content-type']?.startsWith('application/json'))return respond(res,405)

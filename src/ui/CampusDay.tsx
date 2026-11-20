@@ -5,11 +5,11 @@ import { player } from '../scene/Player'
 type TaskId = 'meet'|'study'|'meal'|'scrappy'|'bus'|'atrium'|'recreation'
 type Progress = { completed: TaskId[]; day:number }
 const allTasks: {id:TaskId; label:string; detail:string; code?:string; action?:'student'|'scrappy'|'bus'; verb?:string}[] = [
-  {id:'meet',label:'Meet a student',detail:'Find a student and press F to say hello.',action:'student'},
+  {id:'meet',label:'Meet a student',detail:'Find a student and press T to say hello.',action:'student'},
   {id:'study',label:'Study at the library',detail:'Find C · Lawrence V. Johnson Library.',code:'C',verb:'Study'},
   {id:'meal',label:'Grab a meal',detail:'Find X · Stingers.',code:'X',verb:'Eat'},
-  {id:'scrappy',label:'Say hello to Scrappy',detail:'Find Scrappy and press F to greet him.',action:'scrappy'},
-  {id:'bus',label:'Catch a Big Owl Bus',detail:'Meet a bus on its route and press F to board.',action:'bus'},
+  {id:'scrappy',label:'Say hello to Scrappy',detail:'Find Scrappy and press T to greet him.',action:'scrappy'},
+  {id:'bus',label:'Catch a Big Owl Bus',detail:'Meet a bus on its route and press B to board.',action:'bus'},
   {id:'atrium',label:'Visit the Atrium',detail:'Find J · Atrium Building.',code:'J',verb:'Visit'},
   {id:'recreation',label:'Visit the Rec Center',detail:'Find S1 · Recreation and Wellness Center.',code:'S1',verb:'Visit'},
 ]

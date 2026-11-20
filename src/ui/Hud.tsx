@@ -149,7 +149,6 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
   const near = useNearby(campus)
   const [nearby,setNearby] = useState<{kind:'student'|'scrappy'|'bus';name:string;line:string;index?:number}|null>(null)
   const [message,setMessage] = useState('')
-  const [scrappyMessage,setScrappyMessage] = useState('')
   const [mapOpen,setMapOpen] = useState(false)
   const [viewing,setViewing] = useState(false)
   const savedYaw=useRef(0)
@@ -173,7 +172,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
     }
     const interval=setInterval(()=>{const next=closest();setNearby(old=>old?.name===next?.name?old:next);if(!next && !player.busRide)setMessage('')},200)
     const key=(e:KeyboardEvent)=>{
-      if(indoorState.active||activityState.locked||e.key.toLowerCase()!=='f'||e.repeat||e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement||player.busRide||player.view)return
+      if(indoorState.active||activityState.locked||e.key.toLowerCase()!=='b'||e.repeat||e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement||player.busRide||player.view)return
       const next=closest(); if(!next)return
       // Buses take priority over chatting so a crowd at the stop never blocks boarding.
       if(next.kind!=='bus'&&community.students.some(s=>Math.hypot(s.x-player.x,s.z-player.z)<5))return
@@ -181,9 +180,8 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
       setMessage(next.line)
       window.dispatchEvent(new CustomEvent('campus-action',{detail:{kind:next.kind,allowed:!player.travelOrigin}}))
     }
-    const greet=()=>{if(!indoorState.active&&!activityState.locked&&Math.hypot(scrappy.x-player.x,scrappy.z-player.z)<5){setScrappyMessage('Hooty Hoo! Thanks for stopping by!');window.dispatchEvent(new CustomEvent('campus-action',{detail:{kind:'scrappy',allowed:!player.travelOrigin}}))}}
-    window.addEventListener('keydown',key);window.addEventListener('open-scrappy',greet)
-    return()=>{clearInterval(interval);window.removeEventListener('keydown',key);window.removeEventListener('open-scrappy',greet)}
+    window.addEventListener('keydown',key)
+    return()=>{clearInterval(interval);window.removeEventListener('keydown',key)}
   },[mode])
   return (
     <>
@@ -196,8 +194,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
       {viewing && <div className="view-banner">Viewing location · <button onClick={travelToView}>Travel here</button> <button onClick={returnToPlayer}>Return to character</button></div>}
       {mapOpen && <CampusMap campus={campus} onClose={()=>setMapOpen(false)}/>}
       {mode === 'connect' && <div className="mode-hint">KSU Connect · limited online test</div>}
-      {mode === 'life' && !viewing && !activityState.mode && nearby && <div className="conversation"><b>{nearby.name}</b><span>{message || 'Press F to board'}</span>{message && <button onClick={() => setMessage('')}>Close</button>}</div>}
-      {scrappyMessage&&!indoorState.active&&<div className="conversation"><b>Scrappy</b><span>{scrappyMessage}</span><button onClick={()=>setScrappyMessage('')}>Close</button></div>}
+      {mode === 'life' && !viewing && !activityState.mode && nearby && <div className="conversation"><b>{nearby.name}</b><span>{message || 'Press B to board'}</span>{message && <button onClick={() => setMessage('')}>Close</button>}</div>}
       {near && (
         <div className="nearcard" key={near.name}>
           <div className="kicker">You're at</div>
