@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
+import { RoundedBox } from '@react-three/drei'
 import { Collider, type Campus, type Pt } from '../campus'
 
 // Shared position lets the HUD locate the mascot at the instant the menu is used.
@@ -120,7 +121,7 @@ export function Scrappy({ campus }: { campus: Campus }) {
       }
     }
     if (group.current) group.current.position.set(scrappy.x,0,scrappy.z)
-    const swing=Math.sin(clock.elapsedTime*7)*0.28
+    const swing=Math.sin(clock.elapsedTime*7)*0.42
     if (leftLeg.current) leftLeg.current.rotation.x=swing
     if (rightLeg.current) rightLeg.current.rotation.x=-swing
   })
@@ -134,17 +135,15 @@ export function ScrappyFigure({ legRefs }: { legRefs?: [React.RefObject<THREE.Gr
   const shortsLogo = useMemo(makeShortsLogo, [])
   const [leftLeg, rightLeg] = legRefs ?? [undefined, undefined]
   return <group>
-    {/* Black furry legs, gold shorts and broad gold-soled sneakers. */}
-    <group>
-      {[-0.23,0.23].map((x, i) => <group ref={i === 0 ? leftLeg : rightLeg} key={x} position={[x,0,0]}>
-        <mesh position={[0,0.34,0]}><capsuleGeometry args={[0.12,0.36,4,8]} /><meshStandardMaterial color="#161616" /></mesh>
-        <mesh position={[0,0.12,0.12]}><boxGeometry args={[0.34,0.22,0.5]} /><meshStandardMaterial color="#171717" /></mesh>
-        <mesh position={[0,0.035,0.12]}><boxGeometry args={[0.36,0.07,0.52]} /><meshStandardMaterial color="#e8ae13" /></mesh>
-        <mesh position={[0,0.59,0]}><boxGeometry args={[0.4,0.37,0.46]} /><meshStandardMaterial color="#edb818" /></mesh>
-        {i === 0 && <mesh position={[0,0.6,0.235]}><planeGeometry args={[0.23,0.21]} /><meshBasicMaterial map={shortsLogo} transparent alphaTest={0.05} /></mesh>}
-        <mesh position={[0,0.4,0]}><boxGeometry args={[0.4,0.045,0.47]} /><meshStandardMaterial color="#f3eee2" /></mesh>
-      </group>)}
-    </group>
+    {/* Gold shorts are one rounded piece on the body; the legs swing from the hips underneath them. */}
+    <RoundedBox args={[0.88,0.38,0.5]} radius={0.12} smoothness={4} position={[0,0.6,0]} castShadow><meshStandardMaterial color="#edb818" /></RoundedBox>
+    <RoundedBox args={[0.9,0.05,0.52]} radius={0.02} smoothness={2} position={[0,0.42,0]}><meshStandardMaterial color="#f3eee2" /></RoundedBox>
+    <mesh position={[-0.23,0.6,0.252]}><planeGeometry args={[0.23,0.21]} /><meshBasicMaterial map={shortsLogo} transparent alphaTest={0.05} /></mesh>
+    {[-0.21,0.21].map((x, i) => <group ref={i === 0 ? leftLeg : rightLeg} key={x} position={[x,0.52,0]}>
+      <mesh position={[0,-0.17,0]} castShadow><capsuleGeometry args={[0.12,0.3,6,12]} /><meshStandardMaterial color="#161616" /></mesh>
+      <RoundedBox args={[0.32,0.2,0.48]} radius={0.09} smoothness={4} position={[0,-0.39,0.09]} castShadow><meshStandardMaterial color="#171717" /></RoundedBox>
+      <RoundedBox args={[0.35,0.06,0.5]} radius={0.025} smoothness={3} position={[0,-0.475,0.09]}><meshStandardMaterial color="#e8ae13" /></RoundedBox>
+    </group>)}
     {/* Loose yellow shirt, white hem, black arms and gold shoulder sleeves. */}
     <mesh position={[0,1.05,0]} castShadow><boxGeometry args={[0.94,0.74,0.56]} /><meshStandardMaterial color="#f2ba16" /></mesh>
     <mesh position={[0,0.7,0]}><boxGeometry args={[0.96,0.065,0.57]} /><meshStandardMaterial color="#f5eee0" /></mesh>
