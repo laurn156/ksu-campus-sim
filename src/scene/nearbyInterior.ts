@@ -1,6 +1,8 @@
 import { distToSeg, isCampusBuilding, type Building } from '../campus.ts'
 
-const enterable=(b:Building)=>isCampusBuilding(b)||b.kind==='greenhouse'
+// Buildings that have no playable interior even though they are campus buildings.
+const noInterior=new Set(['T'])
+const enterable=(b:Building)=>!noInterior.has(b.code)&&(isCampusBuilding(b)||b.kind==='greenhouse')
 
 /** Some mapped building pieces belong to a single playable interior. */
 const interiorOwner:Record<string,string>={

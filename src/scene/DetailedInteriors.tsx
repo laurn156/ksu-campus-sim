@@ -284,7 +284,7 @@ function Dining({look}:{look:AvatarLook}) {
   <Block p={[-12,1.05,-3]} s={[1.3,2.1,.9]} c="#546d68"/><Block p={[-12,1.65,-2.52]} s={[.94,.55,.08]} c="#d9e2d9"/><Label text="DRINKS" p={[-12,2.28,-2.49]} size={.19}/>{[-.3,.3].map(dx=><group key={dx}><Block p={[-12+dx,1.3,-2.49]} s={[.08,.2,.12]} c="#d9e2d9"/><DiningModel name="cup" pack="food" p={[-12+dx,.55,-2.42]} scale={.65}/></group>)}
   <Block p={[12,1.05,-3]} s={[1.3,2.1,.9]} c="#6c827b"/><Block p={[12,1.65,-2.52]} s={[.94,.55,.08]} c="#d9e2d9"/><Label text="WATER" p={[12,2.28,-2.49]} size={.19}/>{[-.3,.3].map(dx=><group key={dx}><Block p={[12+dx,1.3,-2.49]} s={[.08,.2,.12]} c="#d9e2d9"/><DiningModel name="cup" pack="food" p={[12+dx,.55,-2.42]} scale={.65}/></group>)}
   <DiningModel name="bottle-ketchup" pack="food" p={[-5,.98,4.6]} scale={.7}/><DiningModel name="bottle-musterd" pack="food" p={[5,.98,4.6]} scale={.7}/>
-  <Poster x={-12} z={-8.23} title="FRESH FOOD" color="#272d27"/><Poster x={12} z={-8.23} title="GO OWLS" color="#d2a32d"/>
+  <WallPoster side={-1} z={-1.5} color="#3f6a4f" title={"FRESH\nEVERY DAY"}/><WallPoster side={1} z={-1.5} color="#d2a32d" title="GO OWLS"/>
   <DiningCrowd look={look}/>
  </>
 }
@@ -481,7 +481,7 @@ const specialBoards:Record<SpecialKind,[string,string,string,string,string,strin
  civil:['SITE SAFETY','HARD HATS IN THE\nTESTING BAY','#8c3b32','ASCE CHAPTER','CONCRETE CANOE TEAM','#6d5a3f'],
  soils:['LAB SAFETY','LABEL EVERY SAMPLE\nWASH YOUR HANDS','#8c3b32','FIELD TRIP','SAMPLE SITE • FRIDAY','#55705f'],
  textile:['STUDIO RULES','CLEAN YOUR STATION\nRETURN SHEARS','#8c3b32','FASHION SHOW','SPRING SHOWCASE','#7a4a6a'],
- competition:['SHOP RULES','SAFETY GLASSES ON\nBATTERIES IN LIPO BAGS','#8c3b32','JOIN A TEAM','VEX • COMBAT • ROV • AERO','#3f5f58'],
+ competition:['SHOP RULES','SAFETY GLASSES ON\nBATTERIES IN LIPO BAGS','#8c3b32','JOIN A TEAM','VEX • SAE • ROV • AERO','#3f5f58'],
  technology:['LAB SAFETY','CHECK THE E-STOP\nSECURE ALL WIRING','#8c3b32','CO-OP FAIR','MEET EMPLOYERS • FRIDAY','#2f5d73'],
  housing:['QUIET HOURS','SUN–THU • 11 PM\nFRI–SAT • 1 AM','#55705f','MOVE-IN DAY','CHECK IN AT THE\nFRONT DESK','#6d5a3f'],
  community:['HOUSE RULES','CLEAN UP AFTER\nYOURSELF','#55705f','THIS WEEK','KARAOKE • WED 8 PM','#6d5a3f'],
