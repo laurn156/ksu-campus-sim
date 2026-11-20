@@ -1,6 +1,6 @@
 import type { Obstacle } from './diningSimulation.ts'
 export type SpecialKind='crawford'|'engineering'|'academic'|'design1'|'design2'|'atrium'|'civil'|'soils'|'textile'|'architecture'|'competition'|'technology'|'housing'|'community'
-export type StationKind='microscope'|'computer'|'research'|'robot'|'electronics'|'mechanical'|'desk'|'study'|'cad'|'printer'|'prototype'|'cnc'|'laser'|'assembly'|'testing'|'storage'|'chess'|'sandwich'|'survey'|'structure'|'bridge'|'soil'|'sieve'|'press'|'sewing'|'loom'|'fabric'|'draft'|'model'|'materials'|'audience'|'drone'|'aircraft'|'rov'|'tank'|'plc'|'conveyor'|'reception'|'pcb'|'dressform'
+export type StationKind='microscope'|'computer'|'research'|'robot'|'electronics'|'mechanical'|'desk'|'study'|'cad'|'printer'|'prototype'|'cnc'|'laser'|'assembly'|'testing'|'storage'|'chess'|'sandwich'|'survey'|'structure'|'bridge'|'soil'|'sieve'|'press'|'sewing'|'loom'|'fabric'|'draft'|'model'|'materials'|'audience'|'drone'|'aircraft'|'rov'|'tank'|'plc'|'conveyor'|'reception'|'pcb'|'dressform'|'vexfield'|'combat'|'toolbench'|'vexbench'|'waiting'|'lockers'|'tv'|'foosball'
 export interface Station {x:number;z:number;kind:StationKind;label:string}
 const s=(x:number,z:number,kind:StationKind,label:string):Station=>({x,z,kind,label})
 export const specialStations:Record<SpecialKind,Station[]>={
@@ -13,10 +13,10 @@ export const specialStations:Record<SpecialKind,Station[]>={
  civil:[s(-10,-7,'survey','SURVEYING'),s(-6,-7,'structure','LOAD TEST'),s(5,-7,'bridge','BRIDGE'),s(9,-7,'computer','DATA'),s(-8,4,'press','CONCRETE TESTING'),s(7,4,'survey','FIELD EQUIPMENT'),s(-4.5,7,'materials','MATERIAL SAMPLES'),s(4.5,7,'cad','SITE DESIGN')],
  soils:[s(-10,-7,'soil','SOIL SAMPLES'),s(-6,-7,'sieve','SIEVE ANALYSIS'),s(5,-7,'press','COMPRESSION'),s(9,-7,'computer','RESULTS'),s(-8,4,'soil','SAMPLE PREPARATION'),s(7,4,'research','MOISTURE CONTENT'),s(-4.5,7,'survey','FIELD KIT'),s(4.5,7,'microscope','SOIL MICROSCOPY')],
  textile:[s(-10,-7,'sewing','SEWING'),s(-6,-7,'sewing','STITCHING'),s(5,-7,'loom','WEAVING'),s(9,-7,'fabric','TEXTILES'),s(-8,4,'draft','PATTERN CUTTING'),s(7,4,'dressform','DRESS FORMS'),s(-4.5,7,'sewing','EMBROIDERY'),s(4.5,7,'fabric','SWATCH LIBRARY')],
- competition:[s(-10,-7,'mechanical','RACING'),s(-6,-7,'cad','VEHICLE DESIGN'),s(5,-7,'aircraft','AERIAL TEAM'),s(9,-7,'drone','FLIGHT TEST'),s(-8,4,'robot','ROBOTICS'),s(7,4,'tank','ROV TANK'),s(-4.5,7,'study','TEAM MEETING'),s(4.5,7,'rov','UNDERWATER ROBOTICS')],
- technology:[s(-10,-7,'plc','PLC CONTROL'),s(-6,-7,'conveyor','AUTOMATION'),s(5,-7,'electronics','ELECTRONICS'),s(9,-7,'computer','INSTRUMENTATION'),s(-8,4,'cnc','MANUFACTURING'),s(7,4,'mechanical','MEASUREMENT'),s(-4.5,7,'plc','INDUSTRIAL CONTROL'),s(4.5,7,'study','TECHNOLOGY CLASS')],
- housing:[s(-10,-7,'computer','STAFF OFFICE'),s(-6,-7,'computer','HOUSING SERVICES'),s(5,-7,'study','MEETING'),s(9,-7,'storage','RECORDS'),s(-8,4,'reception','RECEPTION'),s(7,4,'study','APPOINTMENTS'),s(-4.5,7,'study','WAITING'),s(4.5,7,'study','PAPERWORK')],
- community:[s(-10,-7,'study','STUDY TABLE'),s(-6,-7,'chess','BOARD GAMES'),s(5,-7,'study','GROUP ACTIVITIES'),s(9,-7,'storage','EVENT SUPPLIES'),s(-8,4,'study','LOUNGE'),s(7,4,'study','COMMUNITY TABLE'),s(-4.5,7,'study','STUDY'),s(4.5,7,'chess','GAMES')],
+ competition:[s(-10,-7,'toolbench','TOOL BENCH'),s(-6,-7,'cad','VEHICLE DESIGN'),s(5,-7,'aircraft','AERIAL TEAM'),s(9,-7,'drone','FLIGHT TEST'),s(-8.5,4.6,'vexfield','VEX ROBOTICS'),s(7,4,'tank','UNDERWATER ROV'),s(-4.5,8,'vexbench','VEX BUILD'),s(9.6,8.2,'combat','COMBAT ROBOTS')],
+ technology:[s(-10,-7,'plc','PLC CONTROL'),s(-6,-7,'conveyor','AUTOMATION'),s(5,-7,'electronics','ELECTRONICS'),s(9,-7,'computer','INSTRUMENTATION'),s(-8,4,'cnc','CNC MACHINING'),s(7,4,'testing','METROLOGY'),s(-4.5,7,'robot','ROBOT CELL'),s(4.5,7,'printer','3D PRINTING')],
+ housing:[s(-10,-7,'computer','RESIDENCE LIFE'),s(-6,-7,'computer','ROOM ASSIGNMENTS'),s(5,-7,'study','MEETING ROOM'),s(9,-7,'storage','RECORDS'),s(-8,4,'reception','FRONT DESK'),s(7,4,'study','APPOINTMENTS'),s(-6,8.2,'waiting','WAITING AREA'),s(4.5,8,'lockers','PACKAGE PICKUP')],
+ community:[s(-10,-7,'study','STUDY TABLE'),s(-6,-7,'chess','BOARD GAMES'),s(5,-7,'foosball','FOOSBALL'),s(9,-7,'storage','EVENT SUPPLIES'),s(-7.5,3.4,'tv','TV LOUNGE'),s(7,4,'study','CRAFT TABLE'),s(-4.5,8.4,'study','STUDY NOOK'),s(4.5,7,'chess','GAMES')],
  architecture:[s(-11,-7,'draft','STUDIO A'),s(-7.5,-7,'draft','STUDIO B'),s(-4,-7,'draft','STUDIO C'),s(5,-7,'cad','DIGITAL DESIGN'),s(9,-7,'laser','LASER CUTTER'),s(-8,4.5,'model','STUDIO PROJECTS'),s(7,4.5,'model','THESIS MODELS'),s(-4.5,8,'materials','MATERIAL LIBRARY'),s(4.5,8,'printer','3D PRINTING')],
 }
 // Divider openings form a central corridor between the front and rear sections.
@@ -35,7 +35,18 @@ const walls:Record<SpecialKind,Obstacle[]>={
 }
 export function specialWalls(kind:SpecialKind):Obstacle[]{return walls[kind]}
 export function specialObstacles(kind:SpecialKind):Obstacle[]{
- const footprints=specialStations[kind].filter(({kind:station})=>station!=='audience').map(({x,z,kind:station}):Obstacle=>[x,z,station==='audience'?.75:station==='desk'||station==='computer'&&(kind==='academic'||kind==='atrium')?1.5:2.6,station==='audience'?.65:station==='desk'||station==='computer'&&(kind==='academic'||kind==='atrium')?1.1:1.5])
- return [...walls[kind],...footprints,...(kind==='architecture'?[[0,3.4,3.2,2.2] as Obstacle]:[]),[-12.9,-1.8,.8,.8],[12.9,-1.8,.8,.8],...(kind==='design2'?specialStations.design2.filter(s=>s.kind==='audience').map(({x,z}):Obstacle=>[x,z+.62,.8,.2]):[]),...(kind==='engineering'?[[0,2.7,3.2,2] as Obstacle]:[]),...((kind==='community'||kind==='housing')?[[-11,7,2,1.2],[11,7,2,1.2]] as Obstacle[]:[]),...(kind==='competition'?[[0,3,2.6,1.7]] as Obstacle[]:[]),...(kind==='design1'?[[-11,7,2,1.2],[11,7,2,1.2]] as Obstacle[]:[]),...(kind==='design2'?[[-3,-9.8,.9,.7]] as Obstacle[]:[]),...(kind==='academic'?[[-11,7,2,1.2],[11,7,2,1.2],[-12,-10,1,.8],[12,-10,1,.8]] as Obstacle[]:[])]
+ // Floor-standing set pieces (arenas, lounge sets, lockers) have their own footprints; seats stay walkable.
+ const footprints=specialStations[kind].flatMap(({x,z,kind:station}):Obstacle[]=>{
+  if(station==='audience')return []
+  if(station==='vexfield')return [[x,z,3.6,3.6]]
+  if(station==='combat')return [[x,z,3.2,3.2]]
+  if(station==='waiting')return [[x,z+.6,2.6,.2]]
+  if(station==='tv')return [[x,z,2.4,.6],[x,z+3,2.6,.3]]
+  if(station==='lockers')return [[x,z,2.4,.7]]
+  if(station==='foosball')return [[x,z,1.6,.9]]
+  const compact=station==='desk'||station==='computer'&&(kind==='academic'||kind==='atrium')
+  return [[x,z,compact?1.5:2.6,compact?1.1:1.5]]
+ })
+ return [...walls[kind],...footprints,...(kind==='architecture'?[[0,3.4,3.2,2.2] as Obstacle]:[]),[-12.9,-1.8,.8,.8],[12.9,-1.8,.8,.8],...(kind==='design2'?specialStations.design2.filter(s=>s.kind==='audience').map(({x,z}):Obstacle=>[x,z+.62,.8,.2]):[]),...(kind==='engineering'?[[0,2.7,3.2,2] as Obstacle]:[]),...((kind==='community'||kind==='housing')?[[-11,7,2,1.2],[11,7,2,1.2]] as Obstacle[]:[]),...(kind==='competition'?[[0,3,2.6,1.7],[-13.15,8.6,.7,2]] as Obstacle[]:[]),...(kind==='design1'?[[-11,7,2,1.2],[11,7,2,1.2]] as Obstacle[]:[]),...(kind==='design2'?[[-3,-9.8,.9,.7]] as Obstacle[]:[]),...(kind==='academic'?[[-11,7,2,1.2],[11,7,2,1.2],[-12,-10,1,.8],[12,-10,1,.8]] as Obstacle[]:[])]
 }
-export const seatedStation=(kind:StationKind)=>['computer','desk','cad','study','chess','sewing','draft','audience','pcb'].includes(kind)
+export const seatedStation=(kind:StationKind)=>['computer','desk','cad','study','chess','sewing','draft','audience','pcb','waiting','tv'].includes(kind)
