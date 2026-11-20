@@ -68,17 +68,6 @@ export function CampusActivities({campus,identity}:{campus:Campus;identity:strin
  const [,update]=useState(0),[near,setNear]=useState<'disc'|'hunt'|'bathtub'|null>(null),[nearest,setNearest]=useState<number|null>(null),[message,setMessage]=useState('')
  const sign=useMemo(()=>huntPositions(campus)[0],[campus]),baskets=useMemo(()=>discGolfSpots(campus),[campus]),course=useMemo(()=>bathtubCourse(campus),[campus])
  useEffect(()=>{const f=()=>update(n=>n+1);listeners.add(f);return()=>{listeners.delete(f);exit()}},[])
- const {gl,camera}=useThree()
- useEffect(()=>{
-  const ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),plane=new THREE.Plane(new THREE.Vector3(0,1,0),0),hit=new THREE.Vector3()
-  const aim=(e:PointerEvent)=>{const d=state.disc;if(state.mode!=='disc'||!d||d.flight||d.outcome||d.done)return false
-   const rect=gl.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,1-(e.clientY-rect.top)/rect.height*2);ray.setFromCamera(pointer,camera)
-   if(!ray.ray.intersectPlane(plane,hit))return false
-   const result=discAim(d.lie,[hit.x,hit.z]);state.angle=result.angle;state.power=result.power;player.heading=result.angle;notify();return true}
-  const down=(e:PointerEvent)=>{if(e.button===0&&aim(e)){e.preventDefault();throwDisc()}}
-  gl.domElement.addEventListener('pointermove',aim);gl.domElement.addEventListener('pointerdown',down)
-  return()=>{gl.domElement.removeEventListener('pointermove',aim);gl.domElement.removeEventListener('pointerdown',down)}
- },[camera,gl])
  useEffect(()=>{const id=setInterval(()=>{if(indoorState.active||player.view||player.busRide){activityState.near=null;setNear(null);return}const b=baskets.reduce<Pt|null>((best,p)=>!best||Math.hypot(p[0]-player.x,p[1]-player.z)<Math.hypot(best[0]-player.x,best[1]-player.z)?p:best,null);const next=course.length&&Math.hypot(player.x-course[0][0],player.z-course[0][1])<8?'bathtub':b&&Math.hypot(player.x-b[0],player.z-b[1])<8?'disc':sign&&Math.hypot(player.x-sign[0],player.z-sign[1])<12?'hunt':null;activityState.near=next;setNear(next);if(state.mode==='hunt'){let best=-1,d=4;state.places.forEach((p,i)=>{const dist=Math.hypot(player.x-p[0],player.z-p[1]);if(!state.found.includes(i)&&dist<d){best=i;d=dist}});setNearest(best<0?null:best)}},250);return()=>clearInterval(id)},[campus,sign,baskets,course])
  useEffect(()=>{const start=(e:Event)=>{if(state.mode||activityState.mode)return;const {name,target}=(e as CustomEvent<{name:string;target:{x:number;z:number}}>).detail
   if(name==='Bathtub Race')startBathtub(course)
