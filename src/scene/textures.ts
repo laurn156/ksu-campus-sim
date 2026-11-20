@@ -81,6 +81,11 @@ const DRAW: Record<string, (g: CanvasRenderingContext2D) => void> = {
   librarybrown: (g) => { brick(g, [168, 92, 70], 23) }, // warm red-brown brick (ground photos)
   // Shore Innovation Center: dark chocolate brick.
   innovationbrick: (g) => { brick(g, [118, 74, 58], 29) },
+  // Glass block: a grid of pale green-gray blocks with light mortar lines.
+  glassblock: (g) => {
+    g.fillStyle = '#dfe5e1'; g.fillRect(0, 0, W, H)
+    for (let y = 0; y < H; y += 16) for (let x = 0; x < W; x += 16) { g.fillStyle = (x + y) % 32 ? '#9fb8b0' : '#a9c2ba'; g.fillRect(x + 1, y + 1, 14, 14); g.fillStyle = '#c9dad4'; g.fillRect(x + 3, y + 3, 5, 5) }
+  },
   // Student Center ground floor: red brick with large teal-green windows.
   studentbase: (g) => {
     brick(g, [162, 78, 56], 13)

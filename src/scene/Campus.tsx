@@ -204,13 +204,12 @@ function studentCenterDetails() {
   vault.rotateX(Math.PI / 2)
   add(vault, '#eceae2', 0, 6.3 - vaultR, vaultDepth / 2 - .2, 0.6)
   for (let z = .2; z < vaultDepth - .2; z += .55) {
-    const rib = new THREE.CylinderGeometry(vaultR + .05, vaultR + .05, .07, 48, 1, true, Math.PI - vaultHalf, vaultHalf * 2)
+    const rib = new THREE.CylinderGeometry(vaultR + .12, vaultR + .12, .07, 48, 1, true, Math.PI - vaultHalf, vaultHalf * 2)
     rib.rotateX(Math.PI / 2)
     add(rib, '#c9c7bd', 0, 6.3 - vaultR, z, 0.6)
   }
-  box(16, 0.18, vaultDepth, '#e4e2d8', 0, 4.95, vaultDepth / 2 - .2)
   // Square brick piers hold the front corners of the canopy.
-  for (const x of [-7.2, 7.2]) { box(1.4, 5, 1.4, '#a24f38', x, 2.5, vaultDepth - .9); box(.18, .5, .1, '#f1efe6', x, 3.3, vaultDepth - .15) }
+  for (const x of [-7.2, 7.2]) { box(1.4, 4.8, 1.4, '#a24f38', x, 2.4, vaultDepth - 1.05); box(.18, .5, .1, '#f1efe6', x, 3.3, vaultDepth - .3) }
   const fascia = new THREE.Shape()
   fascia.moveTo(-8, 0); fascia.lineTo(8, 0); fascia.lineTo(8, 0.65)
   fascia.quadraticCurveTo(0, 3.0, -8, 0.65); fascia.closePath()
@@ -253,16 +252,16 @@ function studentCenterDetails() {
     add(rail, '#c8cbc5', 34.4, 1.4, z)
   }
   // Landing under the canopy, then a semicircular fan of steps that spreads out well past the canopy.
-  box(16, 1.08, vaultDepth, '#bcb9ad', 0, .54, vaultDepth / 2 - .2)
+  box(15.6, 1.06, vaultDepth - .1, '#bcb9ad', 0, .53, vaultDepth / 2 - .25)
   const fanZ = vaultDepth - .2
-  for (let i = 0; i < 6; i++) {
-    const top = 1.08 - i * .18, r = 2.4 + i * .95
+  for (let i = 0; i < 5; i++) {
+    const top = .9 - i * .18, r = 2.4 + i * .95
     add(new THREE.CylinderGeometry(r, r, top, 64, 1, false, -Math.PI / 2, Math.PI), i % 2 ? '#c2bfb2' : '#b3b0a3', 0, top / 2, fanZ)
   }
   // Stainless handrails running down the fan.
   for (const a of [-.95, -.32, .32, .95]) {
     const dx = Math.sin(a), dz = Math.cos(a)
-    for (const r of [2.6, 4.5, 6.8]) add(new THREE.CylinderGeometry(.04, .04, .9, 8), '#c9ccc9', dx * r, 1.08 - (r - 2.4) / .95 * .18 + .45, fanZ + dz * r, .35)
+    for (const r of [2.6, 4.5, 6.8]) add(new THREE.CylinderGeometry(.04, .04, .9, 8), '#c9ccc9', dx * r, .9 - (r - 2.4) / .95 * .18 + .45, fanZ + dz * r, .35)
     const rail = new THREE.CylinderGeometry(.045, .045, 4.4, 8)
     rail.rotateX(Math.PI / 2); rail.rotateX(.19); rail.rotateY(a)
     add(rail, '#d4d7d4', dx * 4.7, 1.5, fanZ + dz * 4.7, .35)
@@ -655,9 +654,7 @@ function libraryDetails(b:Building){
       for(const d of [-1,1]){const g=new THREE.BoxGeometry(bw/2+.05,.14,3);g.rotateZ(d*.16);out.push({geo:place(g,x0+bw/2+d*bw/4,b.h+.25-.2,1.2),mat:eave})}
       const rib=new THREE.BoxGeometry(.28,.5,3.2);out.push({geo:place(rib,x0,b.h+.1,1.25),mat:eave})}
     out.push({geo:place(new THREE.BoxGeometry(.28,.5,3.2),len/2,b.h+.1,1.25),mat:eave})
-    box(len-.6,1.15,.1,0,b.h-1.05,.12,material('#c9d8d6',.3))
-    for(let x=-len/2+.6;x<len/2;x+=.55)box(.04,1.15,.14,x,b.h-1.05,.18,frame)
-    box(len-.6,.04,.14,0,b.h-1.05,.18,frame)
+
     // Recessed-looking dark glazed doorway and deep shelter, with low brick planters.
     box(13,3.25,.16,0,1.8,.12,dark)
     for(const x of [-6.5,-4.35,-2.2,0,2.2,4.35,6.5])box(.1,3.25,.2,x,1.8,.25,frame)
@@ -691,6 +688,33 @@ function libraryDetails(b:Building){
     out.push({geo:place(new THREE.PlaneGeometry(5.25,1.55),signX,.95,signZ+.24),mat:new THREE.MeshStandardMaterial({map:st,side:THREE.DoubleSide})})
     const medallion=new THREE.CylinderGeometry(.54,.54,.12,24);medallion.rotateX(Math.PI/2)
     out.push({geo:place(medallion,signX,2.05,signZ+.26),mat:frame})
+  })
+  // Glass-block clerestory band running along every wall of the entrance front, following the real wall line.
+  const blockTex=facade('glassblock').clone();blockTex.wrapS=blockTex.wrapT=THREE.RepeatWrapping;blockTex.needsUpdate=true
+  for(const i of [21,22,23,24,25,26])edge(b.poly[i],b.poly[(i+1)%b.poly.length],(box,len,place)=>{
+    const t=blockTex.clone();t.repeat.set(len/1.6,1);t.needsUpdate=true
+    out.push({geo:place(new THREE.BoxGeometry(len,1.2,.12),0,b.h-1.05,.1),mat:new THREE.MeshStandardMaterial({map:t,roughness:.3,side:THREE.DoubleSide})})
+    box(len,.12,.3,0,b.h-.4,.18,concrete);box(len,.1,.26,0,b.h-1.7,.16,concrete)
+  })
+  // West entrance ("910"): two sets of glass doors under a white canopy band on round columns,
+  // a gray louver high on the brick and the yellow building-number sign (reference photo).
+  edge(b.poly[26],b.poly[0],(box,len,place)=>{
+    const white=material('#eeeee8')
+    box(len*.62,.45,1.6,-len*.06,3.4,.8,white)
+    for(const x of [-len*.33,len*.2])out.push({geo:place(new THREE.CylinderGeometry(.24,.24,3.2,16),x,1.6,1.3),mat:white})
+    for(const x of [-len*.16,len*.02]){
+      box(2.6,2.6,.12,x,1.3,.1,material('#2c3b3a',.3))
+      for(const dx of [-1.3,-.43,.43,1.3])box(.09,2.65,.18,x+dx,1.3,.16,frame)
+      box(2.7,.1,.18,x,2.6,.16,frame);box(2.6,.06,.16,x,1.15,.16,frame)
+    }
+    box(2.4,3.2,.12,-len*.26,7.2,.1,material('#9ea4a2'))
+    for(let y=5.8;y<8.7;y+=.22)box(2.3,.06,.2,-len*.26,y,.16,material('#c3c8c6'))
+    box(1.3,.62,.06,-len*.02,5.3,.06,material('#f1c21b'))
+    const cv=document.createElement('canvas');cv.width=256;cv.height=128
+    const g=cv.getContext('2d')!;g.fillStyle='#1d1d1b';g.textAlign='center';g.font='bold 88px sans-serif';g.fillText('910',128,98)
+    const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace
+    out.push({geo:place(new THREE.PlaneGeometry(1.2,.56),-len*.02,5.3,.1),mat:new THREE.MeshStandardMaterial({map:tx,transparent:true,side:THREE.DoubleSide})})
+    box(.5,.25,.3,-len*.02,6.4,.18,material('#cfd2cf'))
   })
   // Two entrances along the adjoining brick wall beside the library lawn.
   edge(b.poly[21],b.poly[22],(box,len)=>{
