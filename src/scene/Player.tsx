@@ -1,3 +1,4 @@
+import { combinedKeys, hardware } from '../hardware/controller'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import { useEffect, useMemo, useRef } from 'react'
@@ -179,7 +180,7 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
     busCaller.heading=player.heading;busCaller.moving=player.moving
     if (indoorState.active) { busCaller.x = NaN; busCaller.z = NaN } else { busCaller.x = player.x; busCaller.z = player.z }
     if (indoorState.active) { if(player.busRide){const bus=busPositions[player.busRide.index];if(bus){player.x=bus.x;player.z=bus.z}} keys.current.clear(); player.moving = false; return }
-    const k = keys.current
+    const k = combinedKeys(keys.current)
     if (player.viewChanged) { pan.current.set(0,0); snap.current=true; player.viewChanged=false }
     if (player.tp) {
       // teleport (from the "Go to" menu): jump there and snap the camera
@@ -292,9 +293,13 @@ export function Sun() {
   useEffect(() => {
     if (light.current) scene.add(light.current.target)
   }, [scene])
-  useFrame(() => {
+  useFrame((_,dt) => {
     const l = light.current
     if (!l) return
+    const lit=hardware.enabled&&hardware.lightEnabled&&hardware.sample&&performance.now()-hardware.updated<500
+    const level=lit?Math.max(0,Math.min(1,(hardware.sample!.light-80)/700)):1
+    l.intensity=THREE.MathUtils.lerp(l.intensity,.25+1.95*level,1-Math.exp(-Math.min(dt,.1)*.35))
+    l.color.lerp(new THREE.Color(level<.45?'#8799d2':level<.75?'#ffbf83':'#fff1dc'),1-Math.exp(-Math.min(dt,.1)*.35))
     l.position.set(player.x + 60, 110, player.z + 40)
     l.target.position.set(player.x, 0, player.z)
   })

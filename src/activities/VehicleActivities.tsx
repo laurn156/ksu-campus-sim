@@ -1,3 +1,4 @@
+import { combinedKeys } from '../hardware/controller'
 import { Text } from '@react-three/drei'
 import { Character } from '../characters/Character'
 import { useFrame } from '@react-three/fiber'
@@ -29,7 +30,7 @@ export function VehicleWorld({campus}:{campus:Campus}){
  useEffect(()=>{const f=()=>refresh(x=>x+1);listeners.add(f);return()=>{listeners.delete(f);close()}},[])
  useFrame((_,raw)=>{const s=session;if(!s||s.phase!=='driving')return;const crashes=s.run.collisions,carBefore=s.run.car;const inStop=(x:number,z:number)=>s.run.stops.some((stop,i)=>insideBusStop(x,z,stop,s.run.stopHeadings[i]??0));protectedShuttle.active=inStop(carBefore.x,carBefore.z);protectedShuttle.x=carBefore.x;protectedShuttle.z=carBefore.z;let pedestrian=false
  const beforeX=carBefore.x,beforeZ=carBefore.z
- driveBus(s.run,keys,raw,(x,z)=>{
+ driveBus(s.run,combinedKeys(keys),raw,(x,z)=>{
   // Compare each obstacle at the proposed heading, so turning does not make an
   // existing overlap look like a new collision. Backing out must always work.
   const h=carBefore.heading

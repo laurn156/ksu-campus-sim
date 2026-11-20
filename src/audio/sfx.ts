@@ -62,6 +62,7 @@ function noise(dur: number, vol = 0.25, when = 0, cutoff = 1800) {
 }
 
 export const sfx = {
+  horn() { tone(220, .35, { type: 'sawtooth', vol: .28 }); tone(277, .35, { type: 'square', vol: .12 }) },
   hit(speed: number, mine: boolean) {
     const k = Math.min(1, speed / 4)
     tone((mine ? 520 : 400) + k * 360, 0.09, { type: 'sine', vol: 0.35 + k * 0.35, slide: 0.7 })

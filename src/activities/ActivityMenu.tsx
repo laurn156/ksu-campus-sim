@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Collider, pointInPoly, type Campus, type Pt } from '../campus'
 import { approach, player } from '../scene/Player'
 import { busPositions } from '../scene/Buses'
@@ -32,6 +32,7 @@ const items:Item[]=[
 ]
 export function ActivityMenu({campus}:{campus:Campus}){
  const [open,setOpen]=useState(false),[message,setMessage]=useState('')
+ useEffect(()=>{const toggle=()=>setOpen(v=>!v);window.addEventListener('hardware-activities',toggle);return()=>window.removeEventListener('hardware-activities',toggle)},[])
  const go=(item:Item)=>{
   if(indoorState.active||activityState.mode||activityState.locked||player.busRide){setMessage('Exit your current activity or building before traveling.');return}
   if(item.name==='Attend a Class'){window.dispatchEvent(new Event('open-campus-class'));setOpen(false);setMessage('');return}

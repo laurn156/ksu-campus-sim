@@ -34,6 +34,7 @@ export function LifeUI({campus,life,playerName,players}:{campus:Campus;life:Life
   const [photos,setPhotos]=useState(loadPhonePhotos)
   useEffect(()=>{const refresh=()=>setPhotos(loadPhonePhotos());window.addEventListener('phone-photos-changed',refresh);return()=>window.removeEventListener('phone-photos-changed',refresh)},[])
   const [selectedPlayer,setSelectedPlayer]=useState('')
+  useEffect(()=>{const toggle=()=>setMenu(v=>v?null:'relationships');window.addEventListener('hardware-phone',toggle);return()=>window.removeEventListener('hardware-phone',toggle)},[])
   useEffect(()=>{const openPlayers=(event:Event)=>{setSelectedPlayer((event as CustomEvent<string>).detail);setMenu('players')};const closePhone=()=>setMenu(null);window.addEventListener('connect-player',openPlayers);window.addEventListener('close-phone',closePhone);return()=>{window.removeEventListener('connect-player',openPlayers);window.removeEventListener('close-phone',closePhone)}},[])
   const npc=STUDENTS.find(s=>s.id===talking)
   const r=npc?relation(life.state,npc.id):null

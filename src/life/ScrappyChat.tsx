@@ -20,7 +20,7 @@ function fallback(text:string){
 function playGreeting(){
  if(sfx.muted)return
  try{
-  const sound=new Audio('/audio/scrappy-hooty.wav');sound.volume=.85
+  const sound=new Audio('/audio/scrappy-hooty.wav?v=2');sound.volume=.85
   void sound.play().catch(()=>{if('speechSynthesis' in window&&!sfx.muted){const speech=new SpeechSynthesisUtterance('Hooty hoo!');speech.rate=.9;speech.pitch=1.25;window.speechSynthesis.speak(speech)}})
  }catch{/* The conversation remains usable if the device has no audio. */}
 }

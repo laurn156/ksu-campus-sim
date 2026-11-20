@@ -1,3 +1,7 @@
+import { HardwarePanel } from './hardware/HardwarePanel'
+import { clearHardware } from './hardware/controller'
+import { activityState } from './activities/activityState'
+import { indoorState } from './scene/indoorState'
 import { ClassroomActivity } from './activities/ClassroomActivity'
 import { ActivityWorld, CampusActivities } from './activities/CampusActivities'
 import { ActivityMenu } from './activities/ActivityMenu'
@@ -126,18 +130,21 @@ export default function App() {
 function LifeSession({campus,profile,onEdit,onMenu}:{campus:Campus;profile:NestProfile;onEdit:()=>void;onMenu:()=>void}) {
   const life=useLife(profile.playerId,profile.displayName)
   const look=profile.characterAppearance
-  const demo=useDemoWorld(profile.displayName,look)
+  const [solo,setSolo]=useState(false)
+  const demo=useDemoWorld(profile.displayName,look,!solo)
   const game=useMultiplayerGame(demo.id,demo.world.onlineIds,demo.world.sendGame,[])
   const rockGame=useRockChallenge(demo,campus)
   const contest=useCampusContest(demo,campus)
   const photoGame=usePhotoSession(demo)
   const photoPeer=demo.world.peers.find(p=>p.id===photoGame.session?.peer)
+  const enterSolo=()=>{if(activityState.mode||activityState.locked||indoorState.active||document.querySelector('[aria-modal="true"]'))return;demo.leave();setSolo(true)}
   return <>
+    {solo?<HardwarePanel onShared={()=>{clearHardware();setSolo(false)}}/>:<button className="solo-mode-button" onClick={enterSolo}>Private solo</button>}
     <Canvas shadows="percentage" camera={{position:[0,40,40],fov:45,near:.5,far:3000}} dpr={[1,2]}>
       <color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/>
       <hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={look} name={profile.displayName}/><CampusStudents campus={campus} minute={life.state.minute}/><ActivityWorld campus={campus}/><VehicleWorld campus={campus}/><OnlinePlayers peers={demo.world.peers.filter(p=>p.location==='campus')}/>
     </Canvas>
-    <CampusActivities campus={campus} identity={profile.playerId}/><VehicleActivities campus={campus}/><SlapRockActivity campus={campus} identity={profile.playerId}/><BuildingInteriors campus={campus} look={look} peers={demo.world.peers}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onMenu}/><ActivityMenu campus={campus}/><PhotoBooth look={look} name={profile.displayName} friends={[...demo.world.peers.map(p=>({name:p.name,look:p.look})),...CLASSMATES]} shared={photoGame.session?.phase==='active'&&photoPeer?{host:photoGame.session.host,companion:{name:photoPeer.name,look:photoPeer.look},send:photoGame.transmit,leave:photoGame.leave}:undefined}/><ClassroomActivity globalLauncher/><LifeUI campus={campus} life={life} playerName={profile.displayName} onEdit={onEdit} players={selected=><DemoSocial demo={demo} onChallenge={game.start} onRock={rockGame.invite} onPhoto={photoGame.invite} onContest={contest.invite} selectedPlayer={selected}/>}/><ConnectChat world={demo.world}/><MultiplayerGamePanel game={game} peers={demo.world.peers} onlineIds={demo.world.onlineIds}/><RockChallengePanel game={rockGame} demo={demo}/><PhotoSessionPanel game={photoGame} demo={demo}/><NearbyPlayer peers={demo.world.peers}/><CasualStudentChat/><ScrappyChat playerName={profile.displayName}/><CampusContestPanel game={contest} demo={demo}/>
+    <CampusActivities campus={campus} identity={profile.playerId}/><VehicleActivities campus={campus}/><SlapRockActivity campus={campus} identity={profile.playerId}/><BuildingInteriors campus={campus} look={look} peers={demo.world.peers}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onMenu}/><ActivityMenu campus={campus}/><PhotoBooth look={look} name={profile.displayName} friends={[...demo.world.peers.map(p=>({name:p.name,look:p.look})),...CLASSMATES]} shared={photoGame.session?.phase==='active'&&photoPeer?{host:photoGame.session.host,companion:{name:photoPeer.name,look:photoPeer.look},send:photoGame.transmit,leave:photoGame.leave}:undefined}/><ClassroomActivity globalLauncher/><LifeUI campus={campus} life={life} playerName={profile.displayName} onEdit={onEdit} players={selected=><DemoSocial demo={demo} onChallenge={game.start} onRock={rockGame.invite} onPhoto={photoGame.invite} onContest={contest.invite} selectedPlayer={selected}/>}/>{!solo&&<ConnectChat world={demo.world}/>}<MultiplayerGamePanel game={game} peers={demo.world.peers} onlineIds={demo.world.onlineIds}/><RockChallengePanel game={rockGame} demo={demo}/><PhotoSessionPanel game={photoGame} demo={demo}/><NearbyPlayer peers={demo.world.peers}/><CasualStudentChat/><ScrappyChat playerName={profile.displayName}/><CampusContestPanel game={contest} demo={demo}/>
   </>
 }
 

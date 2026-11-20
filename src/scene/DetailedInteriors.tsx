@@ -1,3 +1,4 @@
+import { combinedKeys } from '../hardware/controller'
 import { Clone, Text, useGLTF } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import { createContext, Suspense, useContext, useEffect, useMemo, useRef } from 'react'
@@ -46,7 +47,7 @@ function Move({look,rects,startZ=9}:{look:AvatarLook;rects:Rect[];startZ?:number
   return()=>{window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('pointermove',pointerMove);window.removeEventListener('pointerup',pointerUp);gl.domElement.removeEventListener('pointerdown',pointerDown);gl.domElement.removeEventListener('wheel',wheel);gl.domElement.removeEventListener('contextmenu',menu)}
  },[gl])
  useFrame((_,raw)=>{
-  const dt=Math.min(raw,.05),k=keys.current
+  const dt=Math.min(raw,.05),k=combinedKeys(keys.current)
   if(indoorState.activity||indoorState.talkingNpc!==null)keys.current.clear()
   if(k.has('q'))orbit.current.yaw+=dt*1.6;if(k.has('e'))orbit.current.yaw-=dt*1.6
   let x=Number(k.has('d')||k.has('arrowright'))-Number(k.has('a')||k.has('arrowleft')),z=Number(k.has('s')||k.has('arrowdown'))-Number(k.has('w')||k.has('arrowup'))

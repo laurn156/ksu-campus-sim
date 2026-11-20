@@ -8,15 +8,18 @@ import { DEFAULT_PROFILE } from '../ui/Welcome'
 
 type Direct={id:string;from:string;to:string;text:string}
 type Event={type:string;id?:string;from?:string;to?:string;peer?:Peer;peers?:Peer[];name?:string;text?:string;payload?:GamePacket}
-export function useDemoWorld(name:string,look:AvatarLook) {
+export function useDemoWorld(name:string,look:AvatarLook,enabled=true) {
  const [id,setId]=useState(''),[peers,setPeers]=useState<Peer[]>([]),[messages,setMessages]=useState<{id:string;name:string;text:string}[]>([]),[status,setStatus]=useState('Connecting…'),[requests,setRequests]=useState<string[]>([]),[sent,setSent]=useState<string[]>([]),[friends,setFriends]=useState<string[]>([]),[direct,setDirect]=useState<Direct[]>([])
  const socket=useRef<WebSocket|null>(null)
- const transmit=(data:object)=>{if(socket.current?.readyState!==WebSocket.OPEN)return false;socket.current.send(JSON.stringify(data));return true}
+ const enabledRef=useRef(enabled);enabledRef.current=enabled
+ const leave=()=>{enabledRef.current=false;socket.current?.close();socket.current=null;setPeers([]);setId('');setStatus('Private solo')}
+ const transmit=(data:object)=>{if(!enabledRef.current||socket.current?.readyState!==WebSocket.OPEN)return false;socket.current.send(JSON.stringify(data));return true}
  useEffect(()=>{
+  if(!enabled){setPeers([]);setId('');setStatus('Private solo');return}
   let alive=true,retry:ReturnType<typeof setTimeout>|undefined,ws:WebSocket
   const connect=()=>{
-   if(!alive)return;setStatus('Connecting…');ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/api/demo-world`);socket.current=ws
-   ws.onopen=()=>ws.send(JSON.stringify({type:'join',name,look}))
+   if(!alive||!enabledRef.current)return;setStatus('Connecting…');ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/api/demo-world`);socket.current=ws
+   ws.onopen=()=>{if(!enabledRef.current){ws.close();return}ws.send(JSON.stringify({type:'join',name,look}))}
    ws.onmessage=e=>{let m:Event;try{m=JSON.parse(e.data)}catch{return}
     if(m.type==='welcome'&&m.id){setId(m.id);setPeers((m.peers??[]).map(p=>({...p,look:validLook(p.look)??DEFAULT_PROFILE.look}))); setStatus('Connected')}
     else if(m.type==='peer'&&m.peer){const p={...m.peer,look:validLook(m.peer.look)??DEFAULT_PROFILE.look};setPeers(old=>[...old.filter(x=>x.id!==p.id),p])}
@@ -32,13 +35,13 @@ export function useDemoWorld(name:string,look:AvatarLook) {
     else if(m.type==='friend-declined'&&m.from){const from=m.from;setSent(old=>old.filter(x=>x!==from))}
     else if(m.type==='dm'&&m.id&&m.from&&m.to&&m.text){const {id,from,to,text}=m;setDirect(old=>[...old,{id,from,to,text}].slice(-100))}
    }
-   ws.onclose=()=>{if(!alive)return;setStatus('Reconnecting…');setPeers([]);setRequests([]);setSent([]);setFriends([]);setId('');retry=setTimeout(connect,2000)}
+   ws.onclose=()=>{if(!alive||!enabledRef.current)return;setStatus('Reconnecting…');setPeers([]);setRequests([]);setSent([]);setFriends([]);setId('');retry=setTimeout(connect,2000)}
   }
   connect();const interval=setInterval(()=>{const p=indoorState.active?indoorState:player;transmit({type:'move',x:p.x,y:indoorState.active?0:player.y,z:p.z,heading:p.heading,moving:p.moving,slapping:activityState.mode==='rock'&&performance.now()<activityState.throwUntil,activity:activityState.mode==='bathtub'?'bathtub':'',boosting:activityState.raceBoost,discFlight:activityState.discFlight,location:indoorState.active?indoorState.location:'campus'})},200)
   return()=>{alive=false;clearInterval(interval);clearTimeout(retry);ws?.close();socket.current=null}
- },[name,look])
+ },[name,look,enabled])
  const world:World={peers,onlineIds:peers.map(p=>p.id),messages,status,error:'',send:async text=>transmit({type:'chat',text}),wave:()=>{transmit({type:'wave'})},sendGame:packet=>transmit({type:'game',to:packet.to,packet})}
- return {id,world,requests,sent,friends,direct,transmit}
+ return {id,world,requests,sent,friends,direct,transmit,leave}
 }
 export type DemoWorld=ReturnType<typeof useDemoWorld>
 export function DemoSocial({demo,onChallenge,onRock,onPhoto,onContest,selectedPlayer}:{demo:DemoWorld;onChallenge:(id:string)=>void;onRock:(id:string)=>void;onPhoto:(id:string)=>void;onContest:(id:string,game:'disc'|'race')=>void;selectedPlayer:string}){
