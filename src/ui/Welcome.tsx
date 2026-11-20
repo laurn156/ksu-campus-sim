@@ -6,13 +6,13 @@ import type { AvatarLook } from '../scene/Player'
 import './welcome.css'
 
 export type Profile = { name: string; look: AvatarLook }
-export const DEFAULT_PROFILE: Profile = { name: '', look: { color: 'blue', headwear: 'none', face: 'happy', accessory: 'none', top: 'none', topColor: '#29292c', bottom: 'none', bottomColor: '#4e526b', jerseyNumber: '12', backpack: false, shoes: 'none', bag: 'none', bagStyle: 'backpack' } }
+export const DEFAULT_PROFILE: Profile = { name: '', look: { color: 'blue', headwear: 'none', face: 'happy', accessory: 'none', top: 'tee', topColor: '#29292c', bottom: 'pants', bottomColor: '#4e526b', jerseyNumber: '12', backpack: false, shoes: 'none', bag: 'none', bagStyle: 'backpack' } }
 const hats: {value: Headwear; label: string; icon: string}[] = [
   {value:'none',label:'None',icon:'○'}, {value:'cap',label:'Cap',icon:'◒'}, {value:'beanie',label:'Beanie',icon:'◓'}, {value:'bucket',label:'Bucket hat',icon:'⌒'}, {value:'headphones',label:'Headphones',icon:'♬'}, {value:'headband',label:'Headband',icon:'◠'},
 ]
 const faces: {value: Face; label: string; icon:string}[] = [{value:'happy',label:'Happy',icon:'☺'}, {value:'dots',label:'Smile',icon:'•ᴗ•'}, {value:'wink',label:'Wink',icon:'◠ᴗ•'}, {value:'surprised',label:'Surprised',icon:'⊙'}, {value:'angry',label:'Angry',icon:'•̀ᴗ•́'}]
-const tops: {value: AvatarLook['top']; label: string; icon:string}[] = [{value:'none',label:'None',icon:'○'},{value:'tee',label:'T-shirt',icon:'♧'},{value:'hoodie',label:'Hoodie',icon:'♧'},{value:'ksu-tee',label:'KSU tee',icon:'KSU'},{value:'ksu-hoodie',label:'KSU hoodie',icon:'KSU'},{value:'jersey',label:'KSU jersey',icon:'KSU'}]
-const bottoms: {value: AvatarLook['bottom'];label:string;icon:string}[] = [{value:'none',label:'None',icon:'○'},{value:'shorts',label:'Shorts',icon:'▥'},{value:'skirt',label:'Skirt',icon:'◭'},{value:'pants',label:'Pants',icon:'▥'}]
+const tops: {value: AvatarLook['top']; label: string; icon:string}[] = [{value:'tee',label:'T-shirt',icon:'♧'},{value:'hoodie',label:'Hoodie',icon:'♧'},{value:'ksu-tee',label:'KSU tee',icon:'KSU'},{value:'ksu-hoodie',label:'KSU hoodie',icon:'KSU'},{value:'jersey',label:'KSU jersey',icon:'KSU'}]
+const bottoms: {value: AvatarLook['bottom'];label:string;icon:string}[] = [{value:'shorts',label:'Shorts',icon:'▥'},{value:'skirt',label:'Skirt',icon:'◭'},{value:'pants',label:'Pants',icon:'▥'}]
 const clothingColors = ['#29292c','#f5f1e7','#d4a720','#82906b','#777d9a','#aa92ad']
 type Section = 'Outfit' | 'Hair & hats' | 'Accessories' | 'Colors' | 'Expression'
 const sections: {label:Section; icon:string}[] = [{label:'Outfit',icon:'♧'}, {label:'Hair & hats',icon:'◠'}, {label:'Accessories',icon:'✧'}, {label:'Colors',icon:'◉'}, {label:'Expression',icon:'☺'}]
