@@ -24,7 +24,7 @@ export interface CharacterProps {
   bottom?: 'none' | 'shorts' | 'skirt' | 'pants'
   bottomColor?: string
   jerseyNumber?: string
-  shoes?: 'none' | 'sneakers' | 'black' | 'boots' | 'flipflops'
+  shoes?: 'none' | 'sneakers' | 'black' | 'boots'
   bag?: 'none' | 'black' | 'cream' | 'brown'
   bagStyle?: 'backpack' | 'sling'
   backpack?: boolean
@@ -324,37 +324,30 @@ function Backpack({ color, trim, back, front }: { color: string; trim: string; b
   </group>
 }
 
-/** Flip-flop under a bare foot: foot-shaped sole and a V strap that lies on the foot (leg-local coordinates). */
-function FlipFlop() {
-  const strap = useMemo(() => {
-    const c = new THREE.Vector3(0, -0.155, 0), r = 0.111, on = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z).normalize().multiplyScalar(r).add(c)
-    return [-1, 1].map(s => new THREE.TubeGeometry(new THREE.CatmullRomCurve3([on(0, -0.62, 0.78), on(s * 0.45, -0.45, 0.62), on(s * 0.85, -0.38, 0.1)]), 16, 0.011, 6, false))
-  }, [])
-  return <group>
-    <mesh position={[0, -0.262, 0.035]} scale={[0.95, 0.16, 1.38]}><sphereGeometry args={[0.115, 24, 12]} /><meshStandardMaterial color="#2f6fb0" roughness={0.8} /></mesh>
-    <mesh position={[0, -0.272, 0.035]} scale={[0.97, 0.1, 1.4]}><sphereGeometry args={[0.115, 24, 10]} /><meshStandardMaterial color="#1f4f80" roughness={0.9} /></mesh>
-    {strap.map((g, k) => <mesh key={k} geometry={g}><meshStandardMaterial color="#f2c52e" roughness={0.7} /></mesh>)}
-  </group>
-}
-
-/** Sling bag: one strap from the right shoulder diagonally across the chest, with a small pouch on the back. */
-function SlingBag({ color, trim, back, side }: { color: string; trim: string; back: number; side: number }) {
-  const front = back
-  // Strap points are placed just outside the garment's elliptical cross-section so the tube never dips inside it.
-  const strap = useMemo(() => {
-    const around = (a: number, y: number) => new THREE.Vector3(Math.sin(a) * (side + 0.016), y, Math.cos(a) * (front + 0.016))
-    const pts = [new THREE.Vector3(0.1, 0.53, -back - 0.045), around(2.55, 0.66), around(2.0, 0.76), new THREE.Vector3(0.15, 0.79, -0.02)]
-    for (let k = 0; k <= 6; k++) { const t = k / 6; pts.push(around(0.5 - t * 2.07, 0.72 - t * 0.29)) }
-    pts.push(around(-2.2, 0.42), new THREE.Vector3(-0.16, 0.41, -back - 0.045))
-    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 64, 0.018, 8, false)
-  }, [back, front, side])
+/** Sling bag: one strap worn crossbody from the left shoulder to the right hip. The strap is a single smooth
+ *  closed loop that hugs the garment (radius follows the shirt profile at each height); the pouch rides on it
+ *  across the back, tilted to the strap's angle. */
+function SlingBag({ color, trim, profile, zScale }: { color: string; trim: string; profile: THREE.Vector2[] | null; zScale: number }) {
+  const { strap, pouch } = useMemo(() => {
+    const radiusAt = (y: number) => {
+      if (!profile) return 0.255
+      for (let k = 1; k < profile.length; k++) { const a = profile[k - 1], b = profile[k]; if ((y - a.y) * (y - b.y) <= 0 && a.y !== b.y) return a.x + (b.x - a.x) * (y - a.y) / (b.y - a.y) }
+      return profile[Math.floor(profile.length / 2)].x
+    }
+    const zs = profile ? zScale : 0.2 / 0.255, gap = 0.016
+    const yAt = (phi: number) => 0.59 + 0.165 * Math.sin(phi)
+    const at = (phi: number, out = gap) => { const y = yAt(phi), r = radiusAt(y); return new THREE.Vector3(Math.sin(phi) * (r + out), y, Math.cos(phi) * (r * zs + out)) }
+    const pts = Array.from({ length: 48 }, (_, k) => at((k / 48) * Math.PI * 2))
+    const phi = Math.PI + 0.35, centre = at(phi, gap + 0.05)
+    return { strap: new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true, 'centripetal'), 160, 0.014, 8, true), pouch: { pos: centre, yaw: phi - Math.PI } }
+  }, [profile, zScale])
   return <group>
     <mesh geometry={strap} castShadow><meshStandardMaterial color={trim} roughness={0.95} /></mesh>
-    <group position={[-0.03,0.47,-back-0.055]} rotation={[0,0,0.42]}>
-      <RoundedBox args={[0.3,0.17,0.1]} radius={0.045} smoothness={5} castShadow><meshStandardMaterial color={color} roughness={0.85} /></RoundedBox>
-      <mesh position={[0,0.035,-0.052]}><boxGeometry args={[0.24,0.01,0.006]} /><meshStandardMaterial color={trim} /></mesh>
-      <mesh position={[0.1,0.035,-0.057]}><boxGeometry args={[0.022,0.035,0.01]} /><meshStandardMaterial color="#c9ced0" metalness={0.4} roughness={0.4} /></mesh>
-    </group>
+    <group position={pouch.pos} rotation={[0, pouch.yaw, 0]}><group rotation={[0, 0, 0.56]}>
+      <RoundedBox args={[0.3,0.16,0.1]} radius={0.045} smoothness={5} castShadow><meshStandardMaterial color={color} roughness={0.85} /></RoundedBox>
+      <mesh position={[0,0.032,-0.052]}><boxGeometry args={[0.24,0.008,0.006]} /><meshStandardMaterial color={trim} /></mesh>
+      <mesh position={[0.1,0.032,-0.057]}><boxGeometry args={[0.02,0.032,0.01]} /><meshStandardMaterial color="#c9ced0" metalness={0.4} roughness={0.4} /></mesh>
+    </group></group>
   </group>
 }
 
@@ -503,7 +496,6 @@ export function Character({
               <mesh position={[0,0.18,-0.035]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[0.138,0.013,8,28]} /><meshStandardMaterial color="#5c3c27" /></mesh>
               {[0.07,0.12].map(y=><mesh key={y} position={[0,y,0.097]}><boxGeometry args={[0.07,0.008,0.01]} /><meshStandardMaterial color="#e8d8b8" /></mesh>)}
             </group>}
-            {shoes === 'flipflops' && <FlipFlop />}
             {(shoes === 'sneakers' || shoes === 'black') && <group position={[0,-0.255,0.045]}>
               <mesh position={[0,0.035,0]} scale={[1,0.55,1.28]} castShadow><sphereGeometry args={[0.115,24,16]} /><meshStandardMaterial color={shoes === 'black' ? '#282a2a' : '#f2efe9'} roughness={0.85}/></mesh>
               <mesh position={[0,-0.005,0]} scale={[1.05,0.22,1.3]}><sphereGeometry args={[0.115,24,16]}/><meshStandardMaterial color="#dedbd3" roughness={0.95}/></mesh>
@@ -534,7 +526,7 @@ export function Character({
           <Print r={shirtR+0.004} z={shirtZ} y={0.395} h={0.13} arc={0.85} color={pocketColor} />
           {[-0.05,0.05].map(x => <group key={x}><mesh position={[x,0.66,shirtR*shirtZ*0.985]} rotation={[0.18,0,0]}><capsuleGeometry args={[0.007,0.09,4,8]} /><meshStandardMaterial color="#efe8d8" /></mesh><mesh position={[x,0.6,shirtR*shirtZ+0.01]}><sphereGeometry args={[0.012,8,6]} /><meshStandardMaterial color="#d8cfbd" /></mesh></group>)}
         </group>}
-        {(backpack || bag !== 'none') && bagStyle === 'sling' && <SlingBag color={bag === 'cream' ? '#e8dfca' : bag === 'black' ? '#2c2e30' : '#8a6248'} trim={bag === 'cream' ? '#c9bba3' : bag === 'black' ? '#1b1c1d' : '#5f4332'} back={top === 'none' ? 0.2 : shirtR*shirtZ} side={top === 'none' ? 0.255 : shirtR} />}
+        {(backpack || bag !== 'none') && bagStyle === 'sling' && <SlingBag color={bag === 'cream' ? '#e8dfca' : bag === 'black' ? '#2c2e30' : '#8a6248'} trim={bag === 'cream' ? '#c9bba3' : bag === 'black' ? '#1b1c1d' : '#5f4332'} profile={top === 'none' ? null : shirtProfile} zScale={shirtZ} />}
         {(backpack || bag !== 'none') && bagStyle !== 'sling' && <Backpack color={bag === 'cream' ? '#e8dfca' : bag === 'black' ? '#2c2e30' : '#8a6248'} trim={bag === 'cream' ? '#c9bba3' : bag === 'black' ? '#1b1c1d' : '#5f4332'} back={top === 'none' ? 0.2 : shirtR*shirtZ} front={top === 'none' ? 0.2 : shirtR*shirtZ} />}
         <Arm side={-1} body={body} top={top} topColor={topColor} armRef={rArm} />
         <Arm side={1} body={body} top={top} topColor={topColor} armRef={lArm} />

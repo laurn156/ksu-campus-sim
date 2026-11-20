@@ -40,7 +40,7 @@ export function useConnectWorld(userId:string,username:string):World {
       accessory:allowed(raw.accessory,['none','glasses','square','rectangle'],'none'),
       top:allowed(raw.top,['tee','hoodie','ksu-tee','ksu-hoodie','jersey'],'tee'),
       bottom:allowed(raw.bottom,['shorts','skirt','pants'],'pants'),
-      shoes:allowed(raw.shoes,['none','sneakers','black','boots','flipflops'],'none'),bag:allowed(raw.bag,['none','black','cream','brown'],'none'),bagStyle:allowed(raw.bagStyle,['backpack','sling'],'backpack'),
+      shoes:allowed((raw.shoes as string|undefined)==='flipflops'?'sneakers':raw.shoes,['none','sneakers','black','boots'],'none'),bag:allowed(raw.bag,['none','black','cream','brown'],'none'),bagStyle:allowed(raw.bagStyle,['backpack','sling'],'backpack'),
       topColor:typeof raw.topColor==='string'&&/^#[0-9a-f]{6}$/i.test(raw.topColor)?raw.topColor:'#29292c',
       bottomColor:typeof raw.bottomColor==='string'&&/^#[0-9a-f]{6}$/i.test(raw.bottomColor)?raw.bottomColor:'#4e526b',
       jerseyNumber:typeof raw.jerseyNumber==='string'&&/^\d{1,2}$/.test(raw.jerseyNumber)?raw.jerseyNumber:'12',backpack:false} as AvatarLook

@@ -41,7 +41,7 @@ export function validLook(raw: unknown): AvatarLook | null {
     bottom: pick(l.bottom, ['shorts', 'skirt', 'pants'] as const, 'pants'),
     bottomColor: hex(l.bottomColor, d.bottomColor),
     jerseyNumber: typeof l.jerseyNumber === 'string' && /^\d{1,2}$/.test(l.jerseyNumber) ? l.jerseyNumber : '12',
-    shoes: pick(l.shoes, ['none', 'sneakers', 'black', 'boots', 'flipflops'] as const, 'none'),
+    shoes: pick(l.shoes === 'flipflops' ? 'sneakers' : l.shoes, ['none', 'sneakers', 'black', 'boots'] as const, 'none'),
     bagStyle: pick(l.bagStyle, ['backpack', 'sling'] as const, 'backpack'),
     bag: pick(l.bag, ['none', 'black', 'cream', 'brown'] as const, l.backpack === true ? 'brown' : 'none'),
     backpack: false,
