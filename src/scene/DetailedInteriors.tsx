@@ -199,6 +199,92 @@ const rooms:Record<Exclude<InteriorKind,'student'|'classroom'>,Placed[]>={
  dining:[...[-9,-5,5,9].map(x=>piece('kitchenbar',x,-8,2,1.5)),...[-8,0,8].map(x=>piece('table',x,3,1.7,1.4)),...[-8,8].map(x=>piece('table',x,8,1.7,1.4))],
  parking:[...[-9,-4,4,9].map(x=>piece('sedan',x+1.8,-6,2,4,1.5,0,'car')),piece('cone',2,5,1,1,1,0,'car')]
 }
+// Extra architectural and tabletop details are deliberately kept against walls or
+// on existing furniture, so they do not introduce invisible movement obstacles.
+function WallBoard({x,title,lines,color='#34564d'}:{x:number;title:string;lines:string;color?:string}) {
+ return <group><Block p={[x,2.35,-11.68]} s={[2.7,1.55,.14]} c={color}/><Block p={[x,2.95,-11.58]} s={[2.45,.08,.04]} c="#d5b95d"/><Label text={title} p={[x,2.7,-11.55]} size={.24} color="#f9e9b6"/><Label text={lines} p={[x,2.17,-11.55]} size={.16} color="#f7f4e9"/></group>
+}
+function Clock({x}:{x:number}) {return <group><mesh position={[x,3.35,-11.65]}><circleGeometry args={[.38,24]}/><meshStandardMaterial color="#f6f3e9"/></mesh><Block p={[x,3.42,-11.6]} s={[.04,.25,.05]} c="#263633"/><Block p={[x+.09,3.34,-11.59]} s={[.2,.04,.05]} c="#263633"/></group>}
+function SideWindow({z,side}:{z:number;side:-1|1}) {const x=side*13.78;return <group><Block p={[x,2.3,z]} s={[.12,2.1,3.3]} c="#87abb0"/>{[-1.65,0,1.65].map(n=><Block key={n} p={[x-side*.08,2.3,z+n]} s={[.14,2.2,.1]} c="#e9eee7"/>)}<Block p={[x-side*.08,2.3,z]} s={[.14,.1,3.4]} c="#e9eee7"/></group>}
+function RoomFinish({kind}:{kind:CrowdKind}) {
+ const floor=kind==='dorm'?'#e0d1ba':kind==='garage'||kind==='lab'?'#cbd2ca':kind==='greenhouse'?'#cbd6bf':kind==='parking'?'#898d89':'#e4e0d2'
+ return <>
+  {[-10,-6,-2,2,6,10].map((x,i)=><Block key={x} p={[x,.008,0]} s={[3.96,.016,23.5]} c={i%2?floor:'#d9d6c8'}/>)}
+  <DiningWall p={[-13.93,2.1,0]} s={[.12,4.1,23.8]} color="#e2e0d3">{[-6,2,8].map(z=><SideWindow key={z} z={z} side={-1}/>)}</DiningWall>
+  <DiningWall p={[13.93,2.1,0]} s={[.12,4.1,23.8]} color="#e2e0d3">{[-6,2,8].map(z=><SideWindow key={z} z={z} side={1}/>)}</DiningWall>
+ </>
+}
+function FoodCounterDetails(){return <>
+ {[{z:-8,foods:['burger','fries','sandwich'],title:'CHICKEN • FRIES • DRINKS'},{z:-3.8,foods:['donut-sprinkles','cup-coffee','donut-sprinkles'],title:'COFFEE • DONUTS'},{z:.5,foods:['maki-salmon','maki-salmon','salad'],title:'SUSHI • FRESH BOWLS'}].map(({z,foods,title})=><group key={z}>
+  <Block p={[-11,2.08,z]} s={[3.7,.12,1.35]} c="#e7e3d8"/><Block p={[-11,2.5,z-.3]} s={[3.4,.6,.1]} c="#32413a"/><Label text={title} p={[-11,2.5,z-.2]} size={.17} color="#f8ebcd"/>
+  {foods.map((food,i)=><DiningModel key={i} name={food} pack="food" p={[-12+i*.75,2.18,z+.15]} scale={.55}/>)}
+  <Block p={[-9.65,2.27,z+.1]} s={[.38,.24,.35]} c="#344440"/><Block p={[-9.65,2.45,z+.02]} s={[.3,.18,.08]} c="#96b2ae"/>
+ </group>)}
+ {[-6,-1,4].map((z,i)=><group key={z}><DiningModel name="cup" pack="food" p={[.1,1.08,z]} scale={.55}/><DiningModel name={i===1?'donut-sprinkles':'sandwich'} pack="food" p={[-.4,1.08,z]} scale={.5}/></group>)}
+ <WallBoard x={-2} title="CAMPUS LIFE" lines={'EVENTS • CLUBS\nWELCOME, OWLS'} color="#977938"/>
+ <Block p={[8,1.16,-6]} s={[2.95,.1,.08]} c="#49372d"/>{[-1.35,0,1.35].map(dx=>[-.7,.7].map(dz=><Ball key={`${dx}:${dz}`} p={[9+dx,1.19,-6+dz]} color="#242a26" r={.13}/>))}
+ <Block p={[9,1.08,-1]} s={[.05,.3,1.5]} c="#f5f3e7"/><DiningModel name="pottedplant" p={[-6.4,0,10]} scale={1.2}/>
+ </>}
+function ClassroomDetails(){return <>
+ <Clock x={12}/><WallBoard x={-12} title="CLASSROOM" lines={'OFFICE HOURS\nASK QUESTIONS'} color="#ad8653"/>
+ <Block p={[9,2.3,-11.5]} s={[3.7,2.1,.08]} c="#f8f7ef"/><Label p={[9,2.35,-11.42]} text={'y = mx + b\n△x → 0'} size={.34} color="#455b5a"/>
+ <Block p={[-10,1.1,-9]} s={[1.3,.08,.75]} c="#f0e9dc"/><DiningModel name="books" p={[-10.3,1.18,-9]} scale={.65}/>
+ {[-8,0,8].map((x,i)=><DiningModel key={x} name={i===1?'laptop':'books'} p={[x,1.03,2]} scale={.7}/>)}
+ </>}
+function LibraryDetails(){return <>
+ <WallBoard x={-3} title="LIBRARY" lines={'STUDY • DISCOVER\nRESEARCH HELP'} color="#4a6f68"/><WallBoard x={3} title="QUIET STUDY" lines={'PLEASE KEEP\nVOICES LOW'} color="#a1844f"/><Clock x={12}/>
+ {[-10,-6,0,6,10].flatMap(x=>[.45,.9,1.35].map((y,j)=><group key={`${x}:${y}`}><DiningModel name="books" p={[x-.25,y,-8.75]} scale={.55}/><DiningModel name="books" p={[x+.35,y,-8.75]} scale={.55} r={j%2?.12:0}/></group>))}
+ {[-9,-5,5,9].map((x,i)=><group key={x}><DiningModel name={i%2?'laptop':'books'} p={[x,1.04,-5]} scale={.65}/><DiningModel name="cup" pack="food" p={[x+.55,1.05,-5]} scale={.45}/></group>)}
+ <Block p={[-10,2.25,8]} s={[2.4,.45,.14]} c="#41665c"/><Label text="INFORMATION" p={[-10,2.25,8.1]} size={.2} color="#f5eedc"/>
+ </>}
+function DormDetails(){return <>
+ <WallBoard x={-4} title="COMMUNITY" lines={'RESIDENCE EVENTS\nWELCOME HOME'} color="#6e8577"/><Clock x={4}/>
+ {[-8,8].map((x,i)=><group key={x}><DiningModel name="books" p={[x+.5,1,-5]} scale={.6}/><DiningModel name="cup" pack="food" p={[x-.55,1,-5]} scale={.45}/><Block p={[x,1.2,-8]} s={[1.25,.22,.9]} c={i?'#789193':'#c5a264'}/><Block p={[x,1.36,-8.65]} s={[1.1,.18,.45]} c="#f5efe1"/></group>)}
+ <DiningModel name="cup-coffee" pack="food" p={[-8,1.05,7]} scale={.6}/><DiningModel name="books" p={[-7.55,1.04,7]} scale={.65}/><DiningModel name="pottedplant" p={[12,0,10]} scale={1.2}/>
+ </>}
+function LabDetails(){return <>
+ <WallBoard x={-4} title="ENGINEERING" lines={'DESIGN • TEST • BUILD\nMAKER WORKSPACE'} color="#567b76"/><WallBoard x={4} title="LAB NOTES" lines={'PROTOTYPE\nITERATE • LEARN'} color="#ac8c4c"/><Clock x={12}/>
+ {[-9,-5,5,9].map(x=><group key={x}><DiningModel name="computerkeyboard" p={[x,1.13,-6.7]} scale={.7}/><DiningModel name="books" p={[x+.65,1.1,-7]} scale={.5}/></group>)}
+ {[-8,0,8].map((x,i)=><group key={x}><Block p={[x,1.55,3]} s={[1.2,.9,.8]} c={i===1?'#738d8b':'#717f7a'}/><Block p={[x,1.6,3.43]} s={[.82,.5,.04]} c="#bfdbd1"/><Block p={[x+.48,1.35,3.47]} s={[.12,.12,.07]} c="#e4ad43"/><Ball p={[x-.4,1.28,3.48]} color="#c46a56" r={.08}/></group>)}
+ </>}
+function GarageDetails(){return <>
+ <WallBoard x={-4} title="HORNET GARAGE" lines={'DESIGN • BUILD\nRACE • COMPETE'} color="#8d493c"/><WallBoard x={4} title="PROJECTS" lines={'DRONES • ROBOTS\nCOMPETITION CARS'} color="#596f64"/>
+ {[-11,-10.2,-9.4].map((x,i)=><Model key={x} name="wheel-racing" pack="car" p={[x,.15,-4]} scale={.7+i*.05}/>)}
+ {[6,10].map(x=><group key={x}><Block p={[x,.97,-7]} s={[1.8,.1,1.1]} c="#a68a69"/><Block p={[x+.35,1.24,-7]} s={[.55,.4,.6]} c="#b74939"/><Block p={[x+.35,1.48,-7]} s={[.5,.08,.55]} c="#d18a63"/><Ball p={[x-.4,1.2,-7]} color="#687b73" r={.22}/></group>)}
+ <Block p={[5,1.35,5]} s={[.9,.3,.9]} c="#53696a"/>{[-1,1].flatMap(x=>[-1,1].map(z=><group key={`${x}:${z}`}><Block p={[5+x*.7,1.38,5+z*.7]} s={[1.3,.08,.08]} c="#3f514f"/><Ball p={[5+x*1.25,1.4,5+z*.7]} color="#202e2c" r={.25}/></group>))}
+ </>}
+function GreenhouseDetails(){return <>
+ <WallBoard x={-4} title="GREENHOUSE" lines={'PLANTS • RESEARCH\nGROWING TOGETHER'} color="#5b8061"/><WallBoard x={4} title="PLANT CARE" lines={'WATER • LIGHT\nGROW • LEARN'} color="#728d63"/>
+ {[-9,-5,5,9].flatMap(x=>[-.6,0,.6].map((n,i)=><group key={`${x}:${n}`}><Block p={[x+n,1.18,-7]} s={[.35,.32,.35]} c="#aa7655"/><DiningModel name={['plantsmall1','plantsmall2','plantsmall3'][i]} p={[x+n,1.35,-7]} scale={.65}/></group>))}
+ {[-8,0,8].map(x=><group key={x}><DiningModel name="plantsmall2" p={[x-.5,1.05,3]} scale={.9}/><DiningModel name="plantsmall3" p={[x+.5,1.05,3]} scale={.85}/></group>)}
+ </>}
+function RecreationDetails(){return <>
+ <WallBoard x={3} title="WELLNESS" lines={'MOVE • PLAY\nSTAY ACTIVE'} color="#567a75"/><WallBoard x={10} title="CLIMB" lines={'CHALLENGE YOURSELF\nGO OWLS'} color="#aa8350"/>
+ <Block p={[-5,.08,2.85]} s={[15,.04,.1]} c="#f9e9d2"/><Block p={[-12.4,.08,-4]} s={[.1,.04,13.6]} c="#f9e9d2"/><Block p={[2.4,.08,-4]} s={[.1,.04,13.6]} c="#f9e9d2"/>
+ <group position={[0,0,-8]} rotation={[0,Math.PI,0]}><Hoop x={5} z={-11.6}/></group>
+ {[4,7].map(x=><group key={x}>{[-.8,.8].map(dx=><Ball key={dx} p={[x+dx,.52,5]} color="#273633" r={.25}/>)}</group>)}
+ </>}
+function OfficeDetails(){return <>
+ <WallBoard x={-4} title="CAMPUS SERVICES" lines={'WELCOME\nHOW CAN WE HELP?'} color="#557a72"/><WallBoard x={4} title="INFORMATION" lines={'STUDENT RESOURCES\nCAMPUS DIRECTORY'} color="#a38248"/><Clock x={12}/>
+ {[-9,-5,5,9].map(x=><group key={x}><DiningModel name="computerkeyboard" p={[x,1.05,-6.7]} scale={.65}/><DiningModel name="books" p={[x+.6,1.05,-7]} scale={.55}/></group>)}
+ <DiningModel name="books" p={[7,1.05,7]} scale={.7}/><DiningModel name="cup" pack="food" p={[7.5,1.05,7]} scale={.5}/>
+ </>}
+function ParkingDetails(){return <>{[-9,-4,4,9].flatMap(x=>[-9,-3,3].map(z=><Block key={`${x}:${z}`} p={[x,.08,z]} s={[.09,.025,2.3]} c="#f0e8cb"/>))}<WallBoard x={0} title="PARKING" lines={'DRIVE SLOWLY\nPEDESTRIAN CROSSING'} color="#555f5b"/>{[-10,10].map(x=><Block key={x} p={[x,2,0]} s={[.3,4,.3]} c="#dad8cc"/>)}</>}
+function ActivityZones({kind}:{kind:CrowdKind}) {
+ const zones:Partial<Record<CrowdKind,[number,number,number,number,string][]>>={
+  student:[[-9,-3.5,7,14,'#e9d9c4'],[0,0,8.5,19,'#d5dfd2'],[9,0,7,19,'#d5dce0']],
+  library:[[-8,-6,10,8,'#e4dcc7'],[7,-6,10,8,'#e4dcc7'],[0,4,22,8,'#d9dfd2']],
+  dorm:[[-8,-6,9,9,'#dfd1ba'],[8,-6,9,9,'#dfd1ba'],[-7,6,10,8,'#d4d9c9']],
+  lab:[[-8,-6,10,8,'#cdd8d1'],[8,-6,10,8,'#cdd8d1'],[0,4,22,7,'#d5dbd2']],
+  garage:[[-7,-7,9,7,'#b9c3bd'],[8,-6,10,8,'#d2c9b6'],[0,5,21,7,'#c8d0c7']],
+  greenhouse:[[-8,-6,10,8,'#c7d9bd'],[8,-6,10,8,'#c7d9bd'],[0,4,22,7,'#d5dfc6']],
+  office:[[-8,-6,10,8,'#d9ded2'],[8,-6,10,8,'#d9ded2'],[7,6,8,7,'#e2d6c0']],
+  classroom:[[0,-9,23,4,'#dad8c9'],[0,1,23,13,'#e8e2d4']],
+ }
+ return <>{(zones[kind]??[]).map(([x,z,w,d,color],i)=><Block key={i} p={[x,.018,z]} s={[w,.008,d]} c={color}/>)}</>
+}
+function InteriorDetails({kind}:{kind:CrowdKind}) {return <><RoomFinish kind={kind}/><ActivityZones kind={kind}/ >{kind==='student'?<FoodCounterDetails/>:kind==='classroom'?<ClassroomDetails/>:kind==='library'?<LibraryDetails/>:kind==='dorm'?<DormDetails/>:kind==='lab'?<LabDetails/>:kind==='garage'?<GarageDetails/>:kind==='greenhouse'?<GreenhouseDetails/>:kind==='recreation'?<RecreationDetails/>:kind==='office'?<OfficeDetails/>:<ParkingDetails/>}</>}
+
 function InteriorAgent({agent,look}:{agent:IndoorAgent;look:AvatarLook}) {
  const group=useRef<THREE.Group>(null),walk=useRef(0),sit=useRef(agent.seated?1:0)
  const colors=['orange','green','blue','yellow','purple','cream'] as const
@@ -215,5 +301,5 @@ export function DetailedRoom({kind,look}:{kind:InteriorKind;look:AvatarLook}) {
  const student=kind==='student',classroom=kind==='classroom'
  const rects=useMemo(()=>student?[...studentWalls,...studentFurniture]:classroom?[...desks,[0,-9,8,1] as Rect]:kind==='dining'?diningObstacles:[...(kind==='recreation'||kind==='parking'?[]:partition),...rooms[kind].map(({x,z,w,d})=>[x,z,w,d] as Rect)],[kind,student,classroom])
  const scene=student?<Student look={look}/>:classroom?<Classroom look={look}/>:kind==='library'?<Library look={look}/>:kind==='dorm'?<Dorm look={look}/>:kind==='lab'?<Lab look={look}/>:kind==='garage'?<Garage look={look}/>:kind==='greenhouse'?<Greenhouse look={look}/>:kind==='recreation'?<Recreation look={look}/>:kind==='dining'?<Dining look={look}/>:kind==='parking'?<Parking/>:<Office look={look}/>
- return <><color attach="background" args={['#e8ece2']}/><ambientLight intensity={.95}/><directionalLight position={[5,15,8]} intensity={1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-left={-20} shadow-camera-right={20} shadow-camera-top={20} shadow-camera-bottom={-20} shadow-bias={-.0003}/><Suspense fallback={null}>{!student&&!classroom&&kind!=='dining'&&<Architecture student={false}/ >}<modelScale.Provider value={student||classroom?1:1.5}>{scene}</modelScale.Provider>{kind!=='dining'&&<InteriorPeople kind={kind} rects={rects} look={look}/>}</Suspense><Move rects={rects} look={look}/></>
+ return <><color attach="background" args={['#e8ece2']}/><ambientLight intensity={.95}/><directionalLight position={[5,15,8]} intensity={1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-left={-20} shadow-camera-right={20} shadow-camera-top={20} shadow-camera-bottom={-20} shadow-bias={-.0003}/><Suspense fallback={null}>{!student&&!classroom&&kind!=='dining'&&<Architecture student={false}/ >}<modelScale.Provider value={student||classroom?1:1.5}>{scene}{kind!=='dining'&&<InteriorDetails kind={kind}/>}</modelScale.Provider>{kind!=='dining'&&<InteriorPeople kind={kind} rects={rects} look={look}/>}</Suspense><Move rects={rects} look={look}/></>
 }
