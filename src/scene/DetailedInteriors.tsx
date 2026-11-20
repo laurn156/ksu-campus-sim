@@ -14,7 +14,7 @@ import { DiningSimulation, diningObstacles, diningTables, diningCounters, dining
 
 type V = [number,number,number]
 type Rect = [number,number,number,number]
-export type InteriorKind = 'library'|'dorm'|'student'|'garage'|'greenhouse'|'recreation'|'lab'|'office'|'classroom'|'dining'|'parking'|'bus'|'uits'|'admin'|'math'|'crawford'|'engineering'|'academic'|'design1'|'design2'
+export type InteriorKind = 'library'|'dorm'|'student'|'garage'|'greenhouse'|'recreation'|'lab'|'office'|'classroom'|'dining'|'parking'|'bus'|'uits'|'admin'|'math'|'crawford'|'engineering'|'academic'|'design1'|'design2'|'atrium'|'civil'|'soils'|'textile'|'architecture'
 const asset='/models/kenney-furniture/'
 const modelScale = createContext(1)
 function Model({name,p,r=0,scale=1,pack='furniture'}:{name:string;p:V;r?:number;scale?:number;pack?:'furniture'|'car'|'food'|'nature'}) {const {scene}=useGLTF(`${pack==='furniture'?asset:`/models/kenney-${pack}/`}${name}.glb`);const factor=useContext(modelScale);return <Clone object={scene} position={p} rotation={[0,r,0]} scale={scale*(pack==='furniture'?factor:1)} castShadow receiveShadow/>}
@@ -249,7 +249,7 @@ const rooms:Record<Exclude<InteriorKind,'student'|'classroom'>,Placed[]>={
  recreation:[...[4,7,10].map(x=>piece('table',x,-6,1.3,2.3)),...[4,7].map(x=>piece('table',x,5,2,1.2)),piece('table',11,4,.5,8)],
  office:[...[-9,-5,5,9].map(x=>piece('desk',x,-7,2,1.4)),piece('desk',-8,5,2.2,1.5),piece('loungesofa',7,5,2.5,1.5),piece('tablecoffee',7,7,1.6,1.2),piece('pottedplant',11,9)],
  bus:[...[-1.5,1.5].flatMap(x=>[-8,0,8].map(z=>piece('chair',x,z,.12,.12))),...[-3.25,3.25].map(x=>piece('chair',x,0,.4,24)),...[-7,-3,1,5].flatMap(z=>[-2.85,2.85].map(x=>piece('chair',x,z,.55,1.15))),piece('desk',-2.25,-10,1.5,2),piece('chair',-1.15,-8.7,.4,.3)],
- crawford:[], engineering:[], academic:[], design1:[], design2:[],
+ crawford:[], engineering:[], academic:[], design1:[], design2:[], atrium:[], civil:[], soils:[], textile:[], architecture:[],
  admin:[],
  math:[],
  uits:[...[-10.5,10.5].map(x=>piece('desk',x,0,.18,20)),piece('desk',0,-9.8,21,.2),...[-6,0].map(x=>piece('desk',x,-6.6,4,1.2)),piece('desk',7,-7.5,4,1.3),piece('desk',9.8,-3.25,1.2,2.6),piece('bookcaseopen',9,1,1.5,1.2)],
@@ -493,14 +493,14 @@ function StudentGameBalls({sim}:{sim:InteriorCrowd}) {
  return <><mesh ref={ping} position={[9,.81,-1]}><sphereGeometry args={[.045,10,8]}/><meshStandardMaterial color="#f6eee0"/></mesh><group ref={pool}>{['#f4e9d4','#db4840','#e3ba3d','#404c85','#252b27'].map((color,i)=><mesh key={i} position={[8.45+i*.21,.81,-6+(i%2)*.18]}><sphereGeometry args={[.065,12,10]}/><meshStandardMaterial color={color}/></mesh>)}</group></>
 }
 function InteriorPeople({kind,rects,look}:{kind:CrowdKind;rects:Rect[];look:AvatarLook}) {
- const sim=useMemo(()=>new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:(['crawford','engineering','academic','design1','design2'] as string[]).includes(kind)?6:kind==='math'?12:kind==='admin'?8:kind==='library'?8:5),[kind,rects])
+ const sim=useMemo(()=>new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:(['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture'] as string[]).includes(kind)?6:kind==='math'?12:kind==='admin'?8:kind==='library'?8:5),[kind,rects])
  useEffect(()=>()=>{indoorState.npcPositions=[]},[])
  useFrame((_,dt)=>{sim.step(Math.min(dt,.05),[indoorState.x,indoorState.z]);indoorState.npcPositions=sim.agents.filter(a=>!a.out).map(a=>a.position)})
  return <>{sim.agents.map(agent=><InteriorAgent key={agent.id} agent={agent} look={look} sim={sim}/>)}{kind==='student'&&<StudentGameBalls sim={sim}/>}</>
 }
 export function DetailedRoom({kind,look}:{kind:InteriorKind;look:AvatarLook}) {
  const student=kind==='student',classroom=kind==='classroom'
- const special=(['crawford','engineering','academic','design1','design2'] as string[]).includes(kind)
+ const special=(['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture'] as string[]).includes(kind)
  const rects=useMemo(()=>special?specialObstacles(kind as SpecialKind):kind==='admin'?adminObstacles:kind==='math'?mathObstacles:kind==='library'?libraryObstacles:student?[...studentWalls,...studentFurniture]:classroom?[...desks,[0,-9,8,1] as Rect]:kind==='dining'?diningObstacles:[...(kind==='recreation'||kind==='parking'||kind==='bus'||kind==='uits'||kind==='greenhouse'?[]:partition),...rooms[kind].map(({x,z,w,d})=>[x,z,w,d] as Rect)],[kind,student,classroom,special])
  const scene=special?<SpecialInterior kind={kind as SpecialKind} Wall={DiningWall}/>:student?<Student look={look}/>:classroom?<Classroom look={look}/>:kind==='library'?<Library look={look}/>:kind==='dorm'?<Dorm look={look}/>:kind==='lab'?<Lab look={look}/>:kind==='garage'?<Garage look={look}/>:kind==='greenhouse'?<Greenhouse look={look}/>:kind==='recreation'?<Recreation look={look}/>:kind==='dining'?<Dining look={look}/>:kind==='parking'?<Parking/>:kind==='admin'?<Administration/>:kind==='math'?<Mathematics/>:kind==='bus'?<BusInterior look={look}/>:kind==='uits'?<UitsInterior/>:<Office look={look}/>
  return <><color attach="background" args={['#e8ece2']}/><ambientLight intensity={.95}/><directionalLight position={[5,15,8]} intensity={1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-left={-20} shadow-camera-right={20} shadow-camera-top={20} shadow-camera-bottom={-20} shadow-bias={-.0003}/><Suspense fallback={null}>{!student&&!classroom&&kind!=='dining'&&kind!=='bus'&&kind!=='uits'&&<Architecture student={false} windows={kind==='admin'?[-7.5,11.5]:kind==='math'?[]:kind==='library'?[-8,8]:undefined}/ >}<modelScale.Provider value={student||classroom?1:1.5}>{scene}{kind!=='dining'&&kind!=='bus'&&kind!=='uits'&&kind!=='admin'&&kind!=='math'&&!special&&<InteriorDetails kind={kind}/>}</modelScale.Provider>{kind!=='dining'&&<InteriorPeople kind={kind} rects={rects} look={look}/>}</Suspense><Move rects={rects} look={look} startZ={kind==='uits'?6:9}/></>

@@ -5,7 +5,7 @@ import { adminObstacles, mathObstacles, libraryObstacles } from '../src/scene/ac
 import { clearPoint } from '../src/scene/diningSimulation.ts'
 const partition=[[-8,-2,12,.25],[8,-2,12,.25]]
 const obstacles={
- ...Object.fromEntries(['crawford','engineering','academic','design1','design2'].map(kind=>[kind,specialObstacles(kind)])),
+ ...Object.fromEntries(['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture'].map(kind=>[kind,specialObstacles(kind)])),
  student:[[-5,-1,.3,8],[-5,8.1,.3,3.8],[5,-5,.3,7],[5,5.6,.3,8.8],[-11,-8,4,1.5],[-11,-3.8,4,1.5],[-11,.5,4,1.5],[-10,5,2,2],[-10,9,2,2],[0,-6,3,2],[0,-1,3,2],[0,4,3,2],[9,-6,3,2],[9,-1,3,2],[10,5,2,1.5],[-2,9,2.5,1],[-8.7,7,1.3,1.3],[12,8,1,1]],
  classroom:[...[-4,-1,2,5].flatMap(z=>[-8,-4,0,4,8].map(x=>[x,z,1.4,1.1])),[0,-9,8,1]],
  library:libraryObstacles,
@@ -22,7 +22,7 @@ const obstacles={
  parking:[...[-9,-4,4,9].map(x=>[x+1.8,-6,2,4]),[2,5,1,1]],
 }
 for(const [kind,rects] of Object.entries(obstacles)){
- const sim=new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:kind==='math'?12:kind==='admin'?8:kind==='library'?8:['crawford','engineering','academic','design1','design2'].includes(kind)?6:5)
+ const sim=new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:kind==='math'?12:kind==='admin'?8:kind==='library'?8:['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture'].includes(kind)?6:5)
  const player=kind==='uits'?[0,6]:[0,9]
  assert(sim.agents.length>=4,`${kind}: insufficient people on entry`)
  assert(sim.agents.some(a=>a.position[0]<0)&&sim.agents.some(a=>a.position[0]>0),`${kind}: people not spread out`)
@@ -36,7 +36,7 @@ for(const [kind,rects] of Object.entries(obstacles)){
   for(let i=0;i<sim.agents.length;i++)for(let j=i+1;j<sim.agents.length;j++){assert.notEqual(sim.agents[i].activity,sim.agents[j].activity,`${kind}: duplicated activity reservation`);if(!sim.agents[i].out&&!sim.agents[j].out)assert(Math.hypot(sim.agents[i].position[0]-sim.agents[j].position[0],sim.agents[i].position[1]-sim.agents[j].position[1])>=.60,`${kind}: characters overlap`)}
  }
  assert(visited.every(s=>s.size>=2),`${kind}: an agent never changed activity`)
- const expected={crawford:'research:study',engineering:'robot:study',academic:'write:study',design1:'cad:print',design2:'build:test'}
+ const expected={crawford:'research:study',engineering:'robot:study',academic:'write:study',design1:'cad:print',design2:'build:test',atrium:'write:study',civil:'research:test',soils:'research:fabricate',textile:'fabricate:build',architecture:'cad:build'}
  if(expected[kind])assert(roleTransitions.has(expected[kind]),`${kind}: expected station sequence ${expected[kind]} did not complete`)
  if(kind==='library')assert(carriedBook,'library: nobody carried a book from a shelf')
  if(kind==='greenhouse')assert(carriedWater,'greenhouse: nobody carried a watering can between stations')
