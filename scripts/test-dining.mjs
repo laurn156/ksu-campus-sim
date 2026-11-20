@@ -2,11 +2,13 @@ import assert from 'node:assert/strict'
 import { DiningSimulation, clearPoint, diningObstacles, diningTables } from '../src/scene/diningSimulation.ts'
 const simulation=new DiningSimulation(diningObstacles,diningTables.map(({x,z})=>[x,z]),5)
 assert.equal(simulation.agents.filter(a=>a.seated).length,2,'two diners should already be seated')
+assert.deepEqual(new Set(simulation.agents.filter(a=>a.seated).map(a=>Math.sign(a.position[0]))),new Set([-1,1]),'both sides should be occupied on entry')
 assert(simulation.agents.some(a=>a.phase==='queue'),'a diner should already be in line')
 assert(simulation.agents.some(a=>a.phase==='pickup'),'a diner should already be at a counter')
 assert(simulation.agents.filter(a=>a.phase!=='away').length>=4,'the room should be populated on entry')
 const phases=new Set(), occupied=new Set()
 let sharedTable=false
+const visitedTables=new Set()
 for(let frame=0;frame<12000;frame++){
  const previous=simulation.agents.map(a=>({position:[...a.position],phase:a.phase}))
  simulation.step(.05)
@@ -21,10 +23,12 @@ for(let frame=0;frame<12000;frame++){
   assert(Math.hypot(a.position[0]-b.position[0],a.position[1]-b.position[1])>=.60,`diners ${i} and ${j} overlap`)
  }
  const seated=simulation.agents.filter(a=>a.phase==='eat'&&a.seat!==null)
+ for(const a of seated){const t=simulation.seats[a.seat].table;visitedTables.add(`${t[0]},${t[1]}`)}
  for(const a of seated)for(const b of seated)if(a.id!==b.id){const p=simulation.seats[a.seat].table,q=simulation.seats[b.seat].table;if(p[0]===q[0]&&p[1]===q[1])sharedTable=true}
  occupied.clear()
 }
 assert(sharedTable,'diners never shared a table')
+assert([...visitedTables].some(v=>v.startsWith('-'))&&[...visitedTables].some(v=>!v.startsWith('-'))&&visitedTables.size>=4,'diners should use tables across the room')
 for(const phase of ['enter','toQueue','queue','toCounter','pickup','toSeat','sit','eat','stand','leave'])assert(phases.has(phase),`missing phase: ${phase}`)
 for(const agent of simulation.agents)for(const event of ['enter','queue','counter','tray','eat','stand','leave'])assert(simulation.events.includes(`${agent.id}:${event}`),`diner ${agent.id} never reached ${event}`)
 console.log('Dining routines, seat reservations, obstacle avoidance, and departures passed.')
@@ -35,3 +39,16 @@ for(let frame=0;frame<12000;frame++){
 }
 for(const diner of withPlayer.agents)assert(withPlayer.events.includes(`${diner.id}:leave`),`diner ${diner.id} failed to leave with a player in the aisle`)
 console.log('Dining routines also complete while avoiding a stationary player.')
+
+// Two diners heading directly toward each other must resolve the blockage.
+const headOn=new DiningSimulation([],[],2)
+for(const [i,a] of headOn.agents.entries()){
+ a.position=[i===0?-2:2,0];a.phase='toQueue';a.station=i===0?3:0;a.route=[[i===0?2:-2,0]];a.pathTarget=[i===0?2:-2,0];a.blockedFor=0
+}
+for(let frame=0;frame<800;frame++){
+ headOn.step(.05)
+ const [a,b]=headOn.agents
+ assert(Math.hypot(a.position[0]-b.position[0],a.position[1]-b.position[1])>=.60,'head-on diners overlap')
+}
+assert(headOn.agents.every(a=>a.phase!=='toQueue'),'head-on diners remained stuck')
+console.log('Head-on diners give way and continue their routes.')

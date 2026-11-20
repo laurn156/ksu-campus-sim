@@ -32,6 +32,7 @@ export class DiningSimulation {
  private stationOwners:(number|null)[]=[null,null,null,null]
  private seatOwners:(number|null)[]
  private playerPosition:Point|null=null
+ private seatCursor=0
  readonly obstacles:Obstacle[]
  constructor(obstacles:Obstacle[],tablePositions:Point[],count=5){
   this.obstacles=obstacles
@@ -40,9 +41,11 @@ export class DiningSimulation {
   this.agents=Array.from({length:count},(_,i)=>({id:i,position:[0,10] as Point,heading:Math.PI,phase:'away' as Phase,timer:i*5,station:i%4,seat:null,route:[],blockedFor:0,walk:false,tray:false,seated:false,pathTarget:null}))
   // Start in the middle of ordinary routines so the room is already occupied on entry.
   for(let i=0;i<Math.min(2,this.agents.length,this.seats.length);i++){
-   const a=this.agents[i],seat=this.seats[i]
-   a.position=[...seat.chair];a.heading=seat.heading;a.phase='eat';a.timer=15+i*8;a.seat=i;a.tray=true;a.seated=true
-   this.seatOwners[i]=a.id
+   const index=this.seats.findIndex((s,j)=>this.seatOwners[j]===null&&(i===0?s.table[0]<0:s.table[0]>0))
+   if(index<0)continue
+   const a=this.agents[i],seat=this.seats[index]
+   a.position=[...seat.chair];a.heading=seat.heading;a.phase='eat';a.timer=15+i*8;a.seat=index;a.tray=true;a.seated=true
+   this.seatOwners[index]=a.id
   }
   if(this.agents[2]){
    const a=this.agents[2];a.station=1;a.position=[-5,-2.5];a.heading=Math.PI;a.phase='queue';a.timer=0
@@ -55,14 +58,37 @@ export class DiningSimulation {
    const a=this.agents[4];a.station=2;a.position=[2,7];a.phase='toQueue';a.timer=0;this.plan(a,[5,-2.5])
   }
  }
+ private freeSeat(){
+  // Alternate sides and table rows as seats become available.
+  const tables=[...new Set(this.seats.map(s=>`${s.table[0]},${s.table[1]}`))]
+  for(let n=0;n<tables.length;n++){
+   const table=tables[(this.seatCursor+n)%tables.length]
+   const index=this.seats.findIndex((s,i)=>`${s.table[0]},${s.table[1]}`===table&&this.seatOwners[i]===null)
+   if(index>=0){this.seatCursor=(this.seatCursor+n+Math.ceil(tables.length/2))%tables.length;return index}
+  }
+  return -1
+ }
  private plan(a:Diner,target:Point){a.pathTarget=target;a.route=indoorPath(a.position,target,this.obstacles,[...this.agents.filter(b=>b.id!==a.id&&b.phase!=='away').map(b=>b.position),...(this.playerPosition?[this.playerPosition]:[])]);if(!a.route.length)a.route=indoorPath(a.position,target,this.obstacles)}
  private move(a:Diner,dt:number){
-  if(!a.route.length){a.walk=false;return !a.pathTarget||Math.hypot(a.position[0]-a.pathTarget[0],a.position[1]-a.pathTarget[1])<.18}
+  if(!a.route.length){a.walk=false;const arrived=!a.pathTarget||Math.hypot(a.position[0]-a.pathTarget[0],a.position[1]-a.pathTarget[1])<.18;if(!arrived&&a.pathTarget&&(a.blockedFor+=dt)>1.2){this.plan(a,a.pathTarget);a.blockedFor=0}return arrived}
   const [x,z]=a.route[0],dx=x-a.position[0],dz=z-a.position[1],distance=Math.hypot(dx,dz),step=Math.min(distance,dt*1.45)
   if(distance<.04){a.route.shift();return false}
   const next:Point=[a.position[0]+dx/distance*step,a.position[1]+dz/distance*step]
   const crowd=this.agents.some(b=>b.id!==a.id&&b.phase!=='away'&&Math.hypot(next[0]-b.position[0],next[1]-b.position[1])<.68)||(this.playerPosition!==null&&Math.hypot(next[0]-this.playerPosition[0],next[1]-this.playerPosition[1])<.75)
-  if(crowd){a.walk=false;a.blockedFor+=dt;if(a.blockedFor>1.2&&a.pathTarget){this.plan(a,a.pathTarget);a.blockedFor=0}return false}
+  if(crowd){
+   a.walk=false;a.blockedFor+=dt
+   // Give way to lower-numbered moving diners by stepping sideways or back,
+   // then recalculate the route. This breaks symmetric head-on stand-offs.
+   const blocker=this.agents.find(b=>b.id!==a.id&&b.phase!=='away'&&Math.hypot(next[0]-b.position[0],next[1]-b.position[1])<.68)
+   if(a.blockedFor>.35&&blocker&&a.id>blocker.id&&!['sit','eat','stand'].includes(blocker.phase)){
+    for(const [vx,vz] of [[-dz/distance,dx/distance],[dz/distance,-dx/distance],[-dx/distance,-dz/distance]]){
+     const candidate:Point=[a.position[0]+vx*step,a.position[1]+vz*step]
+     const separated=Math.hypot(candidate[0]-blocker.position[0],candidate[1]-blocker.position[1])>=Math.hypot(a.position[0]-blocker.position[0],a.position[1]-blocker.position[1])-.001
+     if(separated&&clearPoint(...candidate,this.obstacles)&&!this.agents.some(b=>b.id!==a.id&&b.phase!=='away'&&Math.hypot(candidate[0]-b.position[0],candidate[1]-b.position[1])<.68)&&(!this.playerPosition||Math.hypot(candidate[0]-this.playerPosition[0],candidate[1]-this.playerPosition[1])>=.75)){a.position=candidate;a.walk=true;a.heading=Math.atan2(vx,vz);break}
+    }
+   }
+   if(a.blockedFor>1.2&&a.pathTarget){this.plan(a,a.pathTarget);a.blockedFor=0}return false
+  }
   a.blockedFor=0;a.walk=true;a.position=next;a.heading=Math.atan2(dx,dz);return false
  }
  private direct(a:Diner,target:Point,dt:number){const dx=target[0]-a.position[0],dz=target[1]-a.position[1],d=Math.hypot(dx,dz);if(d<.04){a.position=[...target];a.walk=false;return true}const step=Math.min(d,dt*.65),next:Point=[a.position[0]+dx/d*step,a.position[1]+dz/d*step];if((this.playerPosition&&Math.hypot(next[0]-this.playerPosition[0],next[1]-this.playerPosition[1])<.75)||this.agents.some(b=>b.id!==a.id&&b.phase!=='away'&&Math.hypot(next[0]-b.position[0],next[1]-b.position[1])<.68)){a.walk=false;return false}a.position=next;a.walk=true;return false}
@@ -75,7 +101,7 @@ export class DiningSimulation {
     case 'away': if(a.timer<=0&&(!this.playerPosition||Math.hypot(this.playerPosition[0],this.playerPosition[1]-10.5)>=1)&&!this.agents.some(b=>b.id!==a.id&&b.phase!=='away'&&Math.hypot(b.position[0],b.position[1]-10.5)<1)){a.position=[0,10.5];a.phase='enter';this.events.push(`${a.id}:enter`);this.plan(a,[0,7])}break
     case 'enter':if(this.move(a,dt)){a.phase='toQueue';this.plan(a,[stationX,-2.5])}break
     case 'toQueue':if(this.move(a,dt)){a.phase='queue';a.heading=Math.PI;this.events.push(`${a.id}:queue`)}break
-    case 'queue':{const available=this.stationOwners[a.station]===null;const free=this.seatOwners.findIndex(v=>v===null);if(available&&free>=0){this.stationOwners[a.station]=a.id;this.seatOwners[free]=a.id;a.seat=free;a.phase='toCounter';this.plan(a,[stationX,-4])}break}
+    case 'queue':{const available=this.stationOwners[a.station]===null;const free=available?this.freeSeat():-1;if(available&&free>=0){this.stationOwners[a.station]=a.id;this.seatOwners[free]=a.id;a.seat=free;a.phase='toCounter';this.plan(a,[stationX,-4])}break}
     case 'toCounter':if(this.move(a,dt)){a.phase='pickup';a.timer=2.4;a.heading=Math.PI;this.events.push(`${a.id}:counter`)}break
     case 'pickup':if(a.timer<=0&&a.seat!==null){a.tray=true;this.stationOwners[a.station]=null;a.phase='toSeat';this.events.push(`${a.id}:tray`);this.plan(a,this.seats[a.seat].approach)}break
     case 'toSeat':if(seat&&this.move(a,dt)){a.phase='sit';a.heading=seat.heading}break

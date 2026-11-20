@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { Character } from '../characters/Character'
 import type { AvatarLook } from './Player'
 import { indoorState } from './indoorState'
-import { turnInteriorCamera, zoomInteriorCamera } from './interiorCamera'
+import { turnInteriorCamera, zoomInteriorCamera, panInteriorCamera } from './interiorCamera'
 import { DiningSimulation, diningObstacles, diningTables, diningCounters, diningWalls, type Diner } from './diningSimulation'
 
 type V = [number,number,number]
@@ -26,13 +26,13 @@ const desks:Rect[]=[];for(const z of [-4,-1,2,5])for(const x of [-8,-4,0,4,8])de
 function collision(x:number,z:number,rects:Rect[]){return Math.abs(x)>13.4||Math.abs(z)>11.3||rects.some(([cx,cz,w,d])=>Math.abs(x-cx)<w/2+.38&&Math.abs(z-cz)<d/2+.38)}
 function Move({look,rects}:{look:AvatarLook;rects:Rect[]}) {
  const body=useRef<THREE.Group>(null),walk=useRef(0),keys=useRef(new Set<string>()),pos=useRef(new THREE.Vector3(0,0,9))
- const orbit=useRef({yaw:Math.atan2(4,10),pitch:.62,distance:13}),drag=useRef<{x:number;y:number}|null>(null)
+ const orbit=useRef({yaw:Math.atan2(4,10),pitch:.62,distance:13}),drag=useRef<{x:number;y:number;pan:boolean}|null>(null),pan=useRef({x:0,y:0})
  const focus=useRef(new THREE.Vector3(0,1,9)),{camera,gl}=useThree()
  useEffect(()=>{
   const down=(e:KeyboardEvent)=>{if(!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement))keys.current.add(e.key.toLowerCase())}
   const up=(e:KeyboardEvent)=>keys.current.delete(e.key.toLowerCase())
-  const pointerDown=(e:PointerEvent)=>{if(e.button!==0&&e.button!==2)return;if(e.button===2)e.preventDefault();drag.current={x:e.clientX,y:e.clientY}}
-  const pointerMove=(e:PointerEvent)=>{if(!drag.current)return;turnInteriorCamera(orbit.current,e.clientX-drag.current.x,e.clientY-drag.current.y);drag.current={x:e.clientX,y:e.clientY}}
+  const pointerDown=(e:PointerEvent)=>{if(e.button>2)return;e.preventDefault();drag.current={x:e.clientX,y:e.clientY,pan:e.button===1}}
+  const pointerMove=(e:PointerEvent)=>{if(!drag.current)return;const dx=e.clientX-drag.current.x,dy=e.clientY-drag.current.y;if(drag.current.pan)panInteriorCamera(pan.current,orbit.current,dx,dy);else turnInteriorCamera(orbit.current,dx,dy);drag.current.x=e.clientX;drag.current.y=e.clientY}
   const pointerUp=()=>{drag.current=null}
   const wheel=(e:WheelEvent)=>{e.preventDefault();zoomInteriorCamera(orbit.current,e.deltaY)}
   const menu=(e:Event)=>e.preventDefault()
@@ -45,12 +45,13 @@ function Move({look,rects}:{look:AvatarLook;rects:Rect[]}) {
   if(k.has('q'))orbit.current.yaw+=dt*1.6;if(k.has('e'))orbit.current.yaw-=dt*1.6
   let x=Number(k.has('d')||k.has('arrowright'))-Number(k.has('a')||k.has('arrowleft')),z=Number(k.has('s')||k.has('arrowdown'))-Number(k.has('w')||k.has('arrowup'))
   const n=Math.hypot(x,z)
-  if(n){x/=n;z/=n;const speed=(k.has('shift')?6:3.5)*dt;const blocked=(px:number,pz:number)=>collision(px,pz,rects)||indoorState.npcPositions.some(([ax,az])=>Math.hypot(px-ax,pz-az)<.75);if(!blocked(pos.current.x+x*speed,pos.current.z))pos.current.x+=x*speed;if(!blocked(pos.current.x,pos.current.z+z*speed))pos.current.z+=z*speed;if(body.current)body.current.rotation.y=Math.atan2(x,z)}
+  if(n){pan.current={x:0,y:0};x/=n;z/=n;const speed=(k.has('shift')?6:3.5)*dt;const blocked=(px:number,pz:number)=>collision(px,pz,rects)||indoorState.npcPositions.some(([ax,az])=>Math.hypot(px-ax,pz-az)<.75);if(!blocked(pos.current.x+x*speed,pos.current.z))pos.current.x+=x*speed;if(!blocked(pos.current.x,pos.current.z+z*speed))pos.current.z+=z*speed;if(body.current)body.current.rotation.y=Math.atan2(x,z)}
   walk.current=THREE.MathUtils.lerp(walk.current,n?.8:0,dt*10);if(body.current)body.current.position.copy(pos.current)
   indoorState.x=pos.current.x;indoorState.z=pos.current.z;indoorState.heading=body.current?.rotation.y??0;indoorState.moving=!!n
   const {yaw,pitch,distance}=orbit.current,horizontal=Math.cos(pitch)*distance
-  const want=new THREE.Vector3(pos.current.x+Math.sin(yaw)*horizontal,1+Math.sin(pitch)*distance,pos.current.z+Math.cos(yaw)*horizontal)
-  camera.position.lerp(want,1-Math.exp(-dt*9));focus.current.lerp(new THREE.Vector3(pos.current.x,1,pos.current.z),1-Math.exp(-dt*12));camera.lookAt(focus.current)
+  const viewX=pos.current.x+pan.current.x,viewZ=pos.current.z+pan.current.y
+  const want=new THREE.Vector3(viewX+Math.sin(yaw)*horizontal,1+Math.sin(pitch)*distance,viewZ+Math.cos(yaw)*horizontal)
+  camera.position.lerp(want,1-Math.exp(-dt*9));focus.current.lerp(new THREE.Vector3(viewX,1,viewZ),1-Math.exp(-dt*12));camera.lookAt(focus.current)
  })
  return <group ref={body}><Character {...look} walk={walk} scale={1.15}/></group>
 }
