@@ -1,4 +1,6 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { Character } from '../characters/Character'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { bbox, Collider, distToSeg, pointInPoly, type Building, type Campus, type Line, type Pt } from '../campus'
@@ -253,6 +255,26 @@ function addStingersLocal(geo:THREE.BufferGeometry,x:number,y:number,z:number,an
   geo.translate(x,y,z);geo.rotateY(angle);geo.translate(origin.x,0,origin.z)
 }
 
+/** The patio geometry and its seated guests share the exact same table and stool positions. */
+function stingersPatioTables(b:Building){
+ const rail=offsetPoly(b.poly,-4.2)
+ return [14,17,20,23].map(i=>({x:(b.poly[i][0]+rail[i][0])/2,z:(b.poly[i][1]+rail[i][1])/2,rail}))
+}
+function PatioGuest({x,z,heading,index}:{x:number;z:number;heading:number;index:number}){
+ const seated=useRef(1),eat=useRef(1),ref=useRef<THREE.Group>(null)
+ useFrame(({clock})=>{if(ref.current)ref.current.rotation.y=heading+Math.sin(clock.elapsedTime*.65+index*1.9)*.1;eat.current=(clock.elapsedTime*.12+index*.37)%1<.7?1:0})
+ return <group ref={ref} position={[x,.1,z]} rotation={[0,heading,0]}><Character color={(['orange','green','blue','yellow','purple','cream'] as const)[index%6]} top="tee" topColor={['#b96555','#63867b','#586f91','#d6a939','#92768e'][index%5]} bottom="pants" shoes="sneakers" scale={1.15} sit={seated} sitLift={.112} eat={eat}/></group>
+}
+function StingersPatioGuests({campus}:{campus:Campus}){
+ const guests=useMemo(()=>{const building=campus.buildings.find(b=>b.code==='X');if(!building||building.poly.length<27)return []
+  return stingersPatioTables(building).flatMap(({x,z,rail},i)=>{
+   const seats=[0,Math.PI/2,Math.PI,Math.PI*1.5].map(angle=>({x:x+Math.cos(angle)*.95,z:z+Math.sin(angle)*.95,heading:Math.atan2(-Math.cos(angle),-Math.sin(angle))})).filter(p=>!pointInPoly(p.x,p.z,building.poly)&&pointInPoly(p.x,p.z,rail))
+   return seats.slice(0,i%2===0?2:1)
+  })
+ },[campus])
+ return <>{guests.map((guest,i)=><PatioGuest key={i} {...guest} index={i}/>)}</>
+}
+
 /** Approximate the distinctive 806 entrance and curved dining-room glazing from reference photos.
  * The mapped footprint remains the source of the building location and collision boundary. */
 function stingersDetails(b: Building) {
@@ -319,8 +341,7 @@ function stingersDetails(b: Building) {
     beam(new THREE.Vector3(p[0],.1,p[1]),new THREE.Vector3(p[0],1.1,p[1]),.045,railMat)
   }
   // Small outdoor tables and seats sit between the glass and the railing.
-  for(const i of [14,17,20,23]){
-    const x=(b.poly[i][0]+railing[i][0])/2,z=(b.poly[i][1]+railing[i][1])/2
+  for(const {x,z} of stingersPatioTables(b)){
     const tabletop=new THREE.CylinderGeometry(.62,.62,.07,20);tabletop.translate(x,.77,z);pieces.push({geo:tabletop,mat:furniture})
     beam(new THREE.Vector3(x,.1,z),new THREE.Vector3(x,.74,z),.055,railMat)
     for(const a of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const sx=x+Math.cos(a)*.95,sz=z+Math.sin(a)*.95;const seat=new THREE.CylinderGeometry(.26,.26,.07,12);seat.translate(sx,.43,sz);pieces.push({geo:seat,mat:furniture});beam(new THREE.Vector3(sx,.1,sz),new THREE.Vector3(sx,.4,sz),.035,railMat)}
@@ -2356,6 +2377,7 @@ export function CampusScene({ campus, ground = 'drawn' }: { campus: Campus; grou
         </>
       )}
       <Buildings campus={campus} />
+      <StingersPatioGuests campus={campus} />
       <BaseballSeating />
       <LibraryAmphitheater />
       <Landmarks campus={campus} />

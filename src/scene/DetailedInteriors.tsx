@@ -281,10 +281,19 @@ function DiningAgent({agent,look}:{agent:Diner;look:AvatarLook}) {
  })
  return <group ref={group} visible={agent.phase!=='away'} position={[agent.position[0],0,agent.position[1]]} rotation={[0,agent.heading,0]}><Character {...look} color={colors[agent.id%colors.length]} top="tee" topColor={['#d6a939','#63867b','#b96555','#586f91','#92768e'][agent.id%5]} scale={1.15} walk={walk} sit={sit} sitLift={.112} eat={eat}/><group ref={tray} visible={agent.tray} position={[0,agent.seated?1.01:.68,agent.seated?.72:.5]}><Block p={[0,0,0]} s={[.62,.06,.45]} c="#d8cfb7"/><DiningModel name="plate-dinner" pack="food" p={[0,.04,0]} scale={.38}/><DiningModel name="sandwich" pack="food" p={[0,.07,0]} scale={.42}/></group></group>
 }
+const kitchenWorkers:ReadonlyArray<{x:number;z:number;color:'cream'|'orange';topColor:string}>=[
+ {x:-10,z:-9.1,color:'cream',topColor:'#f0eee2'},
+ {x:7.8,z:-9.1,color:'orange',topColor:'#e9e8dc'},
+]
+function KitchenWorker({worker,index}:{worker:typeof kitchenWorkers[number];index:number}){
+ const group=useRef<THREE.Group>(null),work=useRef(1)
+ useFrame(({clock})=>{const t=clock.elapsedTime+index*2.8;work.current=(t*.11)%1<.8?1:0;if(group.current)group.current.rotation.y=Math.PI+Math.sin(t*.6)*.12})
+ return <group ref={group} position={[worker.x,0,worker.z]} rotation={[0,Math.PI,0]}><Character color={worker.color} headwear="none" face="happy" top="tee" topColor={worker.topColor} bottom="pants" bottomColor="#313c38" shoes="black" scale={1.15} work={work}/></group>
+}
 function DiningCrowd({look}:{look:AvatarLook}) {
  const sim=useMemo(()=>new DiningSimulation(diningObstacles,diningTables.map(({x,z})=>[x,z]),5),[])
  useEffect(()=>()=>{indoorState.npcPositions=[]},[])
- useFrame((_,dt)=>{sim.step(Math.min(dt,.05),[indoorState.x,indoorState.z]);indoorState.npcPositions=sim.agents.filter(a=>a.phase!=='away').map(a=>a.position)})
+ useFrame((_,dt)=>{sim.step(Math.min(dt,.05),[indoorState.x,indoorState.z]);indoorState.npcPositions=[...sim.agents.filter(a=>a.phase!=='away').map(a=>a.position),...kitchenWorkers.map(({x,z})=>[x,z] as [number,number])]})
  return <>{sim.agents.map(agent=><DiningAgent key={agent.id} agent={agent} look={look}/>)}</>
 }
 function Dining({look}:{look:AvatarLook}) {
@@ -299,11 +308,12 @@ function Dining({look}:{look:AvatarLook}) {
   <DiningModel name="pottedplant" p={[-12,0,-1]} scale={1.5}/><DiningModel name="pottedplant" p={[12,0,-1]} scale={1.5}/>
   <DiningModel name="kitchencabinetdrawer" p={[-11.2,0,-10.5]} scale={1.7}/><DiningModel name="kitchensink" p={[-9.4,0,-10.5]} scale={1.7}/>
   <DiningModel name="kitchenstove" p={[7.8,0,-10.5]} scale={1.7}/><DiningModel name="kitchenfridgelarge" p={[11.4,0,-10.5]} scale={1.45}/>
-  <DiningModel name="kitchenmicrowave" p={[5.8,1,-10.5]} scale={1.1}/><DiningModel name="cutting-board" pack="food" p={[-10,1.05,-10.4]} scale={1.4}/>
+  <DiningModel name="kitchenmicrowave" p={[5.8,1,-10.5]} scale={1.1}/><DiningModel name="cutting-board" pack="food" p={[-10,1.05,-10.4]} scale={1.4}/><DiningModel name="carrot" pack="food" p={[-10,1.12,-10.4]} scale={.6}/><DiningModel name="burger" pack="food" p={[7.8,1.13,-10.45]} scale={.65}/>
   <Block p={[-12,1.05,-3]} s={[1.3,2.1,.9]} c="#546d68"/><Block p={[-12,1.65,-2.52]} s={[.94,.55,.08]} c="#d9e2d9"/><Label text="DRINKS" p={[-12,2.28,-2.49]} size={.19}/>{[-.3,.3].map(dx=><group key={dx}><Block p={[-12+dx,1.3,-2.49]} s={[.08,.2,.12]} c="#d9e2d9"/><DiningModel name="cup" pack="food" p={[-12+dx,.55,-2.42]} scale={.65}/></group>)}
   <Block p={[12,1.05,-3]} s={[1.3,2.1,.9]} c="#6c827b"/><Block p={[12,1.65,-2.52]} s={[.94,.55,.08]} c="#d9e2d9"/><Label text="WATER" p={[12,2.28,-2.49]} size={.19}/>{[-.3,.3].map(dx=><group key={dx}><Block p={[12+dx,1.3,-2.49]} s={[.08,.2,.12]} c="#d9e2d9"/><DiningModel name="cup" pack="food" p={[12+dx,.55,-2.42]} scale={.65}/></group>)}
   <DiningModel name="bottle-ketchup" pack="food" p={[-5,.98,4.6]} scale={.7}/><DiningModel name="bottle-musterd" pack="food" p={[5,.98,4.6]} scale={.7}/>
   <WallPoster side={-1} z={-1.5} color="#3f6a4f" title={"FRESH\nEVERY DAY"}/><WallPoster side={1} z={-1.5} color="#d2a32d" title="GO OWLS"/>
+  {kitchenWorkers.map((worker,i)=><KitchenWorker key={i} worker={worker} index={i}/>)}
   <DiningCrowd look={look}/>
  </>
 }
