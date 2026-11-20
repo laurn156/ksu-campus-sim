@@ -172,7 +172,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
       if(indoorState.active||e.key.toLowerCase()!=='f'||e.repeat||e.target instanceof HTMLInputElement||e.target instanceof HTMLSelectElement||player.busRide||player.view)return
       if(community.students.some(s=>Math.hypot(s.x-player.x,s.z-player.z)<5))return
       const next=closest(); if(!next)return
-      if(next.kind==='bus' && next.index!==undefined) {player.busRide={index:next.index,until:performance.now()+10000};player.rides++}
+      if(next.kind==='bus' && next.index!==undefined) {player.busRide={index:next.index,until:Infinity};player.rides++}
       setMessage(next.line)
       window.dispatchEvent(new CustomEvent('campus-action',{detail:{kind:next.kind,allowed:!player.travelOrigin}}))
     }
@@ -190,7 +190,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
       {viewing && <div className="view-banner">Viewing location · <button onClick={travelToView}>Travel here</button> <button onClick={returnToPlayer}>Return to character</button></div>}
       {mapOpen && <CampusMap campus={campus} onClose={()=>setMapOpen(false)}/>}
       {mode === 'connect' && <div className="mode-hint">KSU Connect · limited online test</div>}
-      {mode === 'life' && !viewing && nearby && <div className="conversation"><b>{nearby.name}</b><span>{message || (nearby.kind === 'bus' ? 'Press F to board for a short ride' : 'Press F to say hello')}</span>{message && <button onClick={() => setMessage('')}>Close</button>}</div>}
+      {mode === 'life' && !viewing && nearby && <div className="conversation"><b>{nearby.name}</b><span>{message || (nearby.kind === 'bus' ? 'Press F to board' : 'Press F to say hello')}</span>{message && <button onClick={() => setMessage('')}>Close</button>}</div>}
       {near && (
         <div className="nearcard" key={near.name}>
           <div className="kicker">You're at</div>

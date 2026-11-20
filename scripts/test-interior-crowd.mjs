@@ -9,22 +9,28 @@ const obstacles={
  dorm:[...partition,...[-8,8].flatMap(x=>[[x,-8,2,3],[x-2,-10,1.5,1],[x,-5,1.7,1.2]]),[-8,5,3,1.2],[-8,7,1.5,1],[-5,6,1.5,1.5],[10,5,1.5,1.5],[8,5,1.5,1.5]],
  lab:[...partition,...[-9,-5,5,9].map(x=>[x,-7,2,1.5]),...[-8,0,8].map(x=>[x,3,2,1.5]),[-12,-9,1.5,1.5],[12,-9,1.5,1.5]],
  garage:[...partition,[-7,-7,5,3],[-11,-4,1,1],...[6,10].map(x=>[x,-7,2,1.5]),[-8,5,2,1.5],[11,7,1.5,1.5],[5,5,2,1.5]],
- greenhouse:[...partition,...[-9,-5,5,9].map(x=>[x,-7,2,1.5]),...[-8,0,8].map(x=>[x,3,2,1.5]),[-11,8,1.5,1.5],[11,8,1.5,1.5]],
+ greenhouse:[...[-7,7].map(x=>[x,7,2,1.5]),...[-9,-5,5,9].map(x=>[x,-7,2,1.5]),...[-8,0,8].map(x=>[x,3,2,1.5]),[-11,8,1.5,1.5],[11,8,1.5,1.5]],
  recreation:[...[4,7,10].map(x=>[x,-6,1.3,2.3]),...[4,7].map(x=>[x,5,2,1.2]),[11,4,.5,8]],
  office:[...partition,...[-9,-5,5,9].map(x=>[x,-7,2,1.4]),[-8,5,2.2,1.5],[7,5,2.5,1.5],[7,7,1.6,1.2],[11,9,1.5,1.5]],
+ bus:[...[-1.5,1.5].flatMap(x=>[-8,0,8].map(z=>[x,z,.12,.12])),...[-3.25,3.25].map(x=>[x,0,.4,24]),...[-7,-3,1,5].flatMap(z=>[-2.85,2.85].map(x=>[x,z,.55,1.15])),[-2.25,-10,1.5,2]],
+ uits:[...[-10.5,10.5].map(x=>[x,0,.18,20]),[0,-9.8,21,.2],...[-6,0].map(x=>[x,-6.6,4,1.2]),[7,-7.5,4,1.3],[9,-3.2,1.5,1.2],[9,1,1.5,1.2]],
  parking:[...[-9,-4,4,9].map(x=>[x+1.8,-6,2,4]),[2,5,1,1]],
 }
 for(const [kind,rects] of Object.entries(obstacles)){
- const sim=new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:5)
+ const sim=new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:5)
+ const player=kind==='uits'?[0,6]:[0,9]
  assert(sim.agents.length>=4,`${kind}: insufficient people on entry`)
  assert(sim.agents.some(a=>a.position[0]<0)&&sim.agents.some(a=>a.position[0]>0),`${kind}: people not spread out`)
  const visited=sim.agents.map(a=>new Set([a.activity]))
+ let carriedWater=false,carriedLaptop=false
  for(let frame=0;frame<3600;frame++){
-  const previous=sim.agents.map(a=>[...a.position]);sim.step(.05,[0,9])
-  for(const a of sim.agents){if(Math.hypot(a.position[0]-sim.activities[a.activity].position[0],a.position[1]-sim.activities[a.activity].position[1])<.18)visited[a.id].add(a.activity);assert(clearPoint(...a.position,rects),`${kind}: walked into furniture`);assert(Math.hypot(a.position[0]-previous[a.id][0],a.position[1]-previous[a.id][1])<.08,`${kind}: teleported`);assert(Math.hypot(a.position[0],a.position[1]-9)>=.74,`${kind}: hit player`)}
+  const previous=sim.agents.map(a=>[...a.position]);sim.step(.05,player)
+  for(const a of sim.agents){if(a.carry==='water'&&a.walk)carriedWater=true;if(a.carry==='laptop'&&a.walk)carriedLaptop=true;if(Math.hypot(a.position[0]-sim.activities[a.activity].position[0],a.position[1]-sim.activities[a.activity].position[1])<.18)visited[a.id].add(a.activity);assert(clearPoint(...a.position,rects),`${kind}: walked into furniture`);assert(Math.hypot(a.position[0]-previous[a.id][0],a.position[1]-previous[a.id][1])<.08,`${kind}: teleported`);assert(Math.hypot(a.position[0]-player[0],a.position[1]-player[1])>=.74,`${kind}: hit player`)}
   for(let i=0;i<sim.agents.length;i++)for(let j=i+1;j<sim.agents.length;j++)assert(Math.hypot(sim.agents[i].position[0]-sim.agents[j].position[0],sim.agents[i].position[1]-sim.agents[j].position[1])>=.60,`${kind}: characters overlap`)
  }
  assert(visited.every(s=>s.size>=2),`${kind}: an agent never changed activity`)
+ if(kind==='greenhouse')assert(carriedWater,'greenhouse: nobody carried a watering can between stations')
+ if(kind==='uits')assert(carriedLaptop,'UITS: nobody carried a laptop to the help desk')
  console.log(`${kind}: populated, distributed, and moving safely`)
 }
 // Reproduce two people meeting head-on; both must eventually get past one another.

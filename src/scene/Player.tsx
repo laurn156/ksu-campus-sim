@@ -144,7 +144,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05)
-    if (indoorState.active) { keys.current.clear(); player.moving = false; return }
+    if (indoorState.active) { if(player.busRide){const bus=busPositions[player.busRide.index];if(bus){player.x=bus.x;player.z=bus.z}} keys.current.clear(); player.moving = false; return }
     const k = keys.current
     if (player.viewChanged) { pan.current.set(0,0); snap.current=true; player.viewChanged=false }
     if (player.tp) {
