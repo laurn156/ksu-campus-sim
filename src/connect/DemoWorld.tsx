@@ -34,7 +34,7 @@ export function useDemoWorld(name:string,look:AvatarLook) {
    }
    ws.onclose=()=>{if(!alive)return;setStatus('Reconnecting…');setPeers([]);setRequests([]);setSent([]);setFriends([]);setId('');retry=setTimeout(connect,2000)}
   }
-  connect();const interval=setInterval(()=>{const p=indoorState.active?indoorState:player;transmit({type:'move',x:p.x,y:indoorState.active?0:player.y,z:p.z,heading:p.heading,moving:p.moving,slapping:activityState.mode==='rock'&&performance.now()<activityState.throwUntil,activity:activityState.mode==='bathtub'?'bathtub':'',discFlight:activityState.discFlight,location:indoorState.active?indoorState.location:'campus'})},200)
+  connect();const interval=setInterval(()=>{const p=indoorState.active?indoorState:player;transmit({type:'move',x:p.x,y:indoorState.active?0:player.y,z:p.z,heading:p.heading,moving:p.moving,slapping:activityState.mode==='rock'&&performance.now()<activityState.throwUntil,activity:activityState.mode==='bathtub'?'bathtub':'',boosting:activityState.raceBoost,discFlight:activityState.discFlight,location:indoorState.active?indoorState.location:'campus'})},200)
   return()=>{alive=false;clearInterval(interval);clearTimeout(retry);ws?.close();socket.current=null}
  },[name,look])
  const world:World={peers,onlineIds:peers.map(p=>p.id),messages,status,error:'',send:async text=>transmit({type:'chat',text}),wave:()=>{transmit({type:'wave'})},sendGame:packet=>transmit({type:'game',to:packet.to,packet})}

@@ -35,3 +35,5 @@
 @keyframes develop{from{filter:brightness(2.2) saturate(0);transform:rotate(-2deg) translateY(30px)}}
 @media(max-width:860px){.booth{grid-template-columns:1fr;grid-template-rows:auto 1fr;padding:12px;gap:12px;overflow:auto}.booth-frame{height:52vh}.booth-panel{min-height:380px}}
 @media(prefers-reduced-motion:reduce){.booth *,.booth-result *{animation-duration:.01s!important}}
+/* Campus labels are Drei HTML overlays with their own high z-index. */
+body:has(.booth) .student-label{visibility:hidden!important}

@@ -18,10 +18,10 @@ export function bathtubCourse(campus: Campus): Pt[] {
 export type RaceCar={x:number;z:number;heading:number;speed:number;next:number;finished:boolean}
 export function newRace(course:Pt[]):RaceCar { const a=course[0],b=course[1];return {x:a[0],z:a[1],heading:Math.atan2(b[0]-a[0],b[1]-a[1]),speed:0,next:1,finished:false} }
 /** Arcade acceleration, steering, and building/boundary collision. */
-export function driveRace(car:RaceCar,keys:Set<string>,dt:number,course:Pt[],blocked:(x:number,z:number)=>boolean,laps=1) {
+export function driveRace(car:RaceCar,keys:Set<string>,dt:number,course:Pt[],blocked:(x:number,z:number)=>boolean,laps=1,boosting=false) {
  dt=Math.min(dt,.05)
  const forward=keys.has('w')||keys.has('arrowup'),reverse=keys.has('s')||keys.has('arrowdown')
- car.speed=Math.max(-4,Math.min(11,car.speed+((forward?10:0)-(reverse?12:0))*dt))
+ car.speed=Math.max(-4,Math.min(boosting?16:11,car.speed+((forward?(boosting?18:10):0)-(reverse?12:0))*dt))
  if(!forward&&!reverse)car.speed*=Math.exp(-1.4*dt)
  const steer=(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0)
  car.heading-=steer*dt*1.7*Math.min(1,Math.abs(car.speed)/3)*Math.sign(car.speed)
@@ -38,4 +38,10 @@ export function raceCoinPositions(course:Pt[]):Pt[]{
 /** Segment-based pickup avoids skipping coins at high frame rates or speeds. */
 export function collectRaceCoins(positions:Pt[],collected:boolean[],from:Pt,to:Pt,radius=1.65){
  const found:number[]=[];positions.forEach(([x,z],i)=>{if(!collected[i]&&distToSeg(x,z,from,to)<radius){collected[i]=true;found.push(i)}});return found
+}
+
+/** Every three collected coins immediately grants two seconds of speed boost. */
+export function addCoinBoost(totalBefore:number,added:number,remaining:number){
+ const boosts=Math.floor((totalBefore+added)/3)-Math.floor(totalBefore/3)
+ return {remaining:Math.min(6,Math.max(0,remaining)+boosts*2),boosts}
 }
