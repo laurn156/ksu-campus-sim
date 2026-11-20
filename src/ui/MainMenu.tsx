@@ -11,7 +11,7 @@ import { PRESETS } from './nestProfile'
 import './menu.css'
 
 // Fixed menu view: looking across the Student Center plaza with the Big Owl Bus route behind it.
-const EYE = new THREE.Vector3(-120.3, 5, -205.7), TARGET = new THREE.Vector3(-113.2, 3.2, -231.6)
+const EYE = new THREE.Vector3(-99.1, 6, -180.2), TARGET = new THREE.Vector3(-112, 3.5, -222)
 const forward = TARGET.clone().sub(EYE).setY(0).normalize(), right = new THREE.Vector3(-forward.z, 0, forward.x)
 const at = (ahead: number, side: number) => EYE.clone().setY(0).addScaledVector(forward, ahead).addScaledVector(right, side)
 const faceCamera = Math.atan2(-forward.x, -forward.z)
@@ -28,7 +28,7 @@ function MenuCamera() {
 
 /** A student near the menu who waves at the player (right arm reaches up and sways). */
 function Waver({ look }: { look: AvatarLook }) {
-  const reach = useRef<THREE.Vector3 | null>(new THREE.Vector3()), pos = useMemo(() => at(12, 4.6), [])
+  const reach = useRef<THREE.Vector3 | null>(new THREE.Vector3()), pos = useMemo(() => at(15, 2.6), [])
   useFrame(({ clock }) => {
     const t = clock.elapsedTime, sway = Math.sin(t * 6) * .35
     reach.current!.copy(pos).addScaledVector(right, -.55 + sway * .3).add(new THREE.Vector3(0, 2.3 + Math.abs(sway) * .2, 0)).addScaledVector(forward, -.35)
@@ -38,7 +38,7 @@ function Waver({ look }: { look: AvatarLook }) {
 
 /** Two students relaxing on a bench at the edge of the plaza, facing the camera. */
 function BenchSitters() {
-  const sit = useRef(1), pos = useMemo(() => at(17, -6.5), [])
+  const sit = useRef(1), pos = useMemo(() => at(18, 9.5), [])
   return <group position={pos} rotation={[0, faceCamera, 0]}>
     <mesh position={[0, .45, -.05]}><boxGeometry args={[2.4, .1, .6]} /><meshStandardMaterial color="#8a6a4c" /></mesh>
     <mesh position={[0, .85, -.32]}><boxGeometry args={[2.4, .5, .08]} /><meshStandardMaterial color="#8a6a4c" /></mesh>
