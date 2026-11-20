@@ -5,13 +5,13 @@ import { adminObstacles, mathObstacles, libraryObstacles } from '../src/scene/ac
 import { clearPoint } from '../src/scene/diningSimulation.ts'
 const partition=[[-8,-2,12,.25],[8,-2,12,.25]]
 const obstacles={
- ...Object.fromEntries(['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture'].map(kind=>[kind,specialObstacles(kind)])),
+ ...Object.fromEntries(['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture','competition','technology','housing','community'].map(kind=>[kind,specialObstacles(kind)])),
  student:[[-5,-1,.3,8],[-5,8.1,.3,3.8],[5,-5,.3,7],[5,5.6,.3,8.8],[-11,-8,4,1.5],[-11,-3.8,4,1.5],[-11,.5,4,1.5],[-10,5,2,2],[-10,9,2,2],[0,-6,3,2],[0,-1,3,2],[0,4,3,2],[9,-6,3,2],[9,-1,3,2],[10,5,2,1.5],[-2,9,2.5,1],[-8.7,7,1.3,1.3],[12,8,1,1]],
  classroom:[...[-4,-1,2,5].flatMap(z=>[-8,-4,0,4,8].map(x=>[x,z,1.4,1.1])),[0,-9,8,1]],
  library:libraryObstacles,
  admin:adminObstacles,
  math:mathObstacles,
- dorm:[...partition,...[-8,8].flatMap(x=>[[x,-8,2,3],[x-2,-10,1.5,1],[x,-5,1.7,1.2]]),[-8,5,3,1.2],[-8,7,1.5,1],[-5,6,1.5,1.5],[10,5,1.5,1.5],[8,5,1.5,1.5]],
+ dorm:[...partition,...[-8,8].flatMap(x=>[[x,-8,2,3],[x-2,-10,1.5,1],[x,-5,1.7,1.2]]),[-8,5,3,1.2],[-8,7,1.5,1],[-5,6,1.5,1.5],[10,5,1.5,1.5],[8,5,1.5,1.5],[-11,1,2,1.4],[11,1,2,1.4],[11,8,1.5,1.2],[12,-8,1.5,2]],
  lab:[...partition,...[-9,-5,5,9].map(x=>[x,-7,2,1.5]),...[-8,0,8].map(x=>[x,3,2,1.5]),[-12,-9,1.5,1.5],[12,-9,1.5,1.5]],
  garage:[...partition,[-7,-7,5,3],[-11,-4,1,1],...[6,10].map(x=>[x,-7,2,1.5]),[-8,5,2,1.5],[11,7,1.5,1.5],[5,5,2,1.5]],
  greenhouse:[...[-7,7].map(x=>[x,7,2,1.5]),...[-9,-5,5,9].map(x=>[x,-7,2,1.5]),...[-8,0,8].map(x=>[x,3,2,1.5]),[-11,8,1.5,1.5],[11,8,1.5,1.5]],
@@ -22,7 +22,7 @@ const obstacles={
  parking:[...[-9,-4,4,9].map(x=>[x+1.8,-6,2,4]),[2,5,1,1]],
 }
 for(const [kind,rects] of Object.entries(obstacles)){
- const sim=new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:kind==='math'?12:kind==='admin'?8:kind==='library'?8:['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture'].includes(kind)?6:5)
+ const sim=new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:kind==='math'?12:kind==='admin'?8:kind==='library'?8:['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture','competition','technology','housing','community'].includes(kind)?6:5)
  const player=kind==='uits'?[0,6]:[0,9]
  assert(sim.agents.length>=4,`${kind}: insufficient people on entry`)
  assert(sim.agents.some(a=>a.position[0]<0)&&sim.agents.some(a=>a.position[0]>0),`${kind}: people not spread out`)
