@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict'
+import {boardResult,robotMove,machineHint,wireTargets} from '../src/activities/engineeringGames.ts'
+assert.match(machineHint({},false),/fuse/i)
+assert.match(machineHint({},true),/red/i)
+assert.match(machineHint({...wireTargets,blue:'NC'},true),/blue/i)
+assert.equal(machineHint(wireTargets,true),'')
+assert.equal(boardResult(['X','X','X',null,null,null,null,null,null]),'X')
+assert.equal(boardResult(['X','O','X','X','O','O','O','X','X']),'tie')
+assert.equal(robotMove(['O','O',null,'X','X',null,null,null,null]),2,'robot takes a winning move')
+assert.equal(robotMove(['X','X',null,'O',null,null,null,null,null]),2,'robot blocks a winning move')
+assert.equal(robotMove(Array(9).fill(null)),4,'robot favors the center')
+assert.equal(robotMove(['X','X','X','O','O',null,null,null,null]),null,'no moves after a win')
+console.log('Vending wiring and tic-tac-toe win, block and tie logic verified')
+const {solveArm}=await import('../src/activities/robotics.ts')
+for(let i=0;i<9;i++){const x=(i%3-1)*.65,z=(Math.floor(i/3)-1)*.65;assert(solveArm({x:Math.hypot(x+2,z),y:.25-1.1}),`arm can reach square ${i}`)}

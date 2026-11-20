@@ -28,8 +28,8 @@ const items:Item[]=[
  {name:'Hooty Hoo Hunt',kind:'MINIGAME',description:'Find the hidden letters across campus.',instructions:'Press E at the Hooty Hoo Hunt sign.',target:c=>{const p=huntPositions(c)[0];return p?near(c,p):null}},
  {name:'Attend a Class',kind:'LEARN',description:'Choose any subject and topic for a lesson.',instructions:'Choose a subject and topic.',target:()=>({x:player.x,z:player.z,yaw:player.yaw})},
  {name:'Campus Conversations',kind:'MEET',description:'Talk with a campus student and build a friendship.',instructions:'Approach the student and press E to talk.',target:c=>{const p=community.students.reduce<(typeof community.students)[number]|null>((best,s)=>!best||Math.hypot(s.x-player.x,s.z-player.z)<Math.hypot(best.x-player.x,best.z-player.z)?s:best,null);return p?near(c,[p.x,p.z],[2,3]):null}},
- {name:'Robotic Arm',kind:'ROBOTICS',description:'Draw a path for an articulated arm to follow.',instructions:'Go inside the Shore Innovation Center. Approach the robot-arm station and press E.',target:c=>building(c,'1556621556')},
- {name:'Build and Battle Robots',kind:'ROBOTICS',description:'Customize a robot and battle the computer.',instructions:'Go inside the Shore Innovation Center. Approach the BattleBots station and press E.',target:c=>building(c,'1556621556')},
+ {name:'Fix the Vending Machine',kind:'ENGINEERING',description:'Reconnect the wires and get a snack machine working.',instructions:'Approach the out-of-order vending machine and press E.',target:c=>building(c,'1556621556')},
+ {name:'Robot Arm Tic-Tac-Toe',kind:'ENGINEERING',description:'Play tic-tac-toe against a robotic arm.',instructions:'Approach the robotic arm and press E.',target:c=>building(c,'1556621556')},
 ]
 export function ActivityMenu({campus}:{campus:Campus}){
  const [open,setOpen]=useState(false),[message,setMessage]=useState('')
@@ -40,7 +40,7 @@ export function ActivityMenu({campus}:{campus:Campus}){
   player.view=null;window.dispatchEvent(new Event('activity-travel'));player.tp=null;player.viewChanged=true
   const direct=['Bathtub Race','Disc Golf','Drive the Big Owl Bus','Slap the Rock Battle','Hooty Hoo Hunt'].includes(item.name)
   if(direct){window.dispatchEvent(new CustomEvent('activity-start',{detail:{name:item.name,target}}));setOpen(false);setMessage('');return}
-  if(['Robotic Arm','Build and Battle Robots'].includes(item.name)&&target.buildingId){window.dispatchEvent(new CustomEvent('activity-enter-building',{detail:{id:target.buildingId,name:item.name,target}}));setOpen(false);setMessage('');return}
+  if(['Fix the Vending Machine','Robot Arm Tic-Tac-Toe'].includes(item.name)&&target.buildingId){window.dispatchEvent(new CustomEvent('activity-enter-building',{detail:{id:target.buildingId,name:item.name,target}}));setOpen(false);setMessage('');return}
   if(item.name==='Campus Conversations'){const student=community.students.reduce<(typeof community.students)[number]|null>((best,s)=>!best||Math.hypot(s.x-target.x,s.z-target.z)<Math.hypot(best.x-target.x,best.z-target.z)?s:best,null);if(student){player.x=target.x;player.z=target.z;player.yaw=target.yaw;window.dispatchEvent(new CustomEvent('open-student',{detail:student.id}));setOpen(false);setMessage('');return}}
   player.tp=target;setOpen(false);setMessage(item.instructions)
  }
