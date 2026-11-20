@@ -191,7 +191,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
       </div>
       <GoTo campus={campus} onView={viewLocation} />
       <button className="edit-character" onClick={onEdit}>✦ Edit character</button>
-      <button className="mode-return" onClick={onModes}>← Sign out</button>
+      <button className="mode-return" onClick={onModes}>← Main menu</button>
       {viewing && <div className="view-banner">Viewing location · <button onClick={travelToView}>Travel here</button> <button onClick={returnToPlayer}>Return to character</button></div>}
       {mapOpen && <CampusMap campus={campus} onClose={()=>setMapOpen(false)}/>}
       {mode === 'connect' && <div className="mode-hint">KSU Connect · limited online test</div>}

@@ -25,7 +25,8 @@ export function useOfflinePlayers(campus:Campus,userId:string,onlineIds:string[]
   return profiles.filter(p=>p.id!==userId&&!onlineIds.includes(p.id)).slice(0,10).map(p=>{
    const destinations=campus.buildings.filter(b=>['A','C','D','O','S1'].includes(b.code)).map(b=>b.id)
    const position=offlinePosition(p.id,now,paths,destinations)!
-   return {id:p.id,name:p.username,look:{...DEFAULT_PROFILE.look,...p.appearance},...position,online:false} satisfies Peer
+   const {displayName,...appearance}=(p.appearance??{}) as Peer['look']&{displayName?:unknown}
+   return {id:p.id,name:typeof displayName==='string'&&displayName.trim()?displayName.trim().slice(0,24):p.username,look:{...DEFAULT_PROFILE.look,...appearance},...position,online:false} satisfies Peer
   })
  },[profiles,userId,onlineIds,ready,paths,now,campus])
 }

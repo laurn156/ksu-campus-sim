@@ -1,4 +1,5 @@
 import { useFrame, useThree } from '@react-three/fiber'
+import { Html } from '@react-three/drei'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { Character, type Headwear, type Face, type Accessory } from '../characters/Character'
@@ -68,7 +69,7 @@ export function spawnPoint(campus: Campus): [number, number, number] {
   return [cx, cz + 40, 0]
 }
 
-export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
+export function Player({ campus, look, name }: { campus: Campus; look: AvatarLook; name?: string }) {
   const collider = useMemo(() => new Collider(campus.buildings), [campus])
   const body = useRef<THREE.Group>(null)
   const walk = useRef(0)
@@ -243,6 +244,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     <group>
       <group ref={body}>
         <Character {...look} walk={walk} point={throwing} sit={seated} sitLift={.112} scale={1.15} />
+        {name && <Html position={[0, 2.25, 0]} center zIndexRange={[20, 0]}><div className="player-tag">{name}</div></Html>}
       </group>
     </group>
   )

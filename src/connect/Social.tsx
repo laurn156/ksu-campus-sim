@@ -22,7 +22,7 @@ export function SocialPanel({userId,peers,onlineIds,social,wave,allowRoaming}:{u
  const [roaming,setRoaming]=useState(false),[major,setMajor]=useState(''),[settingsError,setSettingsError]=useState('')
  useEffect(()=>{if(!supabase)return;void supabase.from('campus_profiles').select('offline_roaming,major').eq('id',userId).maybeSingle().then(({data,error})=>{if(error){setSettingsError('Offline roaming settings require the unified campus database update.');return}setRoaming(data?.offline_roaming===true);setMajor(data?.major??'')})},[userId])
  const saveSettings=async(enabled:boolean,nextMajor:string)=>{if(!supabase)return;const {error}=await supabase.from('campus_profiles').update({offline_roaming:enabled,major:nextMajor.trim().slice(0,80)||null}).eq('id',userId);if(error)setSettingsError(error.message);else{setRoaming(enabled);setMajor(nextMajor);setSettingsError('Settings saved.')}}
- const people=new Map([...social.profiles.map(p=>[p.id,{id:p.id,name:p.username}] as const),...peers.map(p=>[p.id,{id:p.id,name:p.name}] as const)])
+ const people=new Map([...social.profiles.map(p=>{const d=(p.appearance as {displayName?:unknown}|null)?.displayName;return [p.id,{id:p.id,name:typeof d==='string'&&d.trim()?d.trim().slice(0,24):p.username}] as const}),...peers.map(p=>[p.id,{id:p.id,name:p.name}] as const)])
  const name=(id:string)=>people.get(id)?.name??'Student'
  const available=peers.filter(p=>!social.blocked.includes(p.id))
  const friends=social.links.filter(l=>l.state==='accepted'),incoming=social.links.filter(l=>l.state==='pending'&&l.recipient===userId),outgoing=social.links.filter(l=>l.state==='pending'&&l.sender===userId)

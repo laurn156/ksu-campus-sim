@@ -17,8 +17,8 @@ const clothingColors = ['#29292c','#f5f1e7','#d4a720','#82906b','#777d9a','#aa92
 type Section = 'Outfit' | 'Hair & hats' | 'Accessories' | 'Colors' | 'Expression'
 const sections: {label:Section; icon:string}[] = [{label:'Outfit',icon:'♧'}, {label:'Hair & hats',icon:'◠'}, {label:'Accessories',icon:'✧'}, {label:'Colors',icon:'◉'}, {label:'Expression',icon:'☺'}]
 
-type Props = { screen: 'welcome' | 'create'; profile: Profile; hasSaved: boolean; onChange: (p: Profile) => void; onCreate: () => void; onPlay: () => void; onBack: () => void }
-export function Welcome({ screen, profile, hasSaved, onChange, onCreate, onPlay, onBack }: Props) {
+type Props = { screen: 'welcome' | 'create'; profile: Profile; hasSaved: boolean; onChange: (p: Profile) => void; onCreate: () => void; onPlay: () => void; onBack: () => void; nameError?: string; saveLabel?: string }
+export function Welcome({ screen, profile, hasSaved, onChange, onCreate, onPlay, onBack, nameError, saveLabel }: Props) {
   const [section,setSection] = useState<Section>('Outfit')
   const [clothes,setClothes] = useState<'Top'|'Bottom'|'Shoes'>('Top')
   const [rotation,setRotation] = useState(0)
@@ -36,7 +36,7 @@ export function Welcome({ screen, profile, hasSaved, onChange, onCreate, onPlay,
       <div className="creator2-grid">
         <aside className="creator-nav" aria-label="Customization categories">{sections.map(item => <button key={item.label} aria-pressed={section===item.label} onClick={() => setSection(item.label)}><span>{item.icon}</span>{item.label}</button>)}<button className="randomize" onClick={randomize}>⤨ &nbsp; Randomize</button></aside>
         <div className="creator-stage"><div className="stage-kicker">YOUR CHARACTER <span>✦</span></div><div className="stage-character"><CharacterPreview look={profile.look} rotation={rotation} /></div><div className="stage-floor"></div><div className="stage-controls"><button aria-label="Rotate character left" onClick={() => setRotation(r => r-Math.PI/4)}>‹</button><span>ROTATE YOUR CHARACTER</span><button aria-label="Rotate character right" onClick={() => setRotation(r => r+Math.PI/4)}>›</button></div></div>
-        <div className="creator-panels"><div className="edit-panel name-panel"><label htmlFor="name">Your name <small>OPTIONAL</small></label><input id="name" maxLength={24} placeholder="Enter a name" value={profile.name} onChange={e => onChange({...profile,name:e.target.value})} /></div>
+        <div className="creator-panels"><div className="edit-panel name-panel"><label htmlFor="name">Your name</label><input id="name" maxLength={20} placeholder="Enter your name..." value={profile.name} onChange={e => onChange({...profile,name:e.target.value})} aria-invalid={!!nameError} />{nameError && <p className="name-error" role="alert">{nameError}</p>}</div>
           {section === 'Outfit' && <div className="edit-panel"><div className="panel-title"><h2>♧ &nbsp; Outfit</h2><div className="tabs">{(['Top','Bottom','Shoes'] as const).map(t => <button key={t} aria-pressed={clothes===t} onClick={() => setClothes(t)}>{t}</button>)}</div></div>
             {clothes==='Top' ? <div className="item-grid">{tops.map(t => <Item key={t.value} selected={profile.look.top===t.value} label={t.label} icon={t.icon} onClick={() => set({top:t.value})} />)}</div> : clothes==='Bottom' ? <div className="item-grid">{bottoms.map(t => <Item key={t.value} selected={profile.look.bottom===t.value} label={t.label} icon={t.icon} onClick={() => set({bottom:t.value})} />)}</div> : <div className="item-grid">{([{value:'none',label:'None'},{value:'sneakers',label:'White sneakers'},{value:'black',label:'Black sneakers'}] as const).map(t => <Item key={t.value} selected={profile.look.shoes===t.value} label={t.label} icon={t.value==='none'?'○':'◒'} onClick={() => set({shoes:t.value})}/>)}</div>}
             {clothes==='Top' && profile.look.top!=='none' && <div className="panel-colors"><b>Top color</b>{clothingColors.map(c => <button key={c} aria-label={'Top color '+c} aria-pressed={profile.look.topColor===c} style={{background:c}} onClick={() => set({topColor:c})} />)}</div>}
@@ -48,14 +48,14 @@ export function Welcome({ screen, profile, hasSaved, onChange, onCreate, onPlay,
           {section === 'Colors' && <div className="edit-panel"><div className="panel-title"><h2>◉ &nbsp; Body color</h2></div><div className="body-colors">{(Object.keys(PALETTE) as PaletteName[]).map(color => <button key={color} aria-label={color} aria-pressed={profile.look.color===color} style={{background:PALETTE[color]}} onClick={() => set({color})} />)}</div></div>}
           {section === 'Expression' && <div className="edit-panel"><div className="panel-title"><h2>☺ &nbsp; Expression</h2></div><div className="item-grid">{faces.map(f => <Item key={f.value} selected={profile.look.face===f.value} label={f.label} icon={f.icon} onClick={() => set({face:f.value})}/>)}</div></div>}
           <div className="edit-panel creator-tip"><b>MAKE IT YOURS</b><p>Start with a blank character and add the pieces you like. You can change your look later.</p><button onClick={() => onChange({...profile,look:{...DEFAULT_PROFILE.look}})}>Reset appearance</button></div>
-          <button className="creator-save" onClick={onPlay}>Save &amp; Continue <span>→</span></button><p className="creator-save-note">Your character is saved in this browser on this device.</p>
+          <button className="creator-save" onClick={onPlay}>{saveLabel ?? <>Save &amp; Continue</>} <span>→</span></button><p className="creator-save-note">Your character is saved in this browser on this device.</p>
         </div>
       </div>
     </section>}
   </main>
 }
 function Item({label, icon, selected, onClick}:{label:string;icon:string;selected:boolean;onClick:()=>void}) { return <button className="item" aria-pressed={selected} onClick={onClick}>{icon === '♧' || icon === 'KSU' ? <svg className="garment-icon" viewBox="0 0 60 52" aria-hidden="true"><path d="M18 6 L25 3 Q30 10 35 3 L42 6 L55 16 L49 26 L44 22 L44 46 L16 46 L16 22 L11 26 L5 16 Z" fill={icon === 'KSU' ? '#29292c' : '#e9e4dc'} stroke="#57605b" strokeWidth="2" />{icon === 'KSU' && <text x="30" y="32" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#ffc629">KSU</text>}</svg> : <span>{icon}</span>}<small>{label}</small></button> }
-function CharacterPreview({ look, rotation }: {look: AvatarLook;rotation:number}) {
+export function CharacterPreview({ look, rotation }: {look: AvatarLook;rotation:number}) {
   return <Canvas camera={{position:[0,0.3,5],fov:33}} dpr={[1,1.5]}><ambientLight intensity={2.2}/><directionalLight position={[4,6,5]} intensity={2}/><group position={[0,-0.7,0]} scale={1.3} rotation={[0,rotation,0]}><Character {...look} /></group></Canvas>
 }
 

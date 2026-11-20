@@ -27,8 +27,11 @@ export function useConnectWorld(userId:string,username:string):World {
     const ch=client.channel('campus-player:'+id,{config:{private:true}});channels.set(id,ch)
     void client.from('campus_profiles').select('username,appearance').eq('id',id).maybeSingle().then(({data})=>{
      if(!alive||!data||!channels.has(id))return
-     const name=String(data.username).slice(0,24),raw=data.appearance as Partial<AvatarLook>|null
-     if(!raw || typeof raw!=='object')return
+     const rawAll=data.appearance as (Partial<AvatarLook>&{displayName?:unknown})|null
+     if(!rawAll || typeof rawAll!=='object')return
+     // Nest Life stores the player's display name with their appearance; older profiles fall back to the username.
+     const {displayName,...raw}=rawAll
+     const name=(typeof displayName==='string'&&displayName.trim()?displayName.trim():String(data.username)).slice(0,24)
      const allowed=(value:unknown,options:string[],fallback:string)=>typeof value==='string'&&options.includes(value)?value:fallback
      const look={...DEFAULT_PROFILE.look,...raw,
       color:allowed(raw.color,['orange','yellow','cream','green','blue','purple','slate','charcoal'],'blue'),
