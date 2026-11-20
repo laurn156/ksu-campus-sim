@@ -21,7 +21,7 @@ export function nearestBasket(campus:Campus,x:number,z:number):Pt|null{
 }
 /** Simple ballistic flight, independent of rendering and AI. */
 export function stepDisc(state:{x:number;y:number;z:number;vx:number;vy:number;vz:number},dt:number,wind:Pt=[0,0]){
- const next={...state};next.x+=next.vx*dt;next.y+=next.vy*dt;next.z+=next.vz*dt;next.vy-=5.5*dt
+ const next={...state};next.x+=next.vx*dt;next.y+=next.vy*dt;next.z+=next.vz*dt;const speed=Math.hypot(next.vx,next.vz);next.vy-=Math.max(3.5,5.5-speed*.10)*dt
  next.vx+=wind[0]*dt;next.vz+=wind[1]*dt
  const drag=Math.exp(-.25*dt);next.vx*=drag;next.vz*=drag
  return next
@@ -41,3 +41,12 @@ export function discTrajectory(lie:Pt,angle:number,power:number,wind:Pt){
  for(let i=0;i<100;i++){flight=stepDisc(flight,dt,wind);if(flight.y<=.15)break;if(i%3===0)points.push({x:flight.x,y:flight.y,z:flight.z})}
  return points
 }
+
+/** A disc skips once or twice, then skids to rest rather than stopping in mid-air. */
+export function stepDiscLanding(state:{x:number;y:number;z:number;vx:number;vy:number;vz:number},dt:number){
+ const next={...state};next.x+=next.vx*dt;next.z+=next.vz*dt;next.y+=next.vy*dt;next.vy-=7*dt
+ if(next.y<=.16){next.y=.16;next.vy=next.vy<-.8?-next.vy*.22:0;const drag=Math.exp(-3.4*dt);next.vx*=drag;next.vz*=drag;if(Math.hypot(next.vx,next.vz)<.08){next.vx=0;next.vz=0}}
+ return next
+}
+/** Wind is a world-space acceleration, shared by preview and actual flight. */
+export function makeDiscWind():Pt{const angle=Math.random()*Math.PI*2,magnitude=1.2+Math.random()*2;return [Math.sin(angle)*magnitude,Math.cos(angle)*magnitude]}

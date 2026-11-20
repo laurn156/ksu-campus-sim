@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { Campus, Pt } from '../campus'
+import { protectedShuttle } from './trafficSafety'
 
 export const busDriver = { index: -1 }
 export const busPositions: { x: number; z: number; h: number }[] = []
@@ -58,7 +59,10 @@ function Shuttle({ path, offset, texture }: { path: Pt[]; offset: number; textur
     if (!motion.current) motion.current={distance:offset*data.length*2,wait:0,inStop:false}
     const m=motion.current, dt=Math.min(dtRaw,0.05), index=Math.round(offset * 4)
     const here=busPositions[index]
-    const waiting=!!here && busCaller.riding!==index && Math.hypot(here.x-busCaller.x,here.z-busCaller.z)<HOLD_RADIUS
+    const safetyDistance=here?Math.hypot(here.x-protectedShuttle.x,here.z-protectedShuttle.z):Infinity
+    const clearing=protectedShuttle.active&&safetyDistance<12
+    const waiting=!clearing&&!!here&&((busCaller.riding!==index&&Math.hypot(here.x-busCaller.x,here.z-busCaller.z)<HOLD_RADIUS)||(protectedShuttle.active&&safetyDistance<18))
+    if(clearing)ref.current.visible=false
     if (!waiting) {
       if (m.wait>0) m.wait=Math.max(0,m.wait-dt)
       else m.distance=(m.distance+dt*8)%(data.length*2)

@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict'
-import { busStops, driveBus, toggleBusDoors, busScore } from '../src/activities/busDrive.ts'
+import { busStops, driveBus, toggleBusDoors, busScore, insideBusStop, STOP_WIDTH, STOP_LENGTH } from '../src/activities/busDrive.ts'
 const path=Array.from({length:36},(_,i)=>[i*10,0]), stops=busStops(path,0,0)
 assert.equal(stops.length,3)
-const run={car:{x:0,z:0,heading:Math.PI/2,speed:0,next:1,finished:false},stops,next:0,doors:false,wait:0,passengers:0,finished:false,elapsed:0,pickedUp:0,collisions:0,impactCooldown:0,pedestrianHits:0,arrivals:[],lateStops:0}
+assert(insideBusStop(6,12,[0,0],0),'edge of the visible stop must be eligible')
+assert(!insideBusStop(6.01,12,[0,0],0),'outside the side must not be eligible')
+assert(insideBusStop(12,6,[0,0],Math.PI/2),'rectangle rotates with the roadway')
+assert.equal(STOP_WIDTH,12);assert.equal(STOP_LENGTH,24)
+const run={car:{x:0,z:0,heading:Math.PI/2,speed:0,next:1,finished:false},stops,stopHeadings:stops.map(()=>0),next:0,doors:false,wait:0,passengers:0,finished:false,elapsed:0,pickedUp:0,collisions:0,impactCooldown:0,pedestrianHits:0,arrivals:[],lateStops:0}
 assert.equal(toggleBusDoors(run),'away')
+const corner={...run,car:{...run.car,x:stops[0][0]+6,z:stops[0][1]+12},arrivals:[]};assert.equal(toggleBusDoors(corner),'opened','any stationary point on the rectangle must allow boarding')
 ;[run.car.x,run.car.z]=stops[0];run.car.speed=2
 assert.equal(toggleBusDoors(run),'moving');run.car.speed=0
 assert.equal(toggleBusDoors(run),'opened');assert.equal(toggleBusDoors(run),'opened')

@@ -1,6 +1,11 @@
 import type { Pt } from '../campus.ts'
 import { driveRace, type RaceCar } from './bathtubRace.ts'
 
+export const STOP_WIDTH=12
+export const STOP_LENGTH=24
+/** Heading of the roadway used for both the drawn rectangle and pickup test. */
+export function stopHeading(path:Pt[],stop:Pt){let closest=0;for(let i=1;i<path.length;i++)if(Math.hypot(path[i][0]-stop[0],path[i][1]-stop[1])<Math.hypot(path[closest][0]-stop[0],path[closest][1]-stop[1]))closest=i;const a=path[Math.max(0,closest-1)],b=path[Math.min(path.length-1,closest+1)];return Math.atan2(b[0]-a[0],b[1]-a[1])}
+export function insideBusStop(x:number,z:number,stop:Pt,heading:number){const dx=x-stop[0],dz=z-stop[1],side=dx*Math.cos(heading)-dz*Math.sin(heading),forward=dx*Math.sin(heading)+dz*Math.cos(heading);return Math.abs(side)<=STOP_WIDTH/2+1e-9&&Math.abs(forward)<=STOP_LENGTH/2+1e-9}
 /** Choose three spaced stops along the same road used by campus shuttles. */
 export function busStops(path:Pt[],x:number,z:number):Pt[] {
  if(path.length<4)return []
@@ -10,7 +15,7 @@ export function busStops(path:Pt[],x:number,z:number):Pt[] {
  for(const p of ordered){distance+=Math.hypot(p[0]-last[0],p[1]-last[1]);last=p;if(distance>=75){stops.push(p);distance=0;if(stops.length===3)break}}
  return stops.length===3?stops:[]
 }
-export type BusRun={car:RaceCar;stops:Pt[];next:number;doors:boolean;wait:number;passengers:number;finished:boolean;elapsed:number;pickedUp:number;collisions:number;impactCooldown:number;pedestrianHits:number;arrivals:number[];lateStops:number}
+export type BusRun={car:RaceCar;stops:Pt[];stopHeadings:number[];next:number;doors:boolean;wait:number;passengers:number;finished:boolean;elapsed:number;pickedUp:number;collisions:number;impactCooldown:number;pedestrianHits:number;arrivals:number[];lateStops:number}
 export function driveBus(run:BusRun,keys:Set<string>,dt:number,blocked:(x:number,z:number)=>boolean){
  if(run.finished)return
  run.elapsed+=Math.min(dt,.05)
@@ -24,7 +29,7 @@ export function driveBus(run:BusRun,keys:Set<string>,dt:number,blocked:(x:number
 export function toggleBusDoors(run:BusRun):'opened'|'closed'|'moving'|'away' {
  if(run.doors){if(run.wait<2)return 'opened';run.doors=false;run.next++;const boarding=[3,2,1][run.next-1]??1,leaving=[0,1,3][run.next-1]??0;run.pickedUp+=boarding;run.passengers=Math.max(0,run.passengers+boarding-leaving);if(run.next>=run.stops.length)run.finished=true;return 'closed'}
  if(Math.abs(run.car.speed)>.4)return 'moving'
- const stop=run.stops[run.next];if(!stop||Math.hypot(run.car.x-stop[0],run.car.z-stop[1])>9)return 'away'
+ const stop=run.stops[run.next];if(!stop||!insideBusStop(run.car.x,run.car.z,stop,run.stopHeadings[run.next]??0))return 'away'
  if(run.arrivals[run.next]===undefined){run.arrivals[run.next]=run.elapsed;if(run.elapsed>stopDeadline(run.next))run.lateStops++}
  run.doors=true;run.wait=0;return 'opened'
 }

@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { studentFace, studentVariant, studentJersey } from './studentFace'
 import { bbox, Collider, pointInPoly, type Campus, type Pt } from '../campus'
+import { protectedShuttle, trafficStopAction } from './trafficSafety'
 
 type Route = Pt[]
 function positionAlong(path:Route, distance:number) {
@@ -62,17 +63,20 @@ function useTrafficRoutes(campus:Campus) {
 
 function TrafficMover({path,index,speed,kind,children}:{path:Route;index:number;speed:number;kind:'road'|'path'|'parking';children:React.ReactNode}) {
   const ref=useRef<THREE.Group>(null)
-  const len=useMemo(()=>routeLength(path),[path])
-  useFrame(({clock})=>{
+  const len=useMemo(()=>routeLength(path),[path]),progress=useRef(index*len*.29),initialized=useRef(false)
+  useFrame((_,dt)=>{
     if(!ref.current||len<=0)return
-    const phase=(clock.elapsedTime*speed+index*len*0.29)%(len*2)
-    const forward=phase<len, loc=positionAlong(path,forward?phase:len*2-phase)
+    const nextProgress=progress.current+Math.min(dt,.05)*speed,phase=nextProgress%(len*2)
+    const forward=phase<len,loc=positionAlong(path,forward?phase:len*2-phase)
     if(!loc)return
-    const dir=forward?1:-1, offset=kind==='road'?1.45:0
-    ref.current.position.set(loc.x+loc.dz*offset*dir,0,loc.z-loc.dx*offset*dir)
-    ref.current.rotation.y=Math.atan2(loc.dx*dir,loc.dz*dir)
+    const dir=forward?1:-1,offset=kind==='road'?1.45:0,x=loc.x+loc.dz*offset*dir,z=loc.z-loc.dx*offset*dir
+    const nextDistance=Math.hypot(x-protectedShuttle.x,z-protectedShuttle.z),currentDistance=initialized.current?Math.hypot(ref.current.position.x-protectedShuttle.x,ref.current.position.z-protectedShuttle.z):nextDistance
+    const action=kind==='road'?trafficStopAction(protectedShuttle.active,currentDistance,nextDistance):'move'
+    if(action==='hold')return
+    progress.current=nextProgress;initialized.current=true;ref.current.visible=action!=='clear'
+    ref.current.position.set(x,0,z);ref.current.rotation.y=Math.atan2(loc.dx*dir,loc.dz*dir)
   })
-  return <group ref={ref}>{children}</group>
+  return <group ref={ref} visible={false}>{children}</group>
 }
 function Car({color}:{color:string}) {
   return <group>
