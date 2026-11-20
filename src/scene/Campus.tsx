@@ -90,7 +90,7 @@ function simplifyRing(ring: Pt[], tol: number): Pt[] {
   if (ring.length <= 4) return ring
   let far = 0, best = -1
   for (let i = 1; i < ring.length; i++) { const d = Math.hypot(ring[i][0] - ring[0][0], ring[i][1] - ring[0][1]); if (d > best) { best = d; far = i } }
-  const keep = new Array(ring.length).fill(false); keep[0] = keep[far] = true
+  const keep: boolean[] = Array.from({ length: ring.length }, () => false); keep[0] = keep[far] = true
   const run = (i: number, j: number) => {
     let m = -1, k = -1
     for (let t = i + 1; t < j; t++) { const d = distToSeg(ring[t][0], ring[t][1], ring[i], ring[j % ring.length]); if (d > m) { m = d; k = t } }
