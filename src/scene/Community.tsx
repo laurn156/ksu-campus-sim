@@ -20,6 +20,8 @@ export function CampusStudents({ campus, minute }: {campus:Campus;minute:number}
   return <><AmbientStudents campus={campus}/>{STUDENTS.map((s,i)=><LifeStudent key={s.id} profile={s} campus={campus} minute={minute} index={i} network={network} start={[x,z]}/>)}</>
 }
 function LifeStudent({profile,campus,minute,index,network,start}:{profile:StudentProfile;campus:Campus;minute:number;index:number;network:ReturnType<typeof makePathNetwork>;start:[number,number]}) {
+  const [near,setNear]=useState(false)
+  useEffect(()=>{const timer=setInterval(()=>setNear(Math.hypot(position.current[0]-player.x,position.current[1]-player.z)<7),300);return()=>clearInterval(timer)},[])
   const ref=useRef<THREE.Group>(null),walk=useRef(0), position=useRef<[number,number]>([start[0]+Math.sin(index*1.26)*3.5,start[1]+Math.cos(index*1.26)*3.5]), wait=useRef(index===0?14:4)
   const route=useRef<number[]>([]), lastDestination=useRef(''), scheduled=scheduleFor(profile,minute)
   useEffect(()=>{
@@ -44,7 +46,7 @@ function LifeStudent({profile,campus,minute,index,network,start}:{profile:Studen
     const entry=community.students.find(s=>s.id===profile.id)
     if(entry){entry.x=position.current[0];entry.z=position.current[1]}else community.students.push({id:profile.id,name:profile.name,x:position.current[0],z:position.current[1],line:'Hello!'})
   })
-  return <group ref={ref} position={[...position.current.slice(0,1),0,position.current[1]] as [number,number,number]}><Character color={profile.color} headwear={index%2?'cap':'none'} face="happy" top="tee" topColor="#f4f0e6" bottom="shorts" shoes="sneakers" walk={walk} scale={1.15}/><Html position={[0,2,0]} center distanceFactor={18}><button className="student-label" onClick={event=>{event.stopPropagation();window.dispatchEvent(new CustomEvent('open-student',{detail:profile.id}))}}>{profile.name}</button></Html></group>
+  return <group ref={ref} onClick={event=>{event.stopPropagation();if(near)window.dispatchEvent(new CustomEvent('open-student',{detail:profile.id}))}} position={[...position.current.slice(0,1),0,position.current[1]] as [number,number,number]}><Character color={profile.color} headwear={index%2?'cap':'none'} face="happy" top="tee" topColor="#f4f0e6" bottom="shorts" shoes="sneakers" walk={walk} scale={1.15}/>{near&&<Html position={[0,2,0]} center distanceFactor={18}><button className="student-label" onClick={event=>{event.stopPropagation();window.dispatchEvent(new CustomEvent('open-student',{detail:profile.id}))}}>{profile.name}</button></Html>}</group>
 }
 
 /** Background walkers are instanced, keeping draw calls low even on a large campus. */

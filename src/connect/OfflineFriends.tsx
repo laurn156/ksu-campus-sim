@@ -1,18 +1,31 @@
-import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
-import * as THREE from 'three'
-import { Character } from '../characters/Character'
+import { useEffect, useMemo, useState } from 'react'
+import { Collider, pointInPoly, type Campus } from '../campus'
 import { DEFAULT_PROFILE } from '../ui/Welcome'
-import { player } from '../scene/Player'
+import { supabase } from './client'
 import type { Peer } from './World'
-import type { Social } from './Social'
-function Ghost({name,look,index}:{name:string;look:Peer['look'];index:number}){
- const group=useRef<THREE.Group>(null),center=useRef({x:player.x+12+index*3,z:player.z+12}),phase=useRef(index*2),walk=useRef(0.6)
- useFrame((_,dt)=>{phase.current+=dt*.12;if(group.current){group.current.position.set(center.current.x+Math.cos(phase.current)*4,0,center.current.z+Math.sin(phase.current)*4);group.current.rotation.y=-phase.current}})
- return <group ref={group}><Character {...DEFAULT_PROFILE.look} {...look} walk={walk} scale={1.15}/><Html position={[0,2,0]} center distanceFactor={18}><div className="student-label">{name} · Offline representation</div></Html></group>
-}
-export function OfflineFriends({userId,peers,social}:{userId:string;peers:Peer[];social:Social}){
- const ids=social.links.filter(l=>l.state==='accepted').map(l=>l.sender===userId?l.recipient:l.sender)
- return <>{social.profiles.filter(p=>ids.includes(p.id)&&!peers.some(peer=>peer.id===p.id)&&!social.blocked.includes(p.id)).slice(0,12).map((p,i)=><Ghost key={p.id} index={i} name={p.username} look={p.appearance}/>)}</>
+import { offlinePosition } from './offlineSimulation'
+
+/** Shared clock and account ID produce the same route on every client, without server simulation. */
+export function useOfflinePlayers(campus:Campus,userId:string,onlineIds:string[],ready:boolean) {
+ const [profiles,setProfiles]=useState<{id:string;username:string;appearance:Peer['look']}[]>([])
+ const [now,setNow]=useState(Date.now())
+ const paths=useMemo(()=>{
+  const collider=new Collider(campus.buildings)
+  return campus.paths.flatMap(p=>p.pts.slice(1).map((b,i)=>({a:p.pts[i],b}))).filter(({a,b})=>{
+   const len=Math.hypot(a[0]-b[0],a[1]-b[1]);if(len<5||len>45)return false
+   return [0,.25,.5,.75,1].every(t=>{const x=a[0]+(b[0]-a[0])*t,z=a[1]+(b[1]-a[1])*t;return pointInPoly(x,z,campus.boundary)&&!collider.blocked(x,z,.8)})
+  })
+ },[campus])
+ useEffect(()=>{if(!supabase)return;let alive=true;const client=supabase
+  const refresh=async()=>{const {data,error}=await client.from('campus_profiles').select('id,username,appearance').eq('offline_roaming',true).order('id').limit(40);if(alive&&!error)setProfiles(data??[])}
+  void refresh();const poll=setInterval(()=>void refresh(),15000),clock=setInterval(()=>setNow(Date.now()),500)
+  return()=>{alive=false;clearInterval(poll);clearInterval(clock)}
+ },[])
+ return useMemo(()=>{if(!ready||!paths.length)return [] as Peer[]
+  return profiles.filter(p=>p.id!==userId&&!onlineIds.includes(p.id)).slice(0,10).map(p=>{
+   const destinations=campus.buildings.filter(b=>['A','C','D','O','S1'].includes(b.code)).map(b=>b.id)
+   const position=offlinePosition(p.id,now,paths,destinations)!
+   return {id:p.id,name:p.username,look:{...DEFAULT_PROFILE.look,...p.appearance},...position,online:false} satisfies Peer
+  })
+ },[profiles,userId,onlineIds,ready,paths,now,campus])
 }
