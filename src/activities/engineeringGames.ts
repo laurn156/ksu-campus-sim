@@ -3,11 +3,10 @@ export type Terminal='+12V'|'GND'|'MOTOR'|'SIGNAL'|'NC'
 export const wireTargets:Record<Wire,Terminal>={red:'+12V',black:'GND',blue:'MOTOR',yellow:'SIGNAL'}
 export const wires:Wire[]=['red','black','blue','yellow']
 export const terminals:Terminal[]=['+12V','GND','MOTOR','SIGNAL','NC']
-export function machineHint(connections:Partial<Record<Wire,Terminal>>,fuse:number|null){
- if(fuse===null)return 'The fuse holder is empty. Select a fuse and insert it.'
- if(fuse!==2)return fuse<2?'The fuse rating is too low. Calculate current using power ÷ voltage.':'The fuse rating is too high. Calculate current using power ÷ voltage.'
- const missing=wires.find(w=>!connections[w]);if(missing)return `Connect the ${missing} wire using the diagram.`
- const incorrect=wires.find(w=>connections[w]!==wireTargets[w]);if(incorrect)return `Check the ${incorrect} wire against the diagram. NC stays unused.`
+export function machineHint(connections:Partial<Record<Wire,Terminal>>,jammed:boolean){
+ const missing=wires.find(w=>!connections[w]);if(missing)return `Connect the ${missing} wire using the service notes.`
+ const incorrect=wires.find(w=>connections[w]!==wireTargets[w]);if(incorrect)return `Check the ${incorrect} wire against the service notes. NC stays unused.`
+ if(jammed)return 'Power is restored, but the dispenser is jammed. Remove the stuck snack, then test again.'
  return ''
 }
 export function shuffleTerminals(random:()=>number=Math.random):Terminal[]{const order=[...terminals];for(let i=order.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}return order}
