@@ -1,4 +1,4 @@
 .hardware-panel{position:fixed;top:112px;right:14px;z-index:40;display:flex;gap:5px;flex-wrap:wrap;max-width:440px;justify-content:flex-end;font-size:12px}.hardware-panel button{font-size:12px;padding:6px 9px}.hardware-panel section,.hardware-panel small{flex-basis:100%;background:#f9f6e8;color:#172d25;padding:12px;border-radius:10px;box-shadow:0 4px 16px #0003}.hardware-panel label{display:block;margin-top:8px}
 
-/* Keep conversations unobstructed without disconnecting the controller. */
-body:has(.chat) .hardware-panel{visibility:hidden;pointer-events:none}
+/* Keep conversations and activities unobstructed without disconnecting the controller. */
+body:has(.chat, .activity-panel, .class-back, .booth-panel) .hardware-panel{visibility:hidden;pointer-events:none}
