@@ -21,7 +21,7 @@ function near(campus:Campus,at:Pt,radii=[4,5,6]):Target|null{
 }
 function building(campus:Campus,code:string):Target|null{const b=campus.buildings.find(x=>x.code===code||x.id===code);return b?{...approach(campus,b.poly),buildingId:b.id}:null}
 const items:Item[]=[
- {name:'Bathtub Race',kind:'MINIGAME',description:'Race through checkpoints on Alumni Field.',instructions:'Press E at the race sign, then select Start race.',target:c=>{const p=bathtubCourse(c)[0];return p?near(c,p):null}},
+ {name:'Bathtub Race',kind:'MINIGAME',description:'Race through checkpoints on Alumni Field.',instructions:'Press E near the starting area, then select Start race.',target:c=>{const p=bathtubCourse(c)[0];return p?near(c,p):null}},
  {name:'Disc Golf',kind:'MINIGAME',description:'Aim and throw at a basket.',instructions:'Press E near a basket to start.',target:c=>{const p=discGolfSpots(c)[0];return p?near(c,p):null}},
  {name:'Drive the Big Owl Bus',kind:'MINIGAME',description:'Drive the shuttle and serve campus stops.',instructions:'Press E near the bus to start driving.',target:c=>{const b=busPositions.filter(Boolean).reduce<(typeof busPositions)[number]|null>((best,p)=>!best||Math.hypot(p.x-player.x,p.z-player.z)<Math.hypot(best.x-player.x,best.z-player.z)?p:best,null);return b?near(c,[b.x,b.z],[6,7,8]):null}},
  {name:'Parking Wars',kind:'MINIGAME',description:'Find a space before class starts.',instructions:'Press E near the Parking Wars car.',target:c=>{const p=parkingSpots(c)[0];return p?near(c,[p[0],p[1]-12]):null}},

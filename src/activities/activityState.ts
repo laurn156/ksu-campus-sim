@@ -1,2 +1,2 @@
 /** Shared control gate: activities can pause walking without changing the indoor location. */
-export const activityState={mode:null as null|'disc'|'hunt'|'bathtub'|'busdrive'|'parking',locked:false,vehicleNear:false,parkingNear:false,near:null as null|'disc'|'hunt'|'bathtub'|'busdrive'|'parking'}
+export const activityState={mode:null as null|'disc'|'hunt'|'bathtub'|'busdrive'|'parking',locked:false,throwUntil:0,vehicleNear:false,parkingNear:false,near:null as null|'disc'|'hunt'|'bathtub'|'busdrive'|'parking'}

@@ -73,6 +73,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   const body = useRef<THREE.Group>(null)
   const walk = useRef(0)
   const seated = useRef(0)
+  const throwing = useRef(0)
   const keys = useRef(new Set<string>())
   const dist = useRef(30)
   const snap = useRef(false)
@@ -148,6 +149,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05)
     seated.current = activityState.mode === 'bathtub' || activityState.mode === 'busdrive' ? 1 : 0
+    throwing.current = activityState.mode === 'disc' && performance.now() < activityState.throwUntil ? 1 : 0
     busCaller.riding = player.busRide?.index ?? -1
     if (indoorState.active) { busCaller.x = NaN; busCaller.z = NaN } else { busCaller.x = player.x; busCaller.z = player.z }
     if (indoorState.active) { if(player.busRide){const bus=busPositions[player.busRide.index];if(bus){player.x=bus.x;player.z=bus.z}} keys.current.clear(); player.moving = false; return }
@@ -237,7 +239,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
   return (
     <group>
       <group ref={body}>
-        <Character {...look} walk={walk} sit={seated} sitLift={.112} scale={1.15} />
+        <Character {...look} walk={walk} point={throwing} sit={seated} sitLift={.112} scale={1.15} />
       </group>
     </group>
   )

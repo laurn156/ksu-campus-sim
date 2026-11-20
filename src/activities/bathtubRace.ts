@@ -24,7 +24,7 @@ export function driveRace(car:RaceCar,keys:Set<string>,dt:number,course:Pt[],blo
  car.speed=Math.max(-4,Math.min(11,car.speed+((forward?10:0)-(reverse?12:0))*dt))
  if(!forward&&!reverse)car.speed*=Math.exp(-1.4*dt)
  const steer=(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0)
- car.heading+=steer*dt*1.7*Math.min(1,Math.abs(car.speed)/3)*Math.sign(car.speed)
+ car.heading-=steer*dt*1.7*Math.min(1,Math.abs(car.speed)/3)*Math.sign(car.speed)
  const x=car.x+Math.sin(car.heading)*car.speed*dt,z=car.z+Math.cos(car.heading)*car.speed*dt
  if(blocked(x,z))car.speed=0;else {car.x=x;car.z=z}
  const target=course[car.next%course.length]

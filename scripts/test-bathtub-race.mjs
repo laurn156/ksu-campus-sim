@@ -9,6 +9,7 @@ for(const [x,z] of course){assert(pointInPoly(x,z,field.poly));assert(!collider.
 const car=newRace(course)
 driveRace(car,new Set(['w']),.05,course,()=>false)
 assert(car.speed>0)
+const heading=car.heading;driveRace(car,new Set(['w','d']),.05,course,()=>false);assert(car.heading<heading,'right turns to the driver’s right')
 const x=car.x,z=car.z
 driveRace(car,new Set(['w']),.05,course,()=>true)
 assert.equal(car.speed,0);assert.equal(car.x,x);assert.equal(car.z,z)
