@@ -841,6 +841,19 @@ function engineeringLabDetails(b:Building){
   out.push({geo:connector,mat:glass})
   for(const x of [-256,-252.3,-248.6]){const post=new THREE.BoxGeometry(.16,3.8,.18);post.translate(x,5.1,-44.65);out.push({geo:post,mat:pale})}
   const roof=new THREE.BoxGeometry(8,.25,11);roof.translate(-252.3,7.1,-39.3);out.push({geo:roof,mat:pale})
+  // Picnic tables on the lawn between the facade walk and the curved path, clear of the crossing walk at x -206.
+  const wood=new THREE.MeshStandardMaterial({color:'#9a6a43',roughness:.85}),frame=new THREE.MeshStandardMaterial({color:'#3b4140',roughness:.6,metalness:.3})
+  const part=(w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial,cx:number,cz:number,a:number)=>{
+    const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);g.rotateY(a);g.translate(cx,0,cz);out.push({geo:g,mat})
+  }
+  for(const [x,z,a] of [[-219,-41.3,-.12],[-213,-41.6,0],[-199,-41.2,.1],[-193,-40.8,.18]] as const){
+    part(1.9,.07,.8,0,.76,0,wood,x,z,a)
+    for(const s of [-1,1]){
+      part(1.9,.06,.3,0,.45,s*.72,wood,x,z,a)
+      for(const e of [-.75,.75]) part(.07,.74,.07,e,.38,s*.22,frame,x,z,a)
+    }
+    for(const e of [-.75,.75]) part(.07,.07,1.5,e,.42,0,frame,x,z,a)
+  }
   return out
 }
 
