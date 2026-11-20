@@ -12,7 +12,7 @@ export function useMultiplayerGame(userId:string,onlineIds:string[],send:(packet
  const start=(peer:string)=>{
   if(ref.current){setError('Finish or leave your current game first.');return}
   if(peer===userId||blockedRef.current.includes(peer)||!onlineIds.includes(peer)){setError('That player must be online to play.');return}
-  const m:Match={id:crypto.randomUUID(),peer,host:true,phase:'inviting',board:Array(9).fill(null),pending:null}
+  const m:Match={id:globalThis.crypto?.randomUUID?.()??`${Date.now()}-${Math.random().toString(36).slice(2)}`,peer,host:true,phase:'inviting',board:Array(9).fill(null),pending:null}
   if(!transmit(m,'invite')){setError('Connect to campus before inviting a player.');return}setError('');change(m)
  }
  const accept=()=>{const m=ref.current;if(!m||m.phase!=='incoming')return;const next={...m,phase:'waiting' as const};change(next);transmit(next,'accept')}

@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 
 // Ephemeral demo sessions: the server assigns identities and never accepts a claimed sender.
 export function installDemoRelay(server) {
- const wss=new WebSocketServer({noServer:true,maxPayload:8192}), clients=new Map(), requests=new Set(), friends=new Set()
+ const wss=new WebSocketServer({noServer:true,maxPayload:8192}), clients=new Map(), requests=new Set(), friends=new Set(), challenges=new Map()
  const pair=(a,b)=>[a,b].sort().join(':')
  const send=(ws,data)=>{if(ws?.readyState===WebSocket.OPEN)ws.send(JSON.stringify(data))}
  const broadcast=(data,except)=>{for(const [id,c] of clients)if(id!==except)send(c.ws,data)}
@@ -33,7 +33,19 @@ export function installDemoRelay(server) {
    if(Date.now()-lastAction<100)return;lastAction=Date.now()
    if(m.type==='chat'&&typeof m.text==='string'&&m.text.trim()){broadcast({type:'chat',id:randomUUID(),name:c.peer.name,text:m.text.trim().slice(0,200)});return}
    if(m.type==='wave'){broadcast({type:'wave',id,name:c.peer.name});return}
-   const target=typeof m.to==='string'?clients.get(m.to):null;if(!target||m.to===id)return
+   const target=typeof m.to==='string'?clients.get(m.to):null;if((!target||m.to===id)&&!['rock-accept','rock-leave','rock-score'].includes(m.type))return
+   if(m.type==='rock-invite'){
+    if([...challenges.values()].some(v=>v.a===id||v.b===id||v.a===m.to||v.b===m.to)){send(ws,{type:'rock-unavailable'});return}
+    const challenge=randomUUID();challenges.set(challenge,{a:id,b:m.to,phase:'invited',scores:{}});setTimeout(()=>{const pending=challenges.get(challenge);if(pending?.phase==='invited'){challenges.delete(challenge);for(const participant of [pending.a,pending.b])send(clients.get(participant)?.ws,{type:'rock-left',challenge})}},60000).unref();send(target.ws,{type:'rock-invite',challenge,from:id});send(ws,{type:'rock-wait',challenge,from:m.to});return
+   }
+   if(typeof m.challenge==='string'&&typeof m.type==='string'&&m.type.startsWith('rock-')){
+    const game=challenges.get(m.challenge);if(!game||![game.a,game.b].includes(id))return
+    const other=game.a===id?game.b:game.a
+    if(m.type==='rock-accept'&&id===game.b&&game.phase==='invited'){game.phase='playing';game.started=Date.now()+3000;for(const participant of [game.a,game.b])send(clients.get(participant)?.ws,{type:'rock-start',challenge:m.challenge,from:participant===id?other:id,delay:3000});return}
+    if(m.type==='rock-leave'){challenges.delete(m.challenge);send(clients.get(other)?.ws,{type:'rock-left',challenge:m.challenge});return}
+    if(m.type==='rock-score'&&game.phase==='playing'&&Date.now()>=game.started+19000&&Number.isInteger(m.score)&&m.score>=0&&m.score<=1000){game.scores[id]=m.score;if(game.scores[other]!==undefined){for(const participant of [game.a,game.b])send(clients.get(participant)?.ws,{type:'rock-result',challenge:m.challenge,own:game.scores[participant],other:game.scores[participant===game.a?game.b:game.a]});challenges.delete(m.challenge)}return}
+    return
+   }
    if(m.type==='game'&&m.packet&&typeof m.packet==='object'&&m.packet.to===m.to&&typeof m.packet.kind==='string'&&typeof m.packet.match==='string'){send(target.ws,{type:'game',from:id,payload:m.packet});return}
    const key=pair(id,m.to)
    if(m.type==='friend-request'){if(!friends.has(key)){requests.add(id+':'+m.to);send(target.ws,{type:'friend-request',from:id});send(ws,{type:'friend-sent',to:m.to})}return}
@@ -41,7 +53,7 @@ export function installDemoRelay(server) {
    if(m.type==='friend-decline'){requests.delete(m.to+':'+id);send(target.ws,{type:'friend-declined',from:id});return}
    if(m.type==='dm'&&typeof m.text==='string'&&m.text.trim()){const event={type:'dm',from:id,to:m.to,text:m.text.trim().slice(0,200),id:randomUUID()};send(ws,event);send(target.ws,event)}
   })
-  ws.on('close',()=>{clearTimeout(expire);if(!joined)return;clients.delete(id);for(const key of requests)if(key.split(':').includes(id))requests.delete(key);for(const key of friends)if(key.split(':').includes(id))friends.delete(key);broadcast({type:'leave',id})})
+  ws.on('close',()=>{clearTimeout(expire);if(!joined)return;clients.delete(id);for(const [challenge,game] of challenges)if(game.a===id||game.b===id){send(clients.get(game.a===id?game.b:game.a)?.ws,{type:'rock-left',challenge});challenges.delete(challenge)}for(const key of requests)if(key.split(':').includes(id))requests.delete(key);for(const key of friends)if(key.split(':').includes(id))friends.delete(key);broadcast({type:'leave',id})})
  })
  server.on('close',()=>wss.close())
  return wss

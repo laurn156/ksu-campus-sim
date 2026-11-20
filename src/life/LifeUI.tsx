@@ -1,6 +1,6 @@
 import { activityState } from '../activities/activityState'
 import { indoorState } from '../scene/indoorState'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Campus } from '../campus'
 import { approach, player } from '../scene/Player'
 import { community } from '../scene/Community'
@@ -23,14 +23,16 @@ type Line = { who: 'npc' | 'you' | 'note'; text: string; tone?: 'good' | 'bad' }
 type Plan = { id: StudentId; kind: Outing; label: string; goal: { x: number; z: number } | null; phase: 'going' | 'return' | 'hangout' | 'playing'; until?: number; npcScore?: number }
 
 function timeLabel(minutes:number){const h=Math.floor(minutes/60),m=Math.floor(minutes%60);return (h%12||12)+':'+String(m).padStart(2,'0')+(h<12?' AM':' PM')}
-export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeController;playerName:string;onEdit:()=>void}) {
-  const [closest,setClosest]=useState<StudentId|null>(null),[talking,setTalking]=useState<StudentId|null>(null),[menu,setMenu]=useState<'relationships'|'schedule'|'stories'|'character'|null>(null)
+export function LifeUI({campus,life,playerName,onEdit,players}:{campus:Campus;life:LifeController;playerName:string;onEdit:()=>void;players?:(selected:string)=>ReactNode}) {
+  const [closest,setClosest]=useState<StudentId|null>(null),[talking,setTalking]=useState<StudentId|null>(null),[menu,setMenu]=useState<'relationships'|'players'|'schedule'|'stories'|'character'|null>(null)
   const [message,setMessage]=useState(''),[feedback,setFeedback]=useState(''),[invitation,setInvitation]=useState<{id:StudentId;line:string;suggest?:SocialAction}|null>(null)
   const [open,setOpen]=useState<Category|null>('Friendly'),[suggest,setSuggest]=useState<SocialAction|null>(null),[replies,setReplies]=useState<ReplyOptions|null>(null),[more,setMore]=useState(false)
   const [thinking,setThinking]=useState(false), request=useRef<AbortController|null>(null), lastInvite=useRef(Date.now()-60000)
   const [lines,setLines]=useState<Line[]>([]), logs=useRef<Partial<Record<StudentId,Line[]>>>({}), history=useRef<Partial<Record<StudentId,DialogueTurn[]>>>({})
   const [plan,setPlan]=useState<Plan|null>(null), planRef=useRef<Plan|null>(null), [now,setNow]=useState(Date.now())
   const scroll=useRef<HTMLDivElement>(null)
+  const [selectedPlayer,setSelectedPlayer]=useState('')
+  useEffect(()=>{const openPlayers=(event:Event)=>{setSelectedPlayer((event as CustomEvent<string>).detail);setMenu('players')};const closePhone=()=>setMenu(null);window.addEventListener('connect-player',openPlayers);window.addEventListener('close-phone',closePhone);return()=>{window.removeEventListener('connect-player',openPlayers);window.removeEventListener('close-phone',closePhone)}},[])
   const npc=STUDENTS.find(s=>s.id===talking)
   const r=npc?relation(life.state,npc.id):null
   const state=useRef(life.state);state.current=life.state
@@ -157,8 +159,8 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
       {more&&open&&<div className="chat-actions">{CATEGORIES.find(c=>c.label===open)!.items.map(a=>{const need=UNLOCK[a.id],locked=need!==undefined&&r.score<need;return <button key={a.id} disabled={locked||thinking} title={locked?`Unlocks at ${level(need!)}`:undefined} onClick={()=>interact(a.id)}>{locked?'🔒 ':''}{a.label}</button>})}</div>}
       <form onSubmit={e=>{e.preventDefault();if(message.trim())interact('custom',message)}}><input aria-label="Say something" maxLength={240} placeholder={`Say something to ${npc.name}…`} value={message} onChange={e=>setMessage(e.target.value)}/><button type="submit" disabled={thinking||!message.trim()}>Send</button></form>
     </section>}
-    {menu&&<div className="life-modal-back"><section className="life-phone" role="dialog" aria-modal="true" aria-label="Campus phone"><header><div><small>CAMPUSVERSE</small><h2>Your phone</h2></div><button onClick={()=>setMenu(null)}>✕</button></header><nav>{(['relationships','schedule','stories','character'] as const).map(t=><button key={t} aria-pressed={menu===t} onClick={()=>setMenu(t)}>{t}</button>)}</nav>
-      <div className="phone-content">{menu==='relationships'&&<><h3>Relationships</h3>{STUDENTS.filter(s=>relation(life.state,s.id).met).length===0&&<p>Meet a student to see them here.</p>}{STUDENTS.filter(s=>relation(life.state,s.id).met).map(s=>{const rel=relation(life.state,s.id);return <div className="relationship" key={s.id}><b>{s.name}</b><span>{level(rel.score)}</span><div><i style={{width:Math.max(0,Math.min(100,rel.score))+'%'}}/></div><small>{s.major} · {s.personality}</small></div>})}</>}
+    {menu&&<div className="life-modal-back"><section className="life-phone" role="dialog" aria-modal="true" aria-label="Campus phone"><header><div><small>NEST LIFE</small><h2>Your phone</h2></div><button onClick={()=>setMenu(null)}>✕</button></header><nav>{(['relationships',...(players?['players' as const]:[]),'schedule','stories','character'] as const).map(t=><button key={t} aria-pressed={menu===t} onClick={()=>setMenu(t)}>{t}</button>)}</nav>
+      <div className="phone-content">{menu==='players'&&players?.(selectedPlayer)}{menu==='relationships'&&<><h3>Relationships</h3>{STUDENTS.filter(s=>relation(life.state,s.id).met).length===0&&<p>Meet a student to see them here.</p>}{STUDENTS.filter(s=>relation(life.state,s.id).met).map(s=>{const rel=relation(life.state,s.id);return <div className="relationship" key={s.id}><b>{s.name}</b><span>{level(rel.score)}</span><div><i style={{width:Math.max(0,Math.min(100,rel.score))+'%'}}/></div><small>{s.major} · {s.personality}</small></div>})}</>}
       {menu==='schedule'&&<><h3>Day {life.state.day} · {timeLabel(life.state.minute)}</h3><p>Follow your own schedule. Students are heading to their own activities.</p><p><b>Today:</b> {life.state.day%2?'Engineering demonstration at Q':'Club gathering at A'} · 2–5 PM</p>{STUDENTS.filter(s=>relation(life.state,s.id).met).map(s=><p key={s.id}><b>{s.name}</b> · {scheduleFor(s,life.state.minute).label}</p>)}<button onClick={()=>{life.nextDay();setMenu(null);setFeedback('A new campus day begins.')}}>Start next morning</button></>}
       {menu==='stories'&&<><h3>Journal</h3>{life.state.journal.length?life.state.journal.slice().reverse().map((entry,i)=><p key={i}>{entry}</p>):<p>Your campus stories will appear here as you meet people and try activities.</p>}</>}
       {menu==='character'&&<><h3>{playerName||'Your character'}</h3><p>Academics: {life.state.academics} · Campus involvement: {life.state.involvement}</p><p>Explore campus, meet students, and try activities.</p><button onClick={onEdit}>Edit character</button></>}</div>

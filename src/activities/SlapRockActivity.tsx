@@ -14,7 +14,7 @@ export function SlapRockActivity({campus,identity}:{campus:Campus;identity:strin
  const [near,setNear]=useState(false),[round,setRound]=useState<Round|null>(null),[remaining,setRemaining]=useState(20)
  const [best,setBest]=useState(()=>{try{return Number(localStorage.getItem('nest-rock-best:'+identity))||0}catch{return 0}})
  const current=useRef<Round|null>(null),bestRef=useRef(best),savedView=useRef<{yaw:number;pitch:number}|null>(null)
- const close=()=>{current.current=null;setRound(null);window.dispatchEvent(new Event('rock-paint-finish'));if(savedView.current){player.yaw=savedView.current.yaw;player.pitch=savedView.current.pitch;savedView.current=null;player.view=null;player.viewChanged=true}if(activityState.mode==='rock'){activityState.mode=null;activityState.locked=false}activityState.throwUntil=0}
+ const close=()=>{if(current.current&&!current.current.finished)window.dispatchEvent(new Event('rock-round-cancelled'));current.current=null;setRound(null);window.dispatchEvent(new Event('rock-paint-finish'));if(savedView.current){player.yaw=savedView.current.yaw;player.pitch=savedView.current.pitch;savedView.current=null;player.view=null;player.viewChanged=true}if(activityState.mode==='rock'){activityState.mode=null;activityState.locked=false}activityState.throwUntil=0}
  const start=()=>{
   if(!rock||activityState.mode||indoorState.active||player.busRide)return
   const angle=Math.atan2(rock[0]-player.x,rock[1]-player.z)
