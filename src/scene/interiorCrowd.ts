@@ -1,10 +1,12 @@
+import { specialStations, seatedStation, type SpecialKind } from './specialLayouts.ts'
 import { clearPoint, indoorPath, type Obstacle, type Point } from './diningSimulation.ts'
 
-export type CrowdKind = 'student'|'classroom'|'library'|'dorm'|'garage'|'greenhouse'|'recreation'|'lab'|'office'|'parking'|'bus'|'uits'|'admin'|'math'
-export interface Activity { position:Point; seated?:boolean; heading?:number; duration?:number; role?:'queue'|'pool'|'ping'|'eat'|'tools'|'water'|'plant'|'notes'|'help'|'staff'|'repair'|'seat'|'hold'|'exit'|'study'|'browse'|'read'|'teach'|'meeting'|'write' }
-export interface IndoorAgent {id:number; position:Point; heading:number; seated:boolean; walk:boolean; activity:number; timer:number; route:Point[]; blocked:number; stuckFor:number; carry:'water'|'laptop'|'book'|null; out:boolean; track:'staff'|'visitor'|'student'|'professor'|null}
+export type CrowdKind = 'student'|'classroom'|'library'|'dorm'|'garage'|'greenhouse'|'recreation'|'lab'|'office'|'parking'|'bus'|'uits'|'admin'|'math'|'crawford'|'engineering'|'academic'|'design1'|'design2'
+export interface Activity { position:Point; seated?:boolean; heading?:number; duration?:number; role?:'queue'|'pool'|'ping'|'eat'|'tools'|'water'|'plant'|'notes'|'help'|'staff'|'repair'|'seat'|'hold'|'exit'|'study'|'browse'|'read'|'teach'|'meeting'|'write'|'research'|'robot'|'electronics'|'fabricate'|'cad'|'print'|'build'|'test' }
+export interface IndoorAgent {id:number; position:Point; heading:number; seated:boolean; walk:boolean; activity:number; timer:number; route:Point[]; blocked:number; stuckFor:number; carry:'water'|'laptop'|'book'|'part'|null; out:boolean; track:'staff'|'visitor'|'student'|'professor'|null}
 // Activity points sit beside the actual furniture, leaving circulation routes open.
 export const indoorActivities:Record<CrowdKind,Activity[]>={
+ ...Object.fromEntries((['crawford','engineering','academic','design1','design2'] as SpecialKind[]).map(kind=>[kind,[...(kind==='academic'?[{position:[-7,-9.7] as Point,role:'teach' as const,heading:0,duration:45},{position:[7,-9.7] as Point,role:'teach' as const,heading:0,duration:45}]:[]),...specialStations[kind].map(station=>({position:[station.x,station.z+1.4] as Point,seated:seatedStation(station.kind),heading:Math.PI,role:({microscope:'research',research:'research',computer:'study',robot:'robot',electronics:'electronics',mechanical:'fabricate',desk:'write',study:'meeting',cad:'cad',printer:'print',prototype:'build',cnc:'fabricate',laser:'fabricate',assembly:'build',testing:'test',storage:'tools'} as const)[station.kind],duration:22})),{position:[-2,6] as Point,role:'notes' as const,duration:12},{position:[2,6] as Point,role:'notes' as const,duration:12},...(kind==='academic'?[{position:[-9,6] as Point,role:'teach' as const,duration:20},{position:[0,3] as Point,role:'teach' as const,duration:20}]:[]),...((kind==='engineering'||kind==='design2')?[{position:[0,4.6] as Point,role:'test' as const,duration:18}]:[])]])) as Record<SpecialKind,Activity[]>,
  student:[
   {position:[-8.4,-8],heading:-Math.PI/2,role:'queue'},{position:[-7.4,-8],heading:-Math.PI/2,role:'queue'},{position:[-8.4,-3.8],heading:-Math.PI/2,role:'queue'},
   {position:[1.95,-6],seated:true,heading:-Math.PI/2,role:'eat'},{position:[-1.95,-1],seated:true,heading:Math.PI/2,role:'eat'},
@@ -42,7 +44,7 @@ export const indoorActivities:Record<CrowdKind,Activity[]>={
 }
 function roleTrack(kind:CrowdKind,role:Activity['role']):IndoorAgent['track'] {
  if(kind==='admin')return role==='staff'||role==='meeting'||role==='notes'||role==='teach'?'staff':'visitor'
- if(kind==='math')return role==='teach'||role==='staff'?'professor':'student'
+ if(kind==='math'||kind==='academic')return role==='teach'||role==='staff'?'professor':'student'
  if(kind==='library')return role==='staff'?'staff':'student'
  return null
 }
@@ -57,7 +59,7 @@ export class InteriorCrowd {
   this.kind=kind
   this.activities=indoorActivities[kind].filter(a=>clearPoint(...a.position,obstacles)&&Math.hypot(a.position[0],a.position[1]-9)>1.2)
   const n=Math.min(count,this.activities.length)
-  this.agents=Array.from({length:n},(_,id)=>{const academicSeeds=[0,1,2,3,4,6,8,10,14,15,16,17];const activity=kind==='math'?(academicSeeds[id]??id):(kind==='student'||kind==='bus'||kind==='uits'||kind==='greenhouse'||kind==='library'||kind==='admin')?id:Math.floor(id*this.activities.length/n),a=this.activities[activity];return {id,position:[...a.position] as Point,heading:a.heading??Math.PI,seated:!!a.seated,walk:false,activity,timer:a.duration??8+id*3,route:[],blocked:0,stuckFor:0,carry:null,out:false,track:roleTrack(kind,a.role)}})
+  this.agents=Array.from({length:n},(_,id)=>{const academicSeeds=[0,1,2,3,4,6,8,10,14,15,16,17];const specialAcademicSeeds=[0,1,2,5,10,14];const activity=kind==='academic'?(specialAcademicSeeds[id]??id):kind==='math'?(academicSeeds[id]??id):(kind==='student'||kind==='bus'||kind==='uits'||kind==='greenhouse'||kind==='library'||kind==='admin')?id:Math.floor(id*this.activities.length/n),a=this.activities[activity];return {id,position:[...a.position] as Point,heading:a.heading??Math.PI,seated:!!a.seated,walk:false,activity,timer:a.duration??8+id*3,route:[],blocked:0,stuckFor:0,carry:null,out:false,track:roleTrack(kind,a.role)}})
  }
  private chooseAnother(a:IndoorAgent,player:Point){
   const used=new Set(this.agents.filter(b=>b!==a).map(b=>b.activity))
@@ -84,7 +86,7 @@ export class InteriorCrowd {
     if(a.timer>0)continue
     if(this.kind==='bus'&&goal.role==='exit'){a.out=true;a.walk=false;a.timer=5+a.id;continue}
     const used=new Set(this.agents.filter(b=>b!==a).map(b=>b.activity))
-    const role=this.activities[a.activity].role;if(this.kind==='library'&&role==='browse')a.carry='book';if(this.kind==='library'&&role==='read')a.carry=null;if(role==='tools')a.carry='water';if(role==='water')a.carry=null;if(this.kind==='uits'&&role==='queue')a.carry='laptop';if(this.kind==='uits'&&role==='help')a.carry=null;const preferred=this.kind==='library'&&role==='browse'?'read':this.kind==='library'&&role==='read'?'study':this.kind==='library'&&role==='study'?'browse':role==='tools'?'water':role==='water'?'tools':role==='help'?'seat':role==='queue'?'help':role==='repair'?'staff':(this.kind==='uits'||this.kind==='bus'||this.kind==='admin')&&role==='seat'?'exit':(this.kind==='uits'||this.kind==='admin')&&role==='exit'?'queue':undefined
+    const role=this.activities[a.activity].role;if(this.kind==='library'&&role==='browse')a.carry='book';if(this.kind==='library'&&role==='read')a.carry=null;if(role==='tools')a.carry=this.kind==='greenhouse'?'water':'part';if(role==='water'||role==='build'||role==='robot'||role==='research')a.carry=null;if(this.kind==='uits'&&role==='queue')a.carry='laptop';if(this.kind==='uits'&&role==='help')a.carry=null;const specialSequence:Partial<Record<CrowdKind,Partial<Record<NonNullable<Activity['role']>,Activity['role']>>>>={crawford:{research:'study',study:'research',tools:'research'},engineering:{study:'robot',robot:'study',electronics:'test',test:'study',tools:'robot'},academic:{teach:'teach',write:'study',study:'write',meeting:'study'},design1:{cad:'print',print:'cad',build:'cad',tools:'build'},design2:{tools:'build',build:'test',test:'build',fabricate:'build'}};const linked=specialSequence[this.kind]?.[role??'notes'];const preferred=linked??(this.kind==='library'&&role==='browse'?'read':this.kind==='library'&&role==='read'?'study':this.kind==='library'&&role==='study'?'browse':role==='tools'?(this.kind==='greenhouse'?'water':'build'):role==='water'?'tools':role==='help'?'seat':role==='queue'?'help':role==='repair'?'staff':(this.kind==='uits'||this.kind==='bus'||this.kind==='admin')&&role==='seat'?'exit':(this.kind==='uits'||this.kind==='admin')&&role==='exit'?'queue':undefined)
     let next=preferred?this.activities.findIndex((p,i)=>p.role===preferred&&i!==a.activity&&!used.has(i)&&(!a.track||roleTrack(this.kind,p.role)===a.track)):-1;for(let offset=1;next<0&&offset<=this.activities.length;offset++){const i=(a.activity+offset+a.id)%this.activities.length;if(i!==a.activity&&!used.has(i)&&(!a.track||roleTrack(this.kind,this.activities[i].role)===a.track)){next=i;break}}
     if(next<0){a.timer=5;continue}a.activity=next;a.seated=false;a.timer=this.activities[next].duration??10+a.id*2;this.path(a,player);continue
    }
