@@ -1,0 +1,4 @@
+Kenney Food Kit, CC0 1.0 Universal
+https://kenney.nl/assets/food-kit
+https://creativecommons.org/publicdomain/zero/1.0/
+GLB source: https://github.com/Hidencod/tge-assets/tree/main/packs/food-kit
