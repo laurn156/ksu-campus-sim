@@ -31,7 +31,7 @@ function Move({look,rects}:{look:AvatarLook;rects:Rect[]}) {
  useEffect(()=>{
   const down=(e:KeyboardEvent)=>{if(!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement))keys.current.add(e.key.toLowerCase())}
   const up=(e:KeyboardEvent)=>keys.current.delete(e.key.toLowerCase())
-  const pointerDown=(e:PointerEvent)=>{if(e.button!==2)return;e.preventDefault();drag.current={x:e.clientX,y:e.clientY};gl.domElement.setPointerCapture(e.pointerId)}
+  const pointerDown=(e:PointerEvent)=>{if(e.button!==0&&e.button!==2)return;if(e.button===2)e.preventDefault();drag.current={x:e.clientX,y:e.clientY}}
   const pointerMove=(e:PointerEvent)=>{if(!drag.current)return;turnInteriorCamera(orbit.current,e.clientX-drag.current.x,e.clientY-drag.current.y);drag.current={x:e.clientX,y:e.clientY}}
   const pointerUp=()=>{drag.current=null}
   const wheel=(e:WheelEvent)=>{e.preventDefault();zoomInteriorCamera(orbit.current,e.deltaY)}
@@ -112,7 +112,7 @@ function DiningArchitecture() {
   <Block p={[0,3.02,-8.4]} s={[4.2,.34,.28]} c="#9b856b"/>
   <Label text="KITCHEN" p={[0,3.03,-8.2]} size={.27}/>
   <Model name="doorwayopen" p={[-2,0,-8.35]} scale={2.1}/>
-  {[-9,0,9].map(x=>[-5,5].map(z=><group key={`${x}:${z}`}><Model name="lampsquareceiling" p={[x,4.08,z]} scale={1.25}/><pointLight position={[x,3.8,z]} intensity={2.1} distance={9}/></group>))}
+  {[-9,0,9].map(x=>[-5,5].map(z=><pointLight key={`${x}:${z}`} position={[x,3.8,z]} intensity={2.1} distance={9}/>))}
   <Block p={[-11,1.6,11.8]} s={[3.4,3.2,.15]} c="#86adb0"/><Block p={[-11,1.6,11.69]} s={[.1,3.2,.2]} c="#eeebe0"/><Label text="EXIT" p={[-11,3.5,11.6]} size={.3}/>
  </>
 }
@@ -151,14 +151,14 @@ function Booth({x,z,flip=false}:{x:number;z:number;flip?:boolean}) {return <grou
   <Block p={[x+(flip?-1:1),.76,z]} s={[1,.1,1.4]} c="#e5d4b7"/>
  </group>}
 function DiningAgent({agent,look}:{agent:Diner;look:AvatarLook}) {
- const group=useRef<THREE.Group>(null),tray=useRef<THREE.Group>(null),walk=useRef(0),sit=useRef(0),eat=useRef(0)
+ const group=useRef<THREE.Group>(null),tray=useRef<THREE.Group>(null),walk=useRef(0),sit=useRef(agent.seated?1:0),eat=useRef(agent.seated?1:0)
  const colors=['orange','green','blue','yellow','purple'] as const
  useFrame((_,dt)=>{
   if(group.current){group.current.visible=agent.phase!=='away';group.current.position.set(agent.position[0],0,agent.position[1]);let angle=agent.heading;if(agent.phase==='eat')angle+=Math.sin(performance.now()*.0007+agent.id)*.18;group.current.rotation.y=angle}
   if(tray.current){tray.current.visible=agent.tray;tray.current.position.set(0,agent.seated?1.01:.68,agent.seated?.72:.5)}
   walk.current=THREE.MathUtils.lerp(walk.current,agent.walk?.75:0,Math.min(1,dt*8));sit.current=THREE.MathUtils.lerp(sit.current,agent.seated?1:0,Math.min(1,dt*5));eat.current=agent.phase==='eat'||agent.phase==='pickup'?1:0
  })
- return <group ref={group} visible={false}><Character {...look} color={colors[agent.id%colors.length]} top="tee" topColor={['#d6a939','#63867b','#b96555','#586f91','#92768e'][agent.id%5]} scale={.9} walk={walk} sit={sit} eat={eat}/><group ref={tray} visible={false}><Block p={[0,0,0]} s={[.62,.06,.45]} c="#d8cfb7"/><DiningModel name="plate-dinner" pack="food" p={[0,.04,0]} scale={.38}/><DiningModel name="sandwich" pack="food" p={[0,.07,0]} scale={.42}/></group></group>
+ return <group ref={group} visible={agent.phase!=='away'} position={[agent.position[0],0,agent.position[1]]} rotation={[0,agent.heading,0]}><Character {...look} color={colors[agent.id%colors.length]} top="tee" topColor={['#d6a939','#63867b','#b96555','#586f91','#92768e'][agent.id%5]} scale={1.15} walk={walk} sit={sit} sitLift={.112} eat={eat}/><group ref={tray} visible={agent.tray} position={[0,agent.seated?1.01:.68,agent.seated?.72:.5]}><Block p={[0,0,0]} s={[.62,.06,.45]} c="#d8cfb7"/><DiningModel name="plate-dinner" pack="food" p={[0,.04,0]} scale={.38}/><DiningModel name="sandwich" pack="food" p={[0,.07,0]} scale={.42}/></group></group>
 }
 function DiningCrowd({look}:{look:AvatarLook}) {
  const sim=useMemo(()=>new DiningSimulation(diningObstacles,diningTables.map(({x,z})=>[x,z]),5),[])

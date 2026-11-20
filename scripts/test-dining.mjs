@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import { DiningSimulation, clearPoint, diningObstacles, diningTables } from '../src/scene/diningSimulation.ts'
 const simulation=new DiningSimulation(diningObstacles,diningTables.map(({x,z})=>[x,z]),5)
+assert.equal(simulation.agents.filter(a=>a.seated).length,2,'two diners should already be seated')
+assert(simulation.agents.some(a=>a.phase==='queue'),'a diner should already be in line')
+assert(simulation.agents.some(a=>a.phase==='pickup'),'a diner should already be at a counter')
+assert(simulation.agents.filter(a=>a.phase!=='away').length>=4,'the room should be populated on entry')
 const phases=new Set(), occupied=new Set()
 let sharedTable=false
 for(let frame=0;frame<12000;frame++){

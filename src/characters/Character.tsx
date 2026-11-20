@@ -35,6 +35,8 @@ export interface CharacterProps {
   walk?: React.MutableRefObject<number>
   /** Optional seated and eating animation weights, for ambient indoor characters. */
   sit?: React.MutableRefObject<number>
+  /** Vertical lift while seated, in character-local units. */
+  sitLift?: number
   eat?: React.MutableRefObject<number>
   /** both arms raised (goalkeeper reaching high) */
   armsUp?: boolean
@@ -297,6 +299,7 @@ export function Character({
   swingAt,
   walk,
   sit,
+  sitLift = .23,
   eat,
   armsUp = false,
   lean = 0,
@@ -338,7 +341,7 @@ export function Character({
       const w = walk?.current ?? 0
       phase.current += w * 0.22
       const seated=THREE.MathUtils.clamp(sit?.current??0,0,1)
-      torso.current.position.y = Math.sin(t * 2.2) * 0.012 + Math.abs(Math.sin(phase.current)) * 0.05 * w + seated*.23
+      torso.current.position.y = Math.sin(t * 2.2) * 0.012 + Math.abs(Math.sin(phase.current)) * 0.05 * w + seated*sitLift
       legs.current.forEach((l, i) => l && (l.rotation.x = THREE.MathUtils.lerp(Math.sin(phase.current + i * Math.PI) * 0.7 * w,-1.15,seated)))
       if (w > 0.05 && !reach?.current && rArm.current && lArm.current) {
         // arms swing opposite the legs

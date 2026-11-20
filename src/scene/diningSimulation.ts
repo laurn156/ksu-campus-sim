@@ -35,9 +35,25 @@ export class DiningSimulation {
  readonly obstacles:Obstacle[]
  constructor(obstacles:Obstacle[],tablePositions:Point[],count=5){
   this.obstacles=obstacles
-  this.seats=tablePositions.flatMap(([x,z]):Seat[]=>[{table:[x,z],chair:[x,z+1.1],approach:[x,z+2.05],heading:Math.PI},{table:[x,z],chair:[x,z-1.1],approach:[x,z-2.05],heading:0}]).filter(s=>clearPoint(...s.approach,obstacles))
+  this.seats=tablePositions.filter(([x])=>Math.abs(x)===5).flatMap(([x,z]):Seat[]=>[{table:[x,z],chair:[x,z+1.1],approach:[x+(x<0?2.2:-2.2),z+1.1],heading:Math.PI},{table:[x,z],chair:[x,z-1.1],approach:[x+(x<0?2.2:-2.2),z-1.1],heading:0}]).filter(s=>clearPoint(...s.approach,obstacles))
   this.seatOwners=this.seats.map(()=>null)
   this.agents=Array.from({length:count},(_,i)=>({id:i,position:[0,10] as Point,heading:Math.PI,phase:'away' as Phase,timer:i*5,station:i%4,seat:null,route:[],blockedFor:0,walk:false,tray:false,seated:false,pathTarget:null}))
+  // Start in the middle of ordinary routines so the room is already occupied on entry.
+  for(let i=0;i<Math.min(2,this.agents.length,this.seats.length);i++){
+   const a=this.agents[i],seat=this.seats[i]
+   a.position=[...seat.chair];a.heading=seat.heading;a.phase='eat';a.timer=15+i*8;a.seat=i;a.tray=true;a.seated=true
+   this.seatOwners[i]=a.id
+  }
+  if(this.agents[2]){
+   const a=this.agents[2];a.station=1;a.position=[-5,-2.5];a.heading=Math.PI;a.phase='queue';a.timer=0
+  }
+  if(this.agents[3]){
+   const a=this.agents[3],free=this.seatOwners.findIndex(owner=>owner===null)
+   if(free>=0){a.station=1;a.position=[-5,-4];a.heading=Math.PI;a.phase='pickup';a.timer=3;a.seat=free;this.seatOwners[free]=a.id;this.stationOwners[a.station]=a.id}
+  }
+  if(this.agents[4]){
+   const a=this.agents[4];a.station=2;a.position=[2,7];a.phase='toQueue';a.timer=0;this.plan(a,[5,-2.5])
+  }
  }
  private plan(a:Diner,target:Point){a.pathTarget=target;a.route=indoorPath(a.position,target,this.obstacles,[...this.agents.filter(b=>b.id!==a.id&&b.phase!=='away').map(b=>b.position),...(this.playerPosition?[this.playerPosition]:[])]);if(!a.route.length)a.route=indoorPath(a.position,target,this.obstacles)}
  private move(a:Diner,dt:number){
