@@ -5,27 +5,55 @@ import * as THREE from 'three'
 import { Character } from '../characters/Character'
 import type { AvatarLook } from './Player'
 import { indoorState } from './indoorState'
+import { turnInteriorCamera, zoomInteriorCamera } from './interiorCamera'
+import { DiningSimulation, diningObstacles, diningTables, diningCounters, diningWalls, type Diner } from './diningSimulation'
 
 type V = [number,number,number]
 type Rect = [number,number,number,number]
 export type InteriorKind = 'library'|'dorm'|'student'|'garage'|'greenhouse'|'recreation'|'lab'|'office'|'classroom'|'dining'|'parking'
 const asset='/models/kenney-furniture/'
 const modelScale = createContext(1)
-function Model({name,p,r=0,scale=1,pack='furniture'}:{name:string;p:V;r?:number;scale?:number;pack?:'furniture'|'car'|'food'|'nature'}) {const {scene}=useGLTF(`${pack==='furniture'?asset:`/models/kenney-${pack}/`}${name}.glb`);const factor=useContext(modelScale);return <Clone object={scene} position={p} rotation={[0,r,0]} scale={scale*(pack==='furniture'?factor:1)}/>}
+function Model({name,p,r=0,scale=1,pack='furniture'}:{name:string;p:V;r?:number;scale?:number;pack?:'furniture'|'car'|'food'|'nature'}) {const {scene}=useGLTF(`${pack==='furniture'?asset:`/models/kenney-${pack}/`}${name}.glb`);const factor=useContext(modelScale);return <Clone object={scene} position={p} rotation={[0,r,0]} scale={scale*(pack==='furniture'?factor:1)} castShadow receiveShadow/>}
 function Block({p,s,c}:{p:V;s:V;c:string}) {return <mesh position={p} castShadow receiveShadow><boxGeometry args={s}/><meshStandardMaterial color={c}/></mesh>}
 function Label({text,p,size=.45,color='#273b37'}:{text:string;p:V;size?:number;color?:string}) {return <Text position={p} fontSize={size} color={color} anchorX="center" anchorY="middle" maxWidth={8}>{text}</Text>}
 function Ball({p,color,r=.1}:{p:V;color:string;r?:number}) {return <mesh position={p}><sphereGeometry args={[r,10,8]}/><meshStandardMaterial color={color}/></mesh>}
 function Person({p,look,i=0,rotation=0}:{p:V;look:AvatarLook;i?:number;rotation?:number}) {const colors=['orange','green','blue','yellow','purple','cream'] as const;return <group position={p} rotation={[0,rotation,0]}><Character {...look} color={colors[i%colors.length]} top="tee" topColor={['#e4b240','#507d77','#b55e51','#667d9b'][i%4]} scale={.9}/></group>}
 function WallWindow({x,z=-11.8}:{x:number;z?:number}) {return <group><Block p={[x,2.4,z]} s={[3,2.5,.12]} c="#82aeb6"/>{[-1.5,0,1.5].map(a=><Block key={a} p={[x+a,2.4,z+.1]} s={[.12,2.6,.16]} c="#e9eee6"/>)}<Block p={[x,2.4,z+.1]} s={[3,.12,.16]} c="#e9eee6"/></group>}
-function Architecture({student}:{student:boolean}) {return <><Block p={[0,-.12,0]} s={[28,.24,24]} c="#d8d0bb"/><Block p={[0,2.1,-11.95]} s={[28,4.2,.2]} c="#e9e7db"/><Block p={[-13.95,2.1,0]} s={[.2,4.2,24]} c="#e2e0d3"/><Block p={[13.95,2.1,0]} s={[.2,4.2,24]} c="#e2e0d3"/>{[-10,-5,0,5,10].map(x=><WallWindow key={x} x={x}/>)}{[-8,0,8].map(x=>[-6,4].map(z=><group key={`${x}:${z}`}><Model name="lampsquareceiling" p={[x,4.1,z]} scale={1.5}/><pointLight position={[x,3.8,z]} intensity={4} distance={12}/></group>))}<Block p={[-11,1.6,11.8]} s={[3.4,3.2,.15]} c="#83aeb1"/><Block p={[-11,1.6,11.69]} s={[.1,3.2,.2]} c="#ebece0"/><Label text="EXIT" p={[-11,3.5,11.6]} size={.3}/>{student&&<><Block p={[-5,1.7,-1]} s={[.25,3.4,8]} c="#c8bda7"/><Block p={[-5,1.7,8.1]} s={[.25,3.4,3.8]} c="#c8bda7"/><Block p={[5,1.7,-5]} s={[.25,3.4,7]} c="#c8bda7"/><Block p={[5,1.7,5.6]} s={[.25,3.4,8.8]} c="#c8bda7"/><Label text="FOOD COURT" p={[-9,3.5,-11.7]}/><Label text="GAME ROOM" p={[9,3.5,-11.7]}/></>}</>}
+function Architecture({student}:{student:boolean}) {return <><Block p={[0,-.12,0]} s={[28,.24,24]} c="#d8d0bb"/><DiningWall p={[0,2.1,-11.95]} s={[28,4.2,.2]} color="#e9e7db">{[-10,-5,0,5,10].map(x=><WallWindow key={x} x={x}/>)}</DiningWall><DiningWall p={[-13.95,2.1,0]} s={[.2,4.2,24]} color="#e2e0d3"/><DiningWall p={[13.95,2.1,0]} s={[.2,4.2,24]} color="#e2e0d3"/>{[-8,0,8].map(x=>[-6,4].map(z=><group key={`${x}:${z}`}><Model name="lampsquareceiling" p={[x,4.1,z]} scale={1.5}/><pointLight position={[x,3.8,z]} intensity={4} distance={12}/></group>))}<Block p={[-11,1.6,11.8]} s={[3.4,3.2,.15]} c="#83aeb1"/><Block p={[-11,1.6,11.69]} s={[.1,3.2,.2]} c="#ebece0"/><Label text="EXIT" p={[-11,3.5,11.6]} size={.3}/>{student&&<><DiningWall p={[-5,1.7,-1]} s={[.25,3.4,8]} color="#c8bda7"/><DiningWall p={[-5,1.7,8.1]} s={[.25,3.4,3.8]} color="#c8bda7"/><DiningWall p={[5,1.7,-5]} s={[.25,3.4,7]} color="#c8bda7"/><DiningWall p={[5,1.7,5.6]} s={[.25,3.4,8.8]} color="#c8bda7"/><Label text="FOOD COURT" p={[-9,3.5,-11.7]}/><Label text="GAME ROOM" p={[9,3.5,-11.7]}/></>}</>}
 const studentWalls:Rect[]=[[-5,-1,.3,8],[-5,8.1,.3,3.8],[5,-5,.3,7],[5,5.6,.3,8.8]]
 const studentFurniture:Rect[]=[[-11,-8,4,1.5],[-11,-3.8,4,1.5],[-11,.5,4,1.5],[-10,5,2,2],[-10,9,2,2],[0,-6,2,2],[0,-1,2,2],[0,4,2,2],[9,-6,3,2],[9,-1,3,2],[10,5,2,1.5],[-2,9,2.5,1],[-8.7,7,1.3,1.3],[12,8,1,1]]
 const desks:Rect[]=[];for(const z of [-4,-1,2,5])for(const x of [-8,-4,0,4,8])desks.push([x,z,1.4,1.1])
 function collision(x:number,z:number,rects:Rect[]){return Math.abs(x)>13.4||Math.abs(z)>11.3||rects.some(([cx,cz,w,d])=>Math.abs(x-cx)<w/2+.38&&Math.abs(z-cz)<d/2+.38)}
-function Move({look,rects}:{look:AvatarLook;rects:Rect[]}) {const body=useRef<THREE.Group>(null),walk=useRef(0),keys=useRef(new Set<string>()),pos=useRef(new THREE.Vector3(0,0,9));const {camera}=useThree()
- useEffect(()=>{const down=(e:KeyboardEvent)=>{if(!(e.target instanceof HTMLInputElement))keys.current.add(e.key.toLowerCase())};const up=(e:KeyboardEvent)=>keys.current.delete(e.key.toLowerCase());window.addEventListener('keydown',down);window.addEventListener('keyup',up);return()=>{window.removeEventListener('keydown',down);window.removeEventListener('keyup',up)}},[])
- useFrame((_,raw)=>{const dt=Math.min(raw,.05),k=keys.current;let x=Number(k.has('d')||k.has('arrowright'))-Number(k.has('a')||k.has('arrowleft')),z=Number(k.has('s')||k.has('arrowdown'))-Number(k.has('w')||k.has('arrowup'));const n=Math.hypot(x,z);if(n){x/=n;z/=n;const speed=(k.has('shift')?6:3.5)*dt;if(!collision(pos.current.x+x*speed,pos.current.z,rects))pos.current.x+=x*speed;if(!collision(pos.current.x,pos.current.z+z*speed,rects))pos.current.z+=z*speed;if(body.current)body.current.rotation.y=Math.atan2(x,z)}walk.current=THREE.MathUtils.lerp(walk.current,n?.8:0,dt*10);if(body.current)body.current.position.copy(pos.current);indoorState.x=pos.current.x;indoorState.z=pos.current.z;indoorState.heading=body.current?.rotation.y??0;indoorState.moving=!!n;camera.position.lerp(new THREE.Vector3(pos.current.x+4,8,pos.current.z+10),Math.min(1,dt*5));camera.lookAt(pos.current.x,1,pos.current.z)})
- return <group ref={body}><Character {...look} walk={walk} scale={1.15}/></group>}
+function Move({look,rects}:{look:AvatarLook;rects:Rect[]}) {
+ const body=useRef<THREE.Group>(null),walk=useRef(0),keys=useRef(new Set<string>()),pos=useRef(new THREE.Vector3(0,0,9))
+ const orbit=useRef({yaw:Math.atan2(4,10),pitch:.62,distance:13}),drag=useRef<{x:number;y:number}|null>(null)
+ const focus=useRef(new THREE.Vector3(0,1,9)),{camera,gl}=useThree()
+ useEffect(()=>{
+  const down=(e:KeyboardEvent)=>{if(!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement))keys.current.add(e.key.toLowerCase())}
+  const up=(e:KeyboardEvent)=>keys.current.delete(e.key.toLowerCase())
+  const pointerDown=(e:PointerEvent)=>{if(e.button!==2)return;e.preventDefault();drag.current={x:e.clientX,y:e.clientY};gl.domElement.setPointerCapture(e.pointerId)}
+  const pointerMove=(e:PointerEvent)=>{if(!drag.current)return;turnInteriorCamera(orbit.current,e.clientX-drag.current.x,e.clientY-drag.current.y);drag.current={x:e.clientX,y:e.clientY}}
+  const pointerUp=()=>{drag.current=null}
+  const wheel=(e:WheelEvent)=>{e.preventDefault();zoomInteriorCamera(orbit.current,e.deltaY)}
+  const menu=(e:Event)=>e.preventDefault()
+  window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('pointermove',pointerMove);window.addEventListener('pointerup',pointerUp)
+  gl.domElement.addEventListener('pointerdown',pointerDown);gl.domElement.addEventListener('wheel',wheel,{passive:false});gl.domElement.addEventListener('contextmenu',menu)
+  return()=>{window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('pointermove',pointerMove);window.removeEventListener('pointerup',pointerUp);gl.domElement.removeEventListener('pointerdown',pointerDown);gl.domElement.removeEventListener('wheel',wheel);gl.domElement.removeEventListener('contextmenu',menu)}
+ },[gl])
+ useFrame((_,raw)=>{
+  const dt=Math.min(raw,.05),k=keys.current
+  if(k.has('q'))orbit.current.yaw+=dt*1.6;if(k.has('e'))orbit.current.yaw-=dt*1.6
+  let x=Number(k.has('d')||k.has('arrowright'))-Number(k.has('a')||k.has('arrowleft')),z=Number(k.has('s')||k.has('arrowdown'))-Number(k.has('w')||k.has('arrowup'))
+  const n=Math.hypot(x,z)
+  if(n){x/=n;z/=n;const speed=(k.has('shift')?6:3.5)*dt;const blocked=(px:number,pz:number)=>collision(px,pz,rects)||indoorState.npcPositions.some(([ax,az])=>Math.hypot(px-ax,pz-az)<.75);if(!blocked(pos.current.x+x*speed,pos.current.z))pos.current.x+=x*speed;if(!blocked(pos.current.x,pos.current.z+z*speed))pos.current.z+=z*speed;if(body.current)body.current.rotation.y=Math.atan2(x,z)}
+  walk.current=THREE.MathUtils.lerp(walk.current,n?.8:0,dt*10);if(body.current)body.current.position.copy(pos.current)
+  indoorState.x=pos.current.x;indoorState.z=pos.current.z;indoorState.heading=body.current?.rotation.y??0;indoorState.moving=!!n
+  const {yaw,pitch,distance}=orbit.current,horizontal=Math.cos(pitch)*distance
+  const want=new THREE.Vector3(pos.current.x+Math.sin(yaw)*horizontal,1+Math.sin(pitch)*distance,pos.current.z+Math.cos(yaw)*horizontal)
+  camera.position.lerp(want,1-Math.exp(-dt*9));focus.current.lerp(new THREE.Vector3(pos.current.x,1,pos.current.z),1-Math.exp(-dt*12));camera.lookAt(focus.current)
+ })
+ return <group ref={body}><Character {...look} walk={walk} scale={1.15}/></group>
+}
 function Pool(){return <group><Block p={[9,.8,-6]} s={[3.1,.35,1.8]} c="#624332"/><Block p={[9,1,-6]} s={[2.8,.08,1.5]} c="#387153"/>{[-1.3,0,1.3].map(x=>[-.7,.7].map(z=><Ball key={`${x}:${z}`} p={[9+x,1.08,-6+z]} color="#242820" r={.13}/>))}{[0,1,2,3,4].map(i=><Ball key={i} p={[8.6+i*.17,1.1,-6+(i%2)*.17]} color={['#f1e8ca','#db4840','#e3ba3d','#404c85','#252b27'][i]} r={.08}/>)}{[-1,1].map(x=>[-.6,.6].map(z=><Block key={`${x}:${z}`} p={[9+x,.4,-6+z]} s={[.22,.8,.22]} c="#564638"/>))}<Block p={[9,1.13,-5.3]} s={[2.7,.05,.05]} c="#c3a275"/></group>}
 function PingPong(){return <group><Block p={[9,.8,-1]} s={[3,.16,1.6]} c="#426e91"/><Block p={[9,1,-1]} s={[.04,.35,1.6]} c="#e6e6dd"/>{[-1.2,1.2].map(x=>[-.6,.6].map(z=><Block key={`${x}:${z}`} p={[9+x,.4,-1+z]} s={[.13,.8,.13]} c="#444e4b"/>))}<Ball p={[9.5,.96,-1]} color="#f6eee0" r={.08}/><mesh position={[8.5,.93,-.8]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[.25,12]}/><meshStandardMaterial color="#c65b4b"/></mesh></group>}
 function Student({look}:{look:AvatarLook}) {const counters=[{z:-8,name:'CHICK-FIL-A',color:'#b8423e',items:'CHICKEN  •  FRIES'},{z:-3.8,name:'DUNKIN’',color:'#df7b36',items:'COFFEE  •  DONUTS'},{z:.5,name:'SUSHI',color:'#577e6c',items:'ROLLS  •  BOWLS'}];return <><Architecture student/>{counters.map((c,i)=><group key={c.name}><Block p={[-11,1,c.z]} s={[4,2,1.5]} c={c.color}/><Block p={[-11,2.9,c.z-.6]} s={[4.2,1,.2]} c="#f7f3e8"/><Label text={c.name} p={[-11,3,c.z-.46]} size={.45} color={c.color}/><Block p={[-11,2.2,c.z-.45]} s={[3.8,.5,.1]} c="#32413a"/><Label text={c.items} p={[-11,2.2,c.z-.36]} size={.24} color="#f5e8cb"/><Model name="laptop" p={[-11.8,2,c.z]} scale={.75}/>{i===1&&<Model name="kitchencoffeemachine" p={[-10.4,2,c.z]} scale={.8}/>}<Person look={look} p={[-9,0,c.z+1.4]} i={i} rotation={Math.PI}/></group>)}{[-10,0,5].map((_,i)=><group key={i}><Model name="tableround" p={[0,0,-6+i*5]} scale={1.5}/>{[-1.5,1.5].map(x=><Model key={x} name="chaircushion" p={[x,0,-6+i*5]} r={x<0?Math.PI/2:-Math.PI/2} scale={1.1}/>)}<Person look={look} p={[1.7,0,-6+i*5]} i={i+2}/></group>)}<Model name="loungesofa" p={[-10,0,5]} scale={1.5}/><Model name="loungechair" p={[-10,0,9]} scale={1.3}/><Model name="tablecoffee" p={[-8.7,0,7]} scale={1.2}/><Model name="pottedplant" p={[-13,0,10]} scale={1.3}/><Model name="trashcan" p={[-6.5,0,3]} scale={1.1}/><Pool/><PingPong/><Person look={look} p={[7,0,-6]} i={4}/><Person look={look} p={[10.8,0,-1]} i={5}/><Model name="loungechair" p={[10,0,5]} scale={1.4}/><Block p={[12,1,8]} s={[1,2,.8]} c="#32494b"/><Block p={[12,1.5,7.57]} s={[.7,.7,.08]} c="#82b9bd"/><Label text="ARCADE" p={[12,2.2,7.5]} size={.2}/><Block p={[-2,1,9]} s={[2.5,2,1]} c="#8d795e"/><Label text="INFO" p={[-2,2.3,8.4]} size={.3}/></>}
@@ -35,7 +63,7 @@ function Classroom({look}:{look:AvatarLook}) {return <><Architecture student={fa
 interface Placed { name: string; x:number; z:number; w:number; d:number; scale?:number; r?:number; pack?:'furniture'|'car'|'food'|'nature' }
 const piece=(name:string,x:number,z:number,w=1.5,d=1.5,scale=1,r=0,pack:Placed['pack']='furniture'):Placed=>({name,x,z,w,d,scale,r,pack})
 const partition:Rect[]=[[-8,-2,12,.25],[8,-2,12,.25]]
-function Dividers(){return <>{partition.map(([x,z,w,d],i)=><group key={i}><Block p={[x,1.45,z]} s={[w,2.9,d]} c="#c8c6ba"/><Block p={[x,2.6,z+.16]} s={[w-.6,.12,.08]} c="#e9e6d8"/></group>)}</>}
+function Dividers(){return <>{partition.map(([x,z,w,d],i)=><DiningWall key={i} p={[x,1.45,z]} s={[w,2.9,d]} color="#c8c6ba"><Block p={[x,2.6,z+.16]} s={[w-.6,.12,.08]} c="#e9e6d8"/></DiningWall>)}</>}
 function Poster({x,z=-11.78,title,color='#d7ac4a'}:{x:number;z?:number;title:string;color?:string}) {return <group><Block p={[x,2.1,z]} s={[1.6,2.1,.07]} c={color}/><Label text={title} p={[x,2.2,z+.06]} size={.23} color="#f8f7ee"/></group>}
 function MakeTables({xs,z,look,items=true}:{xs:number[];z:number;look:AvatarLook;items?:boolean}) {return <>{xs.map((x,i)=><group key={x}><Model name="table" p={[x,0,z]} scale={1.25}/><Model name="chaircushion" p={[x,0,z+1]} scale={.85}/>{items&&<><Model name={i%2?'books':'laptop'} p={[x,1.05,z]} scale={.65}/><Person look={look} p={[x,0,z+1.4]} i={i}/></>}</group>)}</>}
 function Library({look}:{look:AvatarLook}) {return <><Dividers/><Label text="LIBRARY" p={[0,3.45,-11.68]}/>{[-10,-6,0,6,10].map((x,i)=><group key={x}><Model name="bookcaseopen" p={[x,0,-9]} scale={1.7}/>{[-.45,0,.45].map(y=><Model key={y} name="books" p={[x+y,1.25,-8.75]} scale={.55}/>)}<Poster x={x} title={['READ','DISCOVER','STUDY'][i%3]}/></group>)}<MakeTables xs={[-9,-5,5,9]} z={-5} look={look}/><MakeTables xs={[-8,0,8]} z={3} look={look}/><Model name="desk" p={[-10,0,8]} scale={1.5}/><Model name="computerscreen" p={[-10,1.1,8]} scale={.8}/><Person look={look} p={[-11,0,9]} i={3}/><Model name="loungesofa" p={[10,0,8]} scale={1.4}/><Model name="pottedplant" p={[12,0,9]} scale={1.2}/></>}
@@ -48,22 +76,19 @@ function Treadmill({x,z}:{x:number;z:number}) {return <group><Block p={[x,.18,z]
 function Recreation({look}:{look:AvatarLook}) {return <><Block p={[-5,.02,-4]} s={[15,.05,14]} c="#c79a66"/><Block p={[-5,.06,-4]} s={[.07,.03,14]} c="#f1e1c8"/><mesh position={[-5,.08,-4]} rotation={[-Math.PI/2,0,0]}><torusGeometry args={[2,.045,5,28]}/><meshStandardMaterial color="#f7ebd6"/></mesh><Hoop x={-5} z={-11.6}/><Label text="RECREATION & WELLNESS" p={[-5,3.9,-11.7]} size={.35}/>{[4,7,10].map((x,i)=><group key={x}><Treadmill x={x} z={-6}/><Person look={look} p={[x,0,-4]} i={i}/></group>)}<Block p={[11,2,4]} s={[.3,4,8]} c="#b39471"/>{Array.from({length:18},(_,i)=><Ball key={i} p={[10.75,.5+(i%5)*.7,1+Math.floor(i/5)*1.8]} color={['#d7654a','#dfbc52','#689d92','#6783a5'][i%4]} r={.15}/>)}{[4,7].map(x=><group key={x}><Block p={[x,.45,5]} s={[2,.3,1]} c="#59665f"/>{[-.8,.8].map(a=><mesh key={a} position={[x+a,.4,5]} rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[.3,.3,.2,12]}/><meshStandardMaterial color="#33433e"/></mesh>)}</group>)}<Person look={look} p={[-5,0,0]} i={4}/><Ball p={[-4,0.35,-1]} color="#bf7043" r={.3}/></>}
 function Office({look}:{look:AvatarLook}) {return <><Dividers/><Label text="OFFICES & SERVICES" p={[0,3.45,-11.68]}/>{[-9,-5,5,9].map((x,i)=><group key={x}><Model name="desk" p={[x,0,-7]} scale={1.3}/><Model name="computerscreen" p={[x,1.05,-7]} scale={.8}/><Model name="chairdesk" p={[x,0,-6]}/><Person look={look} p={[x,0,-5]} i={i}/></group>)}<Model name="desk" p={[-8,0,5]} scale={1.7}/><Model name="computerscreen" p={[-8,1.3,5]} scale={.9}/><Label text="INFORMATION" p={[-8,2.4,5]} size={.28}/><Model name="loungesofa" p={[7,0,5]} scale={1.5}/><Model name="tablecoffee" p={[7,0,7]} scale={1.2}/><Model name="pottedplant" p={[11,0,9]} scale={1.2}/><Person look={look} p={[5,0,8]} i={4}/></>}
 // Stingers: separate dining room, service counters, and a visible preparation kitchen.
-const diningTables = [-9,-5,5,9].flatMap(x=>[.5,4.6,8.7].map(z=>({x,z})))
-const diningCounters = [-9,-5,5,9]
-const diningWalls:Rect[]=[[-8,-8.4,12,.22],[8,-8.4,12,.22]]
-const diningObstacles:Rect[]=[...diningWalls,...diningCounters.map(x=>[x,-5.8,3.25,1.65] as Rect),...diningTables.map(({x,z})=>[x,z,2.65,2.4] as Rect),[-11.5,3,2.2,6], [11.5,3,2.2,6],[-12,9,1.4,1.4],[12,9,1.4,1.4],[-12,-3,1.4,1],[12,-3,1.4,1],[-10.2,-10.4,3.4,1], [9.6,-10.4,4.2,1]]
+
 
 /** Hide only this wall if it actually intersects the camera-to-player sightline. */
 function DiningWall({p,s,color,children}:{p:V;s:V;color:string;children?:React.ReactNode}) {
  const group=useRef<THREE.Group>(null), {camera}=useThree()
- const box=useRef(new THREE.Box3()), ray=useRef(new THREE.Ray()), target=useRef(new THREE.Vector3()), hit=useRef(new THREE.Vector3())
+ const bounds=useMemo(()=>new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(...p),new THREE.Vector3(...s)),[p[0],p[1],p[2],s[0],s[1],s[2]])
+ const ray=useRef(new THREE.Ray()), target=useRef(new THREE.Vector3()), direction=useRef(new THREE.Vector3()), hit=useRef(new THREE.Vector3())
  useFrame(()=>{
   if(!group.current)return
-  box.current.setFromCenterAndSize(new THREE.Vector3(...p),new THREE.Vector3(...s))
   target.current.set(indoorState.x,1,indoorState.z)
   const distance=camera.position.distanceTo(target.current)
-  ray.current.set(camera.position,target.current.clone().sub(camera.position).normalize())
-  const point=ray.current.intersectBox(box.current,hit.current)
+  ray.current.set(camera.position,direction.current.subVectors(target.current,camera.position).normalize())
+  const point=ray.current.intersectBox(bounds,hit.current)
   group.current.visible=!(point&&camera.position.distanceTo(point)<distance-.15)
  })
  return <group ref={group}><Block p={p} s={s} c={color}/>{children}</group>
@@ -73,7 +98,7 @@ function DiningModel({name,p,r=0,scale=1,pack='furniture'}:{name:string;p:V;r?:n
  const {scene}=useGLTF(`${pack==='furniture'?asset:'/models/kenney-food/'}${name}.glb`)
  const factor=useContext(modelScale),size=scale*(pack==='furniture'?factor:1)
  const offset=useMemo(()=>{const bounds=new THREE.Box3().setFromObject(scene);return [-(bounds.min.x+bounds.max.x)/2,-bounds.min.y,-(bounds.min.z+bounds.max.z)/2] as V},[scene])
- return <group position={p} rotation={[0,r,0]}><Clone object={scene} scale={size} position={[offset[0]*size,offset[1]*size,offset[2]*size]}/></group>
+ return <group position={p} rotation={[0,r,0]}><Clone object={scene} scale={size} position={[offset[0]*size,offset[1]*size,offset[2]*size]} castShadow receiveShadow/></group>
 }
 function DiningArchitecture() {
  return <>
@@ -106,14 +131,17 @@ function ServingStation({x,index}:{x:number;index:number}) {
   <DiningModel name="laptop" p={[x+1.05,1.12,-5.25]} scale={.65}/>
  </group>
 }
-function DiningTable({x,z,index,look}:{x:number;z:number;index:number;look:AvatarLook}) {
+function DiningTable({x,z,index}:{x:number;z:number;index:number}) {
+ const groupTable=index>=10,height=groupTable?1.14:.98
+ const chairs:readonly (readonly [number,number,number])[]=groupTable?
+  [[-1.55,0,Math.PI/2],[1.55,0,-Math.PI/2],[-.6,-1.3,0],[.6,-1.3,0],[-.6,1.3,Math.PI],[.6,1.3,Math.PI]]:
+  [[-1.3,0,Math.PI/2],[1.3,0,-Math.PI/2],[0,-1.1,0],[0,1.1,Math.PI]]
  return <group>
-  <DiningModel name="tablecross" p={[x,0,z]} scale={1.65}/>
-  {([[-1.0,0,Math.PI/2],[1.0,0,-Math.PI/2],[0,-.95,0],[0,.95,Math.PI]] as const).map(([dx,dz,rotation],i)=><DiningModel key={i} name="chaircushion" p={[x+dx,0,z+dz]} r={rotation} scale={1.15}/>)}
-  <DiningModel name="plate-dinner" pack="food" p={[x,.87,z]} scale={.45}/>
-  <DiningModel name={index%2?'sandwich':'salad'} pack="food" p={[x,.91,z]} scale={.55}/>
-  <DiningModel name="cup" pack="food" p={[x+.45,.87,z-.2]} scale={.6}/>
-  {index%3===0&&<Person look={look} p={[x+1.25,0,z+.2]} i={index}/>}
+  <DiningModel name="tablecross" p={[x,0,z]} scale={groupTable?2.15:1.85}/>
+  {chairs.map(([dx,dz,rotation],i)=><DiningModel key={i} name="chaircushion" p={[x+dx,0,z+dz]} r={rotation} scale={1.38}/>)}
+  <DiningModel name="plate-dinner" pack="food" p={[x,height,z]} scale={.45}/>
+  <DiningModel name={index%2?'sandwich':'salad'} pack="food" p={[x,height+.04,z]} scale={.55}/>
+  <DiningModel name="cup" pack="food" p={[x+.45,height,z-.2]} scale={.6}/>
  </group>
 }
 function Booth({x,z,flip=false}:{x:number;z:number;flip?:boolean}) {return <group>
@@ -122,13 +150,29 @@ function Booth({x,z,flip=false}:{x:number;z:number;flip?:boolean}) {return <grou
   <Block p={[x+(flip?.48:-.48),1.25,z]} s={[.18,1.15,2.12]} c="#b87954"/>
   <Block p={[x+(flip?-1:1),.76,z]} s={[1,.1,1.4]} c="#e5d4b7"/>
  </group>}
+function DiningAgent({agent,look}:{agent:Diner;look:AvatarLook}) {
+ const group=useRef<THREE.Group>(null),tray=useRef<THREE.Group>(null),walk=useRef(0),sit=useRef(0),eat=useRef(0)
+ const colors=['orange','green','blue','yellow','purple'] as const
+ useFrame((_,dt)=>{
+  if(group.current){group.current.visible=agent.phase!=='away';group.current.position.set(agent.position[0],0,agent.position[1]);let angle=agent.heading;if(agent.phase==='eat')angle+=Math.sin(performance.now()*.0007+agent.id)*.18;group.current.rotation.y=angle}
+  if(tray.current){tray.current.visible=agent.tray;tray.current.position.set(0,agent.seated?1.01:.68,agent.seated?.72:.5)}
+  walk.current=THREE.MathUtils.lerp(walk.current,agent.walk?.75:0,Math.min(1,dt*8));sit.current=THREE.MathUtils.lerp(sit.current,agent.seated?1:0,Math.min(1,dt*5));eat.current=agent.phase==='eat'||agent.phase==='pickup'?1:0
+ })
+ return <group ref={group} visible={false}><Character {...look} color={colors[agent.id%colors.length]} top="tee" topColor={['#d6a939','#63867b','#b96555','#586f91','#92768e'][agent.id%5]} scale={.9} walk={walk} sit={sit} eat={eat}/><group ref={tray} visible={false}><Block p={[0,0,0]} s={[.62,.06,.45]} c="#d8cfb7"/><DiningModel name="plate-dinner" pack="food" p={[0,.04,0]} scale={.38}/><DiningModel name="sandwich" pack="food" p={[0,.07,0]} scale={.42}/></group></group>
+}
+function DiningCrowd({look}:{look:AvatarLook}) {
+ const sim=useMemo(()=>new DiningSimulation(diningObstacles,diningTables.map(({x,z})=>[x,z]),5),[])
+ useEffect(()=>()=>{indoorState.npcPositions=[]},[])
+ useFrame((_,dt)=>{sim.step(Math.min(dt,.05),[indoorState.x,indoorState.z]);indoorState.npcPositions=sim.agents.filter(a=>a.phase!=='away').map(a=>a.position)})
+ return <>{sim.agents.map(agent=><DiningAgent key={agent.id} agent={agent} look={look}/>)}</>
+}
 function Dining({look}:{look:AvatarLook}) {
  return <>
   <DiningArchitecture/>
-  <Block p={[0,3.6,-8.17]} s={[7,.48,.1]} c="#344a3e"/>
+  <Block p={[0,3.6,-8.17]} s={[7,.48,.1]} c="#1d2825"/><Block p={[0,3.3,-8.17]} s={[7,.10,.12]} c="#e4b63b"/>
   <Label text="STINGERS DINING HALL" p={[0,3.62,-8.09]} size={.35} color="#f5d368"/>
   {diningCounters.map((x,i)=><ServingStation key={x} x={x} index={i}/>)}
-  {diningTables.map((table,i)=><DiningTable key={`${table.x}:${table.z}`} {...table} index={i} look={look}/>)}
+  {diningTables.map((table,i)=><DiningTable key={`${table.x}:${table.z}`} {...table} index={i}/>)}
   {[-12,12].map(x=>[1,5].map(z=><Booth key={`${x}:${z}`} x={x} z={z} flip={x>0}/>))}
   <DiningModel name="trashcan" p={[-12,0,9]} scale={1.5}/><DiningModel name="trashcan" p={[12,0,9]} scale={1.5}/><Block p={[-12,1,9]} s={[.65,.18,.65]} c="#5b805d"/><Block p={[12,1,9]} s={[.65,.18,.65]} c="#6389a0"/>
   <DiningModel name="pottedplant" p={[-12,0,-1]} scale={1.5}/><DiningModel name="pottedplant" p={[12,0,-1]} scale={1.5}/>
@@ -137,9 +181,9 @@ function Dining({look}:{look:AvatarLook}) {
   <DiningModel name="kitchenmicrowave" p={[5.8,1,-10.5]} scale={1.1}/><DiningModel name="cutting-board" pack="food" p={[-10,1.05,-10.4]} scale={1.4}/>
   <Block p={[-12,1.05,-3]} s={[1.3,2.1,.9]} c="#546d68"/><Block p={[-12,1.65,-2.52]} s={[.94,.55,.08]} c="#d9e2d9"/><Label text="DRINKS" p={[-12,2.28,-2.49]} size={.19}/>{[-.3,.3].map(dx=><group key={dx}><Block p={[-12+dx,1.3,-2.49]} s={[.08,.2,.12]} c="#d9e2d9"/><DiningModel name="cup" pack="food" p={[-12+dx,.55,-2.42]} scale={.65}/></group>)}
   <Block p={[12,1.05,-3]} s={[1.3,2.1,.9]} c="#6c827b"/><Block p={[12,1.65,-2.52]} s={[.94,.55,.08]} c="#d9e2d9"/><Label text="WATER" p={[12,2.28,-2.49]} size={.19}/>{[-.3,.3].map(dx=><group key={dx}><Block p={[12+dx,1.3,-2.49]} s={[.08,.2,.12]} c="#d9e2d9"/><DiningModel name="cup" pack="food" p={[12+dx,.55,-2.42]} scale={.65}/></group>)}
-  <DiningModel name="bottle-ketchup" pack="food" p={[-4,.87,4.6]} scale={.7}/><DiningModel name="bottle-musterd" pack="food" p={[4,.87,4.6]} scale={.7}/>
-  <Poster x={-12} z={-8.23} title="FRESH FOOD" color="#c58d50"/><Poster x={12} z={-8.23} title="GO OWLS" color="#618573"/>
-  {[-9,9].map((x,i)=><Person key={x} look={look} p={[x,0,-7.35]} i={i+3}/>)}
+  <DiningModel name="bottle-ketchup" pack="food" p={[-5,.98,4.6]} scale={.7}/><DiningModel name="bottle-musterd" pack="food" p={[5,.98,4.6]} scale={.7}/>
+  <Poster x={-12} z={-8.23} title="FRESH FOOD" color="#272d27"/><Poster x={12} z={-8.23} title="GO OWLS" color="#d2a32d"/>
+  <DiningCrowd look={look}/>
  </>
 }
 function Parking(){return <><Block p={[0,.02,0]} s={[26,.04,22]} c="#858984"/>{[-9,-4,4,9].map(x=><group key={x}><Block p={[x,.05,0]} s={[.12,.04,18]} c="#e4e3d4"/><Model name="sedan" pack="car" p={[x+1.8,0,-6]} scale={1.5}/></group>)}<Label text="PARKING" p={[0,3.2,-11.68]}/><Model name="cone" pack="car" p={[2,0,5]}/></>}
@@ -158,5 +202,5 @@ export function DetailedRoom({kind,look}:{kind:InteriorKind;look:AvatarLook}) {
  const student=kind==='student',classroom=kind==='classroom'
  const rects=student?[...studentWalls,...studentFurniture]:classroom?[...desks,[0,-9,8,1] as Rect]:kind==='dining'?diningObstacles:[...(kind==='recreation'||kind==='parking'?[]:partition),...rooms[kind].map(({x,z,w,d})=>[x,z,w,d] as Rect)]
  const scene=student?<Student look={look}/>:classroom?<Classroom look={look}/>:kind==='library'?<Library look={look}/>:kind==='dorm'?<Dorm look={look}/>:kind==='lab'?<Lab look={look}/>:kind==='garage'?<Garage look={look}/>:kind==='greenhouse'?<Greenhouse look={look}/>:kind==='recreation'?<Recreation look={look}/>:kind==='dining'?<Dining look={look}/>:kind==='parking'?<Parking/>:<Office look={look}/>
- return <><color attach="background" args={['#e8ece2']}/><ambientLight intensity={1.3}/><directionalLight position={[5,15,8]} intensity={1.8}/><Suspense fallback={null}>{!student&&!classroom&&kind!=='dining'&&<Architecture student={false}/ >}<modelScale.Provider value={student||classroom?1:1.5}>{scene}</modelScale.Provider></Suspense><Move rects={rects} look={look}/></>
+ return <><color attach="background" args={['#e8ece2']}/><ambientLight intensity={.95}/><directionalLight position={[5,15,8]} intensity={1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-left={-20} shadow-camera-right={20} shadow-camera-top={20} shadow-camera-bottom={-20} shadow-bias={-.0003}/><Suspense fallback={null}>{!student&&!classroom&&kind!=='dining'&&<Architecture student={false}/ >}<modelScale.Provider value={student||classroom?1:1.5}>{scene}</modelScale.Provider></Suspense><Move rects={rects} look={look}/></>
 }

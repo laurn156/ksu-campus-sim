@@ -33,6 +33,9 @@ export interface CharacterProps {
   swingAt?: React.MutableRefObject<number>
   /** walking speed 0..1 (drives the walk cycle) */
   walk?: React.MutableRefObject<number>
+  /** Optional seated and eating animation weights, for ambient indoor characters. */
+  sit?: React.MutableRefObject<number>
+  eat?: React.MutableRefObject<number>
   /** both arms raised (goalkeeper reaching high) */
   armsUp?: boolean
   /** sideways lean in radians (goalkeeper stepping); positive leans to the character's left */
@@ -293,6 +296,8 @@ export function Character({
   reach,
   swingAt,
   walk,
+  sit,
+  eat,
   armsUp = false,
   lean = 0,
   position,
@@ -332,8 +337,9 @@ export function Character({
     if (torso.current) {
       const w = walk?.current ?? 0
       phase.current += w * 0.22
-      torso.current.position.y = Math.sin(t * 2.2) * 0.012 + Math.abs(Math.sin(phase.current)) * 0.05 * w // breathing + step bounce
-      legs.current.forEach((l, i) => l && (l.rotation.x = Math.sin(phase.current + i * Math.PI) * 0.7 * w))
+      const seated=THREE.MathUtils.clamp(sit?.current??0,0,1)
+      torso.current.position.y = Math.sin(t * 2.2) * 0.012 + Math.abs(Math.sin(phase.current)) * 0.05 * w + seated*.23
+      legs.current.forEach((l, i) => l && (l.rotation.x = THREE.MathUtils.lerp(Math.sin(phase.current + i * Math.PI) * 0.7 * w,-1.15,seated)))
       if (w > 0.05 && !reach?.current && rArm.current && lArm.current) {
         // arms swing opposite the legs
         rArm.current.rotation.x = Math.sin(phase.current) * 0.6 * w
@@ -356,6 +362,12 @@ export function Character({
       const e = Math.sin(sw * Math.PI)
       rArm.current.rotation.x = -0.3 - 2.3 * e // big forward/up stroke, readable from any angle
       rArm.current.rotation.z = -1.3 + 1.7 * sw
+      return
+    }
+    // A small repeated gesture reads as eating while the character is seated.
+    if ((eat?.current??0)>0 && rArm.current) {
+      rArm.current.rotation.x=THREE.MathUtils.lerp(rArm.current.rotation.x,-1.0-Math.max(0,Math.sin(t*2.2))*.8,.15)
+      rArm.current.rotation.z=THREE.MathUtils.lerp(rArm.current.rotation.z,-.35,.15)
       return
     }
     // right arm IK-lite: aim the arm toward the reach target
