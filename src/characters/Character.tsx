@@ -39,6 +39,8 @@ export interface CharacterProps {
   sitLift?: number
   eat?: React.MutableRefObject<number>
   work?: React.MutableRefObject<number>
+  /** Right arm raised forward and up, as if pointing at a board in front of the character. */
+  point?: React.MutableRefObject<number>
   /** both arms raised (goalkeeper reaching high) */
   armsUp?: boolean
   /** sideways lean in radians (goalkeeper stepping); positive leans to the character's left */
@@ -303,6 +305,7 @@ export function Character({
   sitLift = .23,
   eat,
   work,
+  point,
   armsUp = false,
   lean = 0,
   position,
@@ -367,6 +370,13 @@ export function Character({
       const e = Math.sin(sw * Math.PI)
       rArm.current.rotation.x = -0.3 - 2.3 * e // big forward/up stroke, readable from any angle
       rArm.current.rotation.z = -1.3 + 1.7 * sw
+      return
+    }
+    // Pointing: right arm up toward the board with a small emphasis bob, left arm relaxed.
+    if ((point?.current??0)>0 && rArm.current && lArm.current) {
+      rArm.current.rotation.x=THREE.MathUtils.lerp(rArm.current.rotation.x,-2.25+Math.sin(t*2.4)*.12,.15)
+      rArm.current.rotation.z=THREE.MathUtils.lerp(rArm.current.rotation.z,-.12,.15)
+      lArm.current.rotation.x=THREE.MathUtils.lerp(lArm.current.rotation.x,-.2,.15)
       return
     }
     // A small repeated gesture reads as eating while the character is seated.

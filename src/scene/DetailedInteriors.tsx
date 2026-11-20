@@ -132,19 +132,30 @@ function Office({look:_look}:{look:AvatarLook}) {return <><Dividers/><Label text
 
 
 /** Hide only this wall if it actually intersects the camera-to-player sightline. */
+// Walls never vanish. When a wall stands between the camera and the player it lowers to a short
+// ledge (a "cutaway", so the base and room outline stay visible) and rises again once the view is
+// clear. A short hold time stops it flickering while the player brushes along it.
 function DiningWall({p,s,color,children}:{p:V;s:V;color:string;children?:React.ReactNode}) {
- const group=useRef<THREE.Group>(null), {camera}=useThree()
+ const wall=useRef<THREE.Mesh>(null), extras=useRef<THREE.Group>(null), {camera}=useThree()
  const bounds=useMemo(()=>new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(...p),new THREE.Vector3(...s)),[p[0],p[1],p[2],s[0],s[1],s[2]])
  const ray=useRef(new THREE.Ray()), target=useRef(new THREE.Vector3()), direction=useRef(new THREE.Vector3()), hit=useRef(new THREE.Vector3())
- useFrame(()=>{
-  if(!group.current)return
+ const state=useRef({cut:false,since:0,height:1})
+ const ledge=Math.min(.45,s[1])/s[1]
+ useFrame((_,raw)=>{
+  if(!wall.current)return
+  const dt=Math.min(raw,.05)
   target.current.set(indoorState.x,1,indoorState.z)
   const distance=camera.position.distanceTo(target.current)
   ray.current.set(camera.position,direction.current.subVectors(target.current,camera.position).normalize())
   const point=ray.current.intersectBox(bounds,hit.current)
-  group.current.visible=!(point&&camera.position.distanceTo(point)<distance-.15)
+  const blocking=!!point&&camera.position.distanceTo(point)<distance-.45
+  const st=state.current
+  if(blocking!==st.cut){st.since+=dt;if(st.since>(blocking?.25:.5)){st.cut=blocking;st.since=0}}else st.since=0
+  st.height=THREE.MathUtils.lerp(st.height,st.cut?ledge:1,Math.min(1,dt*8))
+  wall.current.scale.y=st.height;wall.current.position.y=p[1]-s[1]/2+s[1]*st.height/2
+  if(extras.current)extras.current.visible=st.height>.9
  })
- return <group ref={group}><Block p={p} s={s} c={color}/>{children}</group>
+ return <group><mesh ref={wall} position={p} castShadow receiveShadow><boxGeometry args={s}/><meshStandardMaterial color={color}/></mesh><group ref={extras}>{children}</group></group>
 }
 // Kenney furniture often uses a corner pivot; center it so place settings and chairs line up.
 function DiningModel({name,p,r=0,scale=1,pack='furniture'}:{name:string;p:V;r?:number;scale?:number;pack?:'furniture'|'food'}) {
@@ -425,17 +436,39 @@ function Rug({x,z,w,d,color,border}:{x:number;z:number;w:number;d:number;color:s
 function RecycleBins({x,z}:{x:number;z:number}) {return <group position={[x,0,z]}>{[['#3f74b5','RECYCLE',-.24],['#59605e','TRASH',.24]].map(([c,t,dz])=><group key={t as string}><Block p={[0,.42,dz as number]} s={[.5,.84,.44]} c={c as string}/><Block p={[0,.86,dz as number]} s={[.54,.05,.48]} c="#2b302f"/><group position={[-.255,.55,dz as number]} rotation={[0,-Math.PI/2,0]}><Label text={t as string} p={[0,0,0]} size={.08} color="#f4f4ee"/></group></group>)}</group>}
 function TeacherDesk({x,z}:{x:number;z:number}) {return <group><Block p={[x,.72,z]} s={[1.6,.08,.85]} c="#b89a77"/><Block p={[x,.36,z-.3]} s={[1.55,.72,.06]} c="#9c7f60"/>{[-.75,.75].map(dx=><Block key={dx} p={[x+dx,.36,z]} s={[.08,.72,.8]} c="#9c7f60"/>)}<DiningModel name="laptop" p={[x-.3,.77,z]} scale={.75}/><DiningModel name="books" p={[x+.45,.77,z]} scale={.55}/></group>}
 function SideWindowRow({side,zs}:{side:Side;zs:number[]}) {return <>{zs.map(z=><SideWindow key={z} z={z} side={side}/>)}</>}
+// Side-wall finish for the E–I2 buildings: windows along the rear section, a safety or notice
+// board on each wall, and a fire extinguisher / first-aid kit by the front section.
+const specialBoards:Record<SpecialKind,[string,string,string,string,string,string]>={
+ crawford:['LAB SAFETY','GOGGLES • GLOVES\nNO FOOD OR DRINK','#8c3b32','RESEARCH SYMPOSIUM','POSTERS DUE FRIDAY','#3f5f58'],
+ engineering:['LAB SAFETY','SECURE LOOSE ITEMS\nCHECK THE E-STOP','#8c3b32','ROBOTICS CLUB','MEETS THURSDAYS','#2f5d73'],
+ academic:['STUDY TIPS','BREAK • REVIEW\nREPEAT','#55705f','CAREER FAIR','STUDENT CENTER • 10 AM','#6d5a3f'],
+ design1:['LAB SAFETY','WATCH HOT NOZZLES\nLOG EVERY PRINT','#8c3b32','DESIGN SHOWCASE','SUBMIT YOUR MODELS','#5b4a7a'],
+ design2:['SHOP SAFETY','EYE & EAR PROTECTION\nNO LOOSE SLEEVES','#8c3b32','SENIOR DESIGN','DEMO DAY • APRIL','#2f5d73'],
+ atrium:['HACKATHON','THIS WEEKEND\nTEAMS OF 4','#2f5d73','CS TUTORING','MON–THU • 3–7 PM','#55705f'],
+ civil:['SITE SAFETY','HARD HATS IN THE\nTESTING BAY','#8c3b32','ASCE CHAPTER','CONCRETE CANOE TEAM','#6d5a3f'],
+ soils:['LAB SAFETY','LABEL EVERY SAMPLE\nWASH YOUR HANDS','#8c3b32','FIELD TRIP','SAMPLE SITE • FRIDAY','#55705f'],
+ textile:['STUDIO RULES','CLEAN YOUR STATION\nRETURN SHEARS','#8c3b32','FASHION SHOW','SPRING SHOWCASE','#7a4a6a'],
+ architecture:['STUDIO NOTES','SAVE OFTEN\nCRIT AT 4 PM','#55705f','LECTURE SERIES','VISITING ARCHITECTS','#3f5f58'],
+}
+function FireExtinguisher({side,z}:{side:Side;z:number}) {return <group position={[side*13.72,0,z]}><Block p={[0,1.25,0]} s={[.06,.5,.5]} c="#b8352c"/><mesh position={[-side*.18,.75,0]}><cylinderGeometry args={[.11,.11,.55,14]}/><meshStandardMaterial color="#c8352b"/></mesh><Block p={[-side*.18,1.08,0]} s={[.1,.1,.1]} c="#262b2a"/></group>}
+function FirstAid({side,z}:{side:Side;z:number}) {return <group position={[side*13.78,1.5,z]} rotation={[0,side<0?Math.PI/2:-Math.PI/2,0]}><Block p={[0,0,0]} s={[.6,.5,.14]} c="#f1f1ea"/><Block p={[0,0,.075]} s={[.28,.08,.01]} c="#c8352b"/><Block p={[0,0,.075]} s={[.08,.28,.01]} c="#c8352b"/></group>}
+function SpecialDecor({kind}:{kind:SpecialKind}) {const [lt,ll,lc,rt,rl,rc]=specialBoards[kind];return <>
+ <SideWindowRow side={-1} zs={[-8,-4.2]}/><SideWindowRow side={1} zs={[-8,-4.2]}/>
+ <SideBoard side={-1} z={2} color={lc} title={lt} lines={ll}/><SideBoard side={1} z={2.4} color={rc} title={rt} lines={rl}/>
+ <FireExtinguisher side={-1} z={4.4}/><FirstAid side={1} z={4.6}/><Clock x={12}/>
+ <DiningModel name="pottedplant" p={[-12.9,0,-1.8]} scale={1.3}/><DiningModel name="pottedplant" p={[12.9,0,-1.8]} scale={1.3}/>
+ </>}
 function AcademicPartitions({math=false}:{math?:boolean}){return <>{academicDivider.map(([x,z,w,d],i)=><DiningWall key={i} p={[x,1.45,z]} s={[w,2.9,d]} color="#c8c6ba"><Block p={[x,2.65,z+.17]} s={[w-.5,.1,.08]} c="#ece8d9"/></DiningWall>)}{math&&<DiningWall p={[0,1.45,-7]} s={[.25,2.9,8]} color="#c6c7bd"/>}</>}
 function DeskSet({x,z}:{x:number;z:number}){return <group><DiningModel name="desk" p={[x,0,z]} scale={1.45}/><DiningModel name="chairdesk" p={[x,0,z+1.1]} scale={1.35}/><DiningModel name="computerscreen" p={[x,1.05,z-.1]} scale={.85}/><DiningModel name="computerkeyboard" p={[x,1.06,z+.25]} scale={.75}/><DiningModel name="books" p={[x+.6,1.05,z]} scale={.6}/><DiningModel name="lampsquaretable" p={[x-.55,1.02,z]} scale={.75}/></group>}
 function AcademicTable({x,z,w=3}:{x:number;z:number;w?:number}){return <group><Block p={[x,.94,z]} s={[w,.14,1.65]} c="#b99a79"/>{[-1,1].flatMap(a=>[-1,1].map(b=><Block key={`${a}:${b}`} p={[x+a*(w/2-.2),.47,z+b*.6]} s={[.15,.9,.15]} c="#816b57"/>))}<DiningModel name="laptop" p={[x-.6,1.05,z]} scale={.9}/><DiningModel name="books" p={[x+.5,1.05,z]} scale={.75}/><DiningModel name="cup" pack="food" p={[x+.9,1.05,z+.35]} scale={.65}/></group>}
 function Administration(){return <>
  <Block p={[-7,.03,5]} s={[7,.025,5]} c="#d8d0bc"/><Block p={[7,.03,6]} s={[8,.025,6]} c="#dad9c9"/><AcademicPartitions/>
- {[4,10].map((x,i)=><group key={x}><Block p={[x,.35,i?8:7]} s={[1.4,.7,1.3]} c="#728b7f"/><Block p={[x,.85,(i?8:7)-.55]} s={[1.4,1,.2]} c="#607e73"/></group>)}
+ {[4,10].map((x,i)=><group key={x}><Block p={[x,.35,i?8:7]} s={[1.4,.7,1.3]} c="#728b7f"/><Block p={[x,.85,(i?8:7)+.55]} s={[1.4,1,.2]} c="#607e73"/></group>)}
  <Corkboard side={-1} z={1.2}/><SideBoard side={-1} z={5.4} color="#526e63" title="DIRECTORY" lines={'B • ADMINISTRATION\nOFFICES • MEETING ROOM'}/>
  <Block p={[-8.4,1.31,5]} s={[.45,.1,.36]} c="#465956"/><Block p={[-8.4,1.42,5]} s={[.35,.12,.16]} c="#243735"/>
 
  <Block p={[-7,.58,5]} s={[4,1.16,1.2]} c="#8a6d55"/><Block p={[-7,1.19,5]} s={[4.1,.12,1.3]} c="#e8dfce"/><Block p={[-7,.95,5.62]} s={[4,.06,.02]} c="#d8b552"/><Label text="RECEPTION" p={[-7,.62,5.62]} size={.3} color="#f6efdc"/><DiningModel name="computerscreen" p={[-7.6,1.26,5]} scale={1}/><DiningModel name="computerkeyboard" p={[-7.6,1.26,5.35]} scale={.8}/><DiningModel name="books" p={[-6.1,1.26,5]} scale={.65}/>
- <DiningModel name="chairdesk" p={[-7,0,3.8]} scale={1.4}/><group><Block p={[7,.35,6]} s={[2.9,.7,1.3]} c="#728b7f"/><Block p={[7,.85,5.45]} s={[2.9,1,.2]} c="#607e73"/></group><DiningModel name="tablecoffee" p={[7,0,4]} scale={1.4}/><DiningModel name="chaircushion" p={[8,0,7.5]} scale={1.35}/><DiningModel name="books" p={[7,1.02,4]} scale={.65}/><DiningModel name="pottedplant" p={[-12,0,8]} scale={1.5}/>
+ <DiningModel name="chairdesk" p={[-7,0,3.8]} scale={1.4}/><group><Block p={[7,.35,6]} s={[2.9,.7,1.3]} c="#728b7f"/><Block p={[7,.85,6.55]} s={[2.9,1,.2]} c="#607e73"/></group><group position={[7,0,4]}><Block p={[0,.46,0]} s={[1.5,.07,.9]} c="#a98563"/>{[-.65,.65].flatMap(x=>[-.35,.35].map(z=><Block key={`${x}:${z}`} p={[x,.22,z]} s={[.07,.44,.07]} c="#7c5f45"/>))}<DiningModel name="books" p={[-.35,.5,0]} scale={.6}/><DiningModel name="cup" pack="food" p={[.4,.5,.1]} scale={.55}/></group><DiningModel name="pottedplant" p={[-12,0,8]} scale={1.5}/>
  <WallBoard x={0} title="WELCOME" lines={'STUDENT SERVICES\nKENNESAW STATE'} color="#61796d"/><Clock x={3}/><AreaSign x={-7.5} text="OFFICES" color="#4b6a60"/><AreaSign x={7} text="MEETING ROOM" color="#6d5a3f"/>
  {[-10,-5].map(x=><group key={x}><DeskSet x={x} z={-7}/><LibraryShelf x={x} z={-10.6}/><DiningModel name="chaircushion" p={[x+1.55,0,-5.2]} scale={1.2}/></group>)}
  <AcademicTable x={7} z={-6} w={4}/>{[5.6,7,8.4].map(x=><DiningModel key={x} name="chaircushion" p={[x,0,-4.5]} scale={1.25}/>)}
@@ -446,6 +479,15 @@ function Administration(){return <>
  <Rug x={7} z={6} w={6.5} d={4.6} color="#c9d4c6" border="#9fb2a6"/><FloorLamp x={11.4} z={9.2}/><DiningModel name="pottedplant" p={[12.8,0,10.6]} scale={1.5}/>
  </>}
 function MathDesk({x,z,i}:{x:number;z:number;i:number}){return <group><DiningModel name="desk" p={[x,0,z]} scale={1.2}/><DiningModel name="chairdesk" p={[x,0,z+1.05]} scale={1.25}/><DiningModel name={i%2?'laptop':'books'} p={[x,1.03,z]} scale={.68}/></group>}
+// Supply shelf in the math lounge: graphing calculators, textbooks, binders and drafting tools. Front faces the room (-x).
+function MathShelf(){const wood='#a07f5f',calc=[0,1,2,3]
+ return <group position={[12.95,0,10]} rotation={[0,-Math.PI/2,0]}>
+  <Block p={[0,1.1,-.3]} s={[1.8,2.2,.06]} c="#8b6b4f"/>{[-.88,.88].map(x=><Block key={x} p={[x,1.1,0]} s={[.06,2.2,.62]} c={wood}/>)}{[.06,.62,1.18,1.74,2.18].map(y=><Block key={y} p={[0,y,0]} s={[1.8,.05,.62]} c={wood}/>)}
+  {calc.map(i=><group key={i} position={[-.6+i*.4,.66,.05]} rotation={[-.35,0,0]}><Block p={[0,.17,0]} s={[.2,.34,.04]} c="#2c3236"/><Block p={[0,.25,.022]} s={[.15,.09,.005]} c="#a9c7a4"/>{[0,1,2].map(r=><Block key={r} p={[0,.07+r*.045,.022]} s={[.15,.025,.005]} c="#59636a"/>)}</group>)}
+  {['#2f5d8a','#a8453c','#3f7a55','#b58a2e','#6d4f7a','#2f5d8a','#a8453c'].map((c,i)=><Block key={i} p={[-.7+i*.13,1.36,.02]} s={[.11,.32+(i%3)*.04,.42]} c={c}/>)}<Label text="CALCULUS" p={[.45,1.33,.32]} size={.07} color="#3b4a4b"/><Block p={[.5,1.24,.05]} s={[.6,.08,.42]} c="#d9cfb8"/><Block p={[.5,1.31,.05]} s={[.55,.06,.4]} c="#3f7a55"/>
+  {['#3c6aa8','#c9a54a','#c4473c','#59605e'].map((c,i)=><Block key={c} p={[-.55+i*.22,1.93,.02]} s={[.16,.36,.46]} c={c}/>)}<mesh position={[.45,1.83,.05]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[.22,20,0,Math.PI]}/><meshStandardMaterial color="#e9e4c8" side={THREE.DoubleSide} transparent opacity={.85}/></mesh>
+  {[0,1,2].map(i=><Block key={i} p={[-.5+i*.5,.22,.02]} s={[.4,.28,.5]} c={['#5c6e6b','#7a8a87','#5c6e6b'][i]}/>)}<Label text="GRAPH PAPER" p={[0,.22,.28]} size={.06} color="#f4f4ee"/>
+ </group>}
 function Mathematics(){return <>
  <Block p={[-8,.025,5]} s={[7,.025,5]} c="#d7dfd4"/><Block p={[7,.025,5]} s={[7,.025,5]} c="#d7dfd4"/><AcademicPartitions math/>
  {[-4.5,4.5].map(x=><group key={x}><Block p={[x,.45,8]} s={[2.2,.16,.9]} c="#a38967"/><Block p={[x,.82,8.4]} s={[2.2,.8,.16]} c="#b49a78"/>{[-.9,.9].map(dx=><Block key={dx} p={[x+dx,.2,8]} s={[.12,.4,.75]} c="#7d7161"/>)}</group>)}
@@ -459,7 +501,7 @@ function Mathematics(){return <>
  <AreaSign x={0} text="MATHEMATICS" color="#3c5f58"/>
  {[-10,-7,-4,4,7,10].flatMap(x=>[-7,-4].map((z,i)=><MathDesk key={`${x}:${z}`} x={x} z={z} i={i+(x>0?1:0)}/>))}
  <AcademicTable x={-8} z={5}/><AcademicTable x={7} z={5}/>{[-9.1,-8,-6.9,5.9,7,8.1].map(x=><DiningModel key={x} name="chaircushion" p={[x,0,6.4]} scale={1.25}/>)}
- <DiningModel name="desk" p={[12,0,8]} scale={1.3}/><DiningModel name="laptop" p={[12,1.05,8]} scale={.8}/><DiningModel name="bookcaseopen" p={[12,0,10]} scale={1.5}/>
+ <DiningModel name="desk" p={[12,0,8]} scale={1.3}/><DiningModel name="laptop" p={[12,1.05,8]} scale={.8}/><MathShelf/>
  <Clock x={-12}/><Clock x={12}/>
  <SideWindowRow side={-1} zs={[-9,5,9]}/><SideWindowRow side={1} zs={[-9,4.5]}/>
  <SideBoard side={-1} z={-5.5} color="#2e4a6b" title="π ≈ 3.14159" lines={'C = 2πr\nA = πr²'}/><SideBoard side={1} z={-5.5} color="#6d4f7a" title="e^(iπ) + 1 = 0" lines={"EULER'S IDENTITY"}/>
@@ -469,20 +511,23 @@ function Mathematics(){return <>
  </>}
 
 function InteriorAgent({agent,look,sim}:{agent:IndoorAgent;look:AvatarLook;sim:InteriorCrowd}) {
- const group=useRef<THREE.Group>(null),prop=useRef<THREE.Group>(null),walk=useRef(0),sit=useRef(agent.seated?1:0),eat=useRef(0),work=useRef(0)
+ const group=useRef<THREE.Group>(null),prop=useRef<THREE.Group>(null),walk=useRef(0),sit=useRef(agent.seated?1:0),eat=useRef(0),work=useRef(0),point=useRef(0),turn=useRef(0)
  const colors=['orange','green','blue','yellow','purple','cream'] as const
  const arrived=()=>{const goal=sim.activities[agent.activity];return !agent.route.length&&Math.hypot(agent.position[0]-goal.position[0],agent.position[1]-goal.position[1])<.18}
  useFrame(({clock},dt)=>{
   const activity=sim.activities[agent.activity],active=arrived()&&!agent.walk,role=active?activity.role:undefined
-  if(group.current){group.current.visible=!agent.out;group.current.position.set(agent.position[0],0,agent.position[1]);group.current.rotation.y=agent.heading}
+  // Teachers at a board (teach spots facing the class) alternate between talking to the class and turning to point at the board.
+  const lecturing=role==='teach'&&activity.heading===0,atBoard=lecturing&&(clock.elapsedTime*.11+agent.id*.31)%1>.5
+  turn.current=THREE.MathUtils.lerp(turn.current,atBoard?2.6:0,Math.min(1,dt*3));point.current=atBoard&&turn.current>2.2?1:0
+  if(group.current){group.current.visible=!agent.out;group.current.position.set(agent.position[0],0,agent.position[1]);group.current.rotation.y=agent.heading+turn.current}
   if(prop.current){prop.current.visible=role==='pool'||role==='ping'||role==='water'||!!agent.carry||role==='notes'||role==='repair'||role==='help';if(role==='pool'){
     // Cue held level over the rail, tip angled down at the cue ball: slow draw back, quick stroke forward.
     const cycle=(clock.elapsedTime*.6+agent.id*.37)%1,draw=cycle<.8?cycle/.8:1-(cycle-.8)/.2
     prop.current.position.set(.12,.9,.05-draw*.22);prop.current.rotation.x=.05
-   }else{prop.current.position.set(.3,.75,.35);prop.current.rotation.x=Math.sin(clock.elapsedTime*3+agent.id)*.55}prop.current.children[0].visible=role==='pool';prop.current.children[1].visible=role==='ping';prop.current.children[2].visible=role==='water'||agent.carry==='water';prop.current.children[3].visible=role==='notes'||role==='repair'||role==='help'||agent.carry==='laptop'||agent.carry==='book'||agent.carry==='part'}
-  walk.current=THREE.MathUtils.lerp(walk.current,agent.walk?.75:0,Math.min(1,dt*8));sit.current=THREE.MathUtils.lerp(sit.current,agent.seated?1:0,Math.min(1,dt*5));eat.current=role==='eat'?1:0;work.current=role==='pool'||role==='ping'||role==='water'||role==='plant'||role==='notes'||role==='staff'||role==='repair'||role==='study'||role==='read'||role==='write'||role==='teach'||role==='meeting'||role==='research'||role==='robot'||role==='electronics'||role==='fabricate'||role==='cad'||role==='print'||role==='build'||role==='test'?1:0
+   }else{prop.current.position.set(.3,.75,.35);prop.current.rotation.x=Math.sin(clock.elapsedTime*3+agent.id)*.55}prop.current.children[0].visible=role==='pool';prop.current.children[1].visible=role==='ping';prop.current.children[2].visible=role==='water'||agent.carry==='water';prop.current.children[3].visible=role==='notes'||role==='repair'||role==='help'||agent.carry==='laptop'||agent.carry==='part';prop.current.children[4].visible=agent.carry==='book'}
+  walk.current=THREE.MathUtils.lerp(walk.current,agent.walk?.75:0,Math.min(1,dt*8));sit.current=THREE.MathUtils.lerp(sit.current,agent.seated?1:0,Math.min(1,dt*5));eat.current=role==='eat'?1:0;work.current=role==='pool'||role==='ping'||role==='water'||role==='plant'||role==='notes'||role==='staff'||role==='repair'||role==='study'||role==='read'||role==='write'||(role==='teach'&&!atBoard)||role==='meeting'||role==='research'||role==='robot'||role==='electronics'||role==='fabricate'||role==='cad'||role==='print'||role==='build'||role==='test'?1:0
  })
- return <group ref={group} position={[agent.position[0],0,agent.position[1]]} rotation={[0,agent.heading,0]}><Character {...look} color={colors[agent.id%colors.length]} top="tee" topColor={['#d6a939','#63867b','#b96555','#586f91','#92768e'][agent.id%5]} scale={1.15} walk={walk} sit={sit} sitLift={.112} eat={eat} work={work}/><group ref={prop} visible={false} position={[.3,.75,.35]}><mesh rotation={[Math.PI/2,0,0]} position={[0,0,.65]}><cylinderGeometry args={[.025,.035,1.6,7]}/><meshStandardMaterial color="#ba9268"/></mesh><group><mesh rotation={[-Math.PI/2,0,0]} position={[0,.03,.22]}><circleGeometry args={[.23,12]}/><meshStandardMaterial color="#c74739" side={THREE.DoubleSide}/></mesh><Block p={[0,0,0]} s={[.06,.06,.32]} c="#856746"/></group><group><Block p={[0,0,.1]} s={[.35,.32,.32]} c="#8da698"/><Block p={[0,.23,.1]} s={[.2,.14,.14]} c="#78978a"/><Block p={[0,.04,.34]} s={[.1,.1,.35]} c="#8da698"/></group><group><Block p={[0,0,.15]} s={[.42,.08,.55]} c="#495c59"/><Block p={[0,.07,.16]} s={[.35,.04,.46]} c="#e1e6d8"/></group></group></group>
+ return <group ref={group} position={[agent.position[0],0,agent.position[1]]} rotation={[0,agent.heading,0]}><Character {...look} color={colors[agent.id%colors.length]} top="tee" topColor={['#d6a939','#63867b','#b96555','#586f91','#92768e'][agent.id%5]} scale={1.15} walk={walk} sit={sit} sitLift={.112} eat={eat} work={work} point={point}/><group ref={prop} visible={false} position={[.3,.75,.35]}><mesh rotation={[Math.PI/2,0,0]} position={[0,0,.65]}><cylinderGeometry args={[.025,.035,1.6,7]}/><meshStandardMaterial color="#ba9268"/></mesh><group><mesh rotation={[-Math.PI/2,0,0]} position={[0,.03,.22]}><circleGeometry args={[.23,12]}/><meshStandardMaterial color="#c74739" side={THREE.DoubleSide}/></mesh><Block p={[0,0,0]} s={[.06,.06,.32]} c="#856746"/></group><group><Block p={[0,0,.1]} s={[.35,.32,.32]} c="#8da698"/><Block p={[0,.23,.1]} s={[.2,.14,.14]} c="#78978a"/><Block p={[0,.04,.34]} s={[.1,.1,.35]} c="#8da698"/></group><group><Block p={[0,0,.15]} s={[.42,.08,.55]} c="#495c59"/><Block p={[0,.07,.16]} s={[.35,.04,.46]} c="#e1e6d8"/></group><group position={[-.08,0,.08]} rotation={[0,0,.15]}><Block p={[0,0,.1]} s={[.1,.42,.32]} c={['#a8453c','#2f5d8a','#3f7a55','#b58a2e'][agent.id%4]}/><Block p={[.005,0,.1]} s={[.09,.38,.3]} c="#f3eddc"/><Block p={[-.052,0,.1]} s={[.01,.42,.32]} c={['#a8453c','#2f5d8a','#3f7a55','#b58a2e'][agent.id%4]}/></group></group></group>
 }
 function StudentGameBalls({sim}:{sim:InteriorCrowd}) {
  const ping=useRef<THREE.Mesh>(null),pool=useRef<THREE.Group>(null)
@@ -493,7 +538,7 @@ function StudentGameBalls({sim}:{sim:InteriorCrowd}) {
  return <><mesh ref={ping} position={[9,.81,-1]}><sphereGeometry args={[.045,10,8]}/><meshStandardMaterial color="#f6eee0"/></mesh><group ref={pool}>{['#f4e9d4','#db4840','#e3ba3d','#404c85','#252b27'].map((color,i)=><mesh key={i} position={[8.45+i*.21,.81,-6+(i%2)*.18]}><sphereGeometry args={[.065,12,10]}/><meshStandardMaterial color={color}/></mesh>)}</group></>
 }
 function InteriorPeople({kind,rects,look}:{kind:CrowdKind;rects:Rect[];look:AvatarLook}) {
- const sim=useMemo(()=>new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:(['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture'] as string[]).includes(kind)?6:kind==='math'?12:kind==='admin'?8:kind==='library'?8:5),[kind,rects])
+ const sim=useMemo(()=>new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:kind==='bus'?8:kind==='uits'?7:(['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture'] as string[]).includes(kind)?6:kind==='math'?12:kind==='admin'?8:kind==='library'?10:5),[kind,rects])
  useEffect(()=>()=>{indoorState.npcPositions=[]},[])
  useFrame((_,dt)=>{sim.step(Math.min(dt,.05),[indoorState.x,indoorState.z]);indoorState.npcPositions=sim.agents.filter(a=>!a.out).map(a=>a.position)})
  return <>{sim.agents.map(agent=><InteriorAgent key={agent.id} agent={agent} look={look} sim={sim}/>)}{kind==='student'&&<StudentGameBalls sim={sim}/>}</>
@@ -502,6 +547,6 @@ export function DetailedRoom({kind,look}:{kind:InteriorKind;look:AvatarLook}) {
  const student=kind==='student',classroom=kind==='classroom'
  const special=(['crawford','engineering','academic','design1','design2','atrium','civil','soils','textile','architecture'] as string[]).includes(kind)
  const rects=useMemo(()=>special?specialObstacles(kind as SpecialKind):kind==='admin'?adminObstacles:kind==='math'?mathObstacles:kind==='library'?libraryObstacles:student?[...studentWalls,...studentFurniture]:classroom?[...desks,[0,-9,8,1] as Rect]:kind==='dining'?diningObstacles:[...(kind==='recreation'||kind==='parking'||kind==='bus'||kind==='uits'||kind==='greenhouse'?[]:partition),...rooms[kind].map(({x,z,w,d})=>[x,z,w,d] as Rect)],[kind,student,classroom,special])
- const scene=special?<SpecialInterior kind={kind as SpecialKind} Wall={DiningWall}/>:student?<Student look={look}/>:classroom?<Classroom look={look}/>:kind==='library'?<Library look={look}/>:kind==='dorm'?<Dorm look={look}/>:kind==='lab'?<Lab look={look}/>:kind==='garage'?<Garage look={look}/>:kind==='greenhouse'?<Greenhouse look={look}/>:kind==='recreation'?<Recreation look={look}/>:kind==='dining'?<Dining look={look}/>:kind==='parking'?<Parking/>:kind==='admin'?<Administration/>:kind==='math'?<Mathematics/>:kind==='bus'?<BusInterior look={look}/>:kind==='uits'?<UitsInterior/>:<Office look={look}/>
- return <><color attach="background" args={['#e8ece2']}/><ambientLight intensity={.95}/><directionalLight position={[5,15,8]} intensity={1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-left={-20} shadow-camera-right={20} shadow-camera-top={20} shadow-camera-bottom={-20} shadow-bias={-.0003}/><Suspense fallback={null}>{!student&&!classroom&&kind!=='dining'&&kind!=='bus'&&kind!=='uits'&&<Architecture student={false} windows={kind==='admin'?[-7.5,11.5]:kind==='math'?[]:kind==='library'?[-8,8]:undefined}/ >}<modelScale.Provider value={student||classroom?1:1.5}>{scene}{kind!=='dining'&&kind!=='bus'&&kind!=='uits'&&kind!=='admin'&&kind!=='math'&&!special&&<InteriorDetails kind={kind}/>}</modelScale.Provider>{kind!=='dining'&&<InteriorPeople kind={kind} rects={rects} look={look}/>}</Suspense><Move rects={rects} look={look} startZ={kind==='uits'?6:9}/></>
+ const scene=special?<><SpecialInterior kind={kind as SpecialKind} Wall={DiningWall}/><SpecialDecor kind={kind as SpecialKind}/></>:student?<Student look={look}/>:classroom?<Classroom look={look}/>:kind==='library'?<Library look={look}/>:kind==='dorm'?<Dorm look={look}/>:kind==='lab'?<Lab look={look}/>:kind==='garage'?<Garage look={look}/>:kind==='greenhouse'?<Greenhouse look={look}/>:kind==='recreation'?<Recreation look={look}/>:kind==='dining'?<Dining look={look}/>:kind==='parking'?<Parking/>:kind==='admin'?<Administration/>:kind==='math'?<Mathematics/>:kind==='bus'?<BusInterior look={look}/>:kind==='uits'?<UitsInterior/>:<Office look={look}/>
+ return <><color attach="background" args={['#e8ece2']}/><ambientLight intensity={.95}/><directionalLight position={[5,15,8]} intensity={1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-left={-20} shadow-camera-right={20} shadow-camera-top={20} shadow-camera-bottom={-20} shadow-bias={-.0003}/><Suspense fallback={null}>{!student&&!classroom&&kind!=='dining'&&kind!=='bus'&&kind!=='uits'&&<Architecture student={false} windows={kind==='admin'?[-7.5,11.5]:kind==='math'||kind==='academic'||kind==='atrium'?[]:kind==='design1'?[0]:kind==='design2'?[-10,10]:kind==='library'?[-8,8]:undefined}/ >}<modelScale.Provider value={student||classroom?1:1.5}>{scene}{kind!=='dining'&&kind!=='bus'&&kind!=='uits'&&kind!=='admin'&&kind!=='math'&&!special&&<InteriorDetails kind={kind}/>}</modelScale.Provider>{kind!=='dining'&&<InteriorPeople kind={kind} rects={rects} look={look}/>}</Suspense><Move rects={rects} look={look} startZ={kind==='uits'?6:9}/></>
 }
