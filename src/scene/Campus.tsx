@@ -85,28 +85,108 @@ function offsetPoly(poly: Pt[], d: number): Pt[] {
   return out
 }
 
-/** Hipped roof: every eave slopes up and in to an inset ridge outline, which is capped flat. */
+/** Douglas-Peucker on a closed ring; keeps at least four corners. */
+function simplifyRing(ring: Pt[], tol: number): Pt[] {
+  if (ring.length <= 4) return ring
+  let far = 0, best = -1
+  for (let i = 1; i < ring.length; i++) { const d = Math.hypot(ring[i][0] - ring[0][0], ring[i][1] - ring[0][1]); if (d > best) { best = d; far = i } }
+  const keep = new Array(ring.length).fill(false); keep[0] = keep[far] = true
+  const run = (i: number, j: number) => {
+    let m = -1, k = -1
+    for (let t = i + 1; t < j; t++) { const d = distToSeg(ring[t][0], ring[t][1], ring[i], ring[j % ring.length]); if (d > m) { m = d; k = t } }
+    if (k > 0 && m > tol) { keep[k] = true; run(i, k); run(k, j) }
+  }
+  run(0, far); run(far, ring.length)
+  const out = ring.filter((_, i) => keep[i])
+  return out.length >= 4 ? out : ring
+}
+
+/** Hipped roof: height rises with the distance to the nearest eave, up to a flat cap.
+ *  Unlike an inset outline, this stays correct on L-, T- and notched footprints (no folded or missing faces).
+ *  The footprint's triangles are subdivided only where the slope changes (ridges and valleys). */
 function hipRoofGeometry(b: Building, rise: number): THREE.BufferGeometry {
   const [x0, z0, x1, z1] = bbox(b.poly)
   const d = Math.min(7, Math.min(x1 - x0, z1 - z0) * 0.42)
-  const inner = offsetPoly(b.poly, d)
-  const y0 = b.h
-  const y1 = b.h + rise
-  const pos: number[] = []
-  const n = b.poly.length
-  for (let i = 0; i < n; i++) {
-    const a = b.poly[i]
-    const c = b.poly[(i + 1) % n]
-    const ai = inner[i]
-    const ci = inner[(i + 1) % n]
-    pos.push(a[0], y0, a[1], c[0], y0, c[1], ci[0], y1, ci[1], a[0], y0, a[1], ci[0], y1, ci[1], ai[0], y1, ai[1])
+  // Tiny jogs in the footprint would make slivers of roof; the roof follows a simplified outline instead
+  // and the eave-height ceiling below covers any narrow ledge that leaves.
+  const poly = simplifyRing(b.poly, 0.9), n = poly.length
+  let area = 0
+  for (let i = 0; i < n; i++) area += poly[i][0] * poly[(i + 1) % n][1] - poly[(i + 1) % n][0] * poly[i][1]
+  const sgn = area > 0 ? 1 : -1
+  // Each eave is a roof plane. Past a reflex (inside) corner its plane continues up to the valley line;
+  // past an outside corner the neighbouring plane takes over. The lowest plane over a point is the roof there.
+  const edges = poly.map((a, i) => {
+    const c = poly[(i + 1) % n], raw = Math.hypot(c[0] - a[0], c[1] - a[1]), L = raw || 1
+    const u = [(c[0] - a[0]) / L, (c[1] - a[1]) / L]
+    return { a, L, u, nrm: [-u[1] * sgn, u[0] * sgn], skip: raw < 1e-3 }
+  })
+  const turn = (i: number) => { // signed turn at vertex i, positive when the corner is reflex
+    const p = edges[(i - 1 + n) % n].u, q = edges[i].u
+    return -Math.atan2(p[0] * q[1] - p[1] * q[0], p[0] * q[0] + p[1] * q[1]) * sgn
   }
-  const sides = new THREE.BufferGeometry()
-  sides.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-  sides.computeVertexNormals()
-  const cap = flatGeometry(inner, y1).toNonIndexed()
-  cap.deleteAttribute('uv')
-  return mergeGeometries([sides, cap])
+  // Slope of the valley side past each corner: gentle past an inside corner, a near-wall past an outside one.
+  const past = poly.map((_, i) => { const t = turn(i); return t > -1e-3 ? Math.max(0.3, Math.tan(Math.max(0, t) / 2)) : 20 })
+  const height = (x: number, z: number) => {
+    let m = Infinity
+    for (let i = 0; i < n; i++) {
+      const e = edges[i]
+      if (e.skip) continue
+      const rx = x - e.a[0], rz = z - e.a[1]
+      const h = Math.abs(rx * e.nrm[0] + rz * e.nrm[1]), t = rx * e.u[0] + rz * e.u[1]
+      const over = t < 0 ? -t * past[i] : t > e.L ? (t - e.L) * past[(i + 1) % n] : 0
+      m = Math.min(m, Math.max(h, over))
+    }
+    return b.h + rise * Math.min(m, d) / d
+  }
+  const pos: number[] = []
+  type V = [number, number, number]
+  const mid = (p: V, q: V): V => { const x = (p[0] + q[0]) / 2, z = (p[2] + q[2]) / 2; return [x, height(x, z), z] }
+  const off = (m: V, p: V, q: V) => Math.abs(m[1] - (p[1] + q[1]) / 2)
+  const split = (a: V, c: V, e: V, depth: number) => {
+    const ac = mid(a, c), ce = mid(c, e), ea = mid(e, a)
+    const len = Math.max(Math.hypot(a[0] - c[0], a[2] - c[2]), Math.hypot(c[0] - e[0], c[2] - e[2]), Math.hypot(e[0] - a[0], e[2] - a[2]))
+    const cx = (a[0] + c[0] + e[0]) / 3, cz = (a[2] + c[2] + e[2]) / 3
+    const bend = Math.max(off(ac, a, c), off(ce, c, e), off(ea, e, a), Math.abs(height(cx, cz) - (a[1] + c[1] + e[1]) / 3))
+    if (depth < 5 && len > 0.45 && bend > 0.05) {
+      split(a, ac, ea, depth + 1); split(ac, c, ce, depth + 1); split(ea, ce, e, depth + 1); split(ac, ce, ea, depth + 1)
+    } else pos.push(a[0], a[1], a[2], c[0], c[1], c[2], e[0], e[1], e[2])
+  }
+  // Start from an even grid of 2 m cells aligned with the longest wall, cut to the outline, so ridges and
+  // valleys are refined in small, well-shaped triangles instead of long slivers.
+  let ux = 1, uz = 0, best = 0
+  for (const e of edges) if (!e.skip && e.L > best) { best = e.L; ux = e.u[0]; uz = e.u[1] }
+  const toLocal = (p: Pt): Pt => [p[0] * ux + p[1] * uz, -p[0] * uz + p[1] * ux]
+  const toWorld = (x: number, y: number): V => { const wx = x * ux - y * uz, wz = x * uz + y * ux; return [wx, height(wx, wz), wz] }
+  const local = poly.map(toLocal)
+  const [lx0, ly0, lx1, ly1] = bbox(local), CELL = 2
+  const clip = (ring: Pt[], keep: (p: Pt) => boolean, cut: (a: Pt, b: Pt) => Pt) => {
+    const out: Pt[] = []
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i], c = ring[(i + 1) % ring.length], ka = keep(a), kc = keep(c)
+      if (ka) out.push(a)
+      if (ka !== kc) out.push(cut(a, c))
+    }
+    return out
+  }
+  const atX = (x: number) => (a: Pt, c: Pt): Pt => [x, a[1] + (c[1] - a[1]) * (x - a[0]) / (c[0] - a[0])]
+  const atY = (y: number) => (a: Pt, c: Pt): Pt => [a[0] + (c[0] - a[0]) * (y - a[1]) / (c[1] - a[1]), y]
+  for (let gx = lx0; gx < lx1; gx += CELL) for (let gy = ly0; gy < ly1; gy += CELL) {
+    const x1 = Math.min(gx + CELL, lx1), y1 = Math.min(gy + CELL, ly1)
+    let piece = clip(local, p => p[0] >= gx, atX(gx))
+    piece = clip(piece, p => p[0] <= x1, atX(x1))
+    piece = clip(piece, p => p[1] >= gy, atY(gy))
+    piece = clip(piece, p => p[1] <= y1, atY(y1))
+    if (piece.length < 3) continue
+    const contour = piece.map(([x, y]) => new THREE.Vector2(x, y))
+    for (const [i, j, k] of THREE.ShapeUtils.triangulateShape(contour, [])) split(toWorld(...piece[i]), toWorld(...piece[j]), toWorld(...piece[k]), 0)
+  }
+  const roof = new THREE.BufferGeometry()
+  roof.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  roof.computeVertexNormals()
+  // A ceiling at eave height hides any hairline gaps where fine and coarse triangles meet.
+  const ceiling = flatGeometry(b.poly, b.h + 0.01).toNonIndexed()
+  ceiling.deleteAttribute('uv')
+  return mergeGeometries([roof, ceiling])
 }
 
 /** Flat polygon at height y (footprints, lawns, lots...). Shape is built in (x, -z) and laid flat. */
