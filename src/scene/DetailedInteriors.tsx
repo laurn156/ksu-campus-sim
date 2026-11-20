@@ -92,7 +92,7 @@ function Student({look:_look}:{look:AvatarLook}) {return <>
  <DiningModel name="loungesofa" p={[-10,0,5]} scale={2.1}/><DiningModel name="loungechair" p={[-10,0,9]} scale={1.9}/><DiningModel name="tablecoffee" p={[-8.7,0,7]} scale={1.65}/>
  <DiningModel name="pottedplant" p={[-13,0,10]} scale={2}/><DiningModel name="trashcan" p={[-6.5,0,3]} scale={1.65}/>
  <Pool/><PingPong/><DiningModel name="loungechair" p={[10,0,5]} scale={1.9}/>
- <group><Block p={[12,.8,8]} s={[1.05,1.6,.85]} c="#283b44"/><Block p={[12,1.75,8]} s={[1.1,.32,.9]} c="#d8a82f"/><Label text="ARCADE" p={[12,1.76,7.52]} size={.19} color="#25362f"/><Block p={[12,1.25,7.55]} s={[.86,.72,.09]} c="#121f2a"/><Block p={[12,1.25,7.49]} s={[.72,.56,.04]} c="#508f9a"/><Label text="SPACE OWLS" p={[12,1.26,7.45]} size={.12} color="#ffe091"/><Block p={[12,.78,7.43]} s={[1,.14,.48]} c="#3c5a63"/><Ball p={[11.75,.9,7.35]} color="#e5684e" r={.08}/>{[0,.2,.4].map(dx=><Ball key={dx} p={[12+dx,.89,7.35]} color="#efc44b" r={.06}/>)}<Block p={[12,.35,7.54]} s={[.3,.22,.04]} c="#141e21"/></group>
+ {/* Arcade cabinet angled toward the room; its front (local -z) faces the play area and camera. */}<group position={[12.2,0,8.2]} rotation={[0,3*Math.PI/4,0]}><Block p={[0,0.8,0]} s={[1.05,1.6,.85]} c="#283b44"/><Block p={[0,1.75,0]} s={[1.1,.32,.9]} c="#d8a82f"/><Label rotY={Math.PI} text="ARCADE" p={[0,1.76,-0.48]} size={.19} color="#25362f"/><Block p={[0,1.25,-0.45]} s={[.86,.72,.09]} c="#121f2a"/><Block p={[0,1.25,-0.51]} s={[.72,.56,.04]} c="#508f9a"/><Label rotY={Math.PI} text="SPACE OWLS" p={[0,1.26,-0.55]} size={.12} color="#ffe091"/><Block p={[0,0.78,-0.57]} s={[1,.14,.48]} c="#3c5a63"/><Ball p={[-0.25,0.9,-0.65]} color="#e5684e" r={.08}/>{[0,.2,.4].map(dx=><Ball key={dx} p={[12+dx,.89,7.35]} color="#efc44b" r={.06}/>)}<Block p={[0,0.35,-0.46]} s={[.3,.22,.04]} c="#141e21"/></group>
  <Block p={[-2,.55,9]} s={[2.5,1.1,1]} c="#987a5c"/><Block p={[-2,1.13,9]} s={[2.65,.12,1.1]} c="#ded2b9"/><Block p={[-2.75,1.32,9.3]} s={[.06,.3,.06]} c="#5d544a"/><Block p={[-2.75,1.62,9.3]} s={[1.7,.36,.06]} c="#2f4d47"/><Label text="INFORMATION" p={[-2.75,1.62,9.265]} size={.2} color="#f6efdc" rotY={Math.PI}/><Label text="INFORMATION" p={[-2.75,1.62,9.335]} size={.2} color="#f6efdc"/><DiningModel name="laptop" p={[-2,1.2,9]} scale={1.1}/>
  </>}
 
@@ -270,7 +270,7 @@ function RoomFinish({kind}:{kind:CrowdKind}) {
 }
 function FoodCounterDetails(){return <>
  <WallBoard x={-2} title="CAMPUS LIFE" lines={'EVENTS • CLUBS\nWELCOME, OWLS'} color="#977938"/>
- <Block p={[8,1.16,-6]} s={[2.95,.1,.08]} c="#49372d"/><Block p={[9,1.08,-1]} s={[.05,.3,1.5]} c="#f5f3e7"/>
+ 
  <DiningModel name="pottedplant" p={[-6.4,0,10]} scale={1.8}/>
  </>}
 function ClassroomDetails(){return <>
