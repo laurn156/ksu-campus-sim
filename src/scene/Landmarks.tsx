@@ -163,11 +163,17 @@ function SlapTheRock({ at }: { at: Pt }) {
       const outward=new THREE.Vector3(x-center.x,0,z-center.z).normalize()
       const ray=new THREE.Raycaster(center.clone().addScaledVector(outward,8).setY(1.25),outward.clone().negate())
       const uv=ray.intersectObject(mesh)[0]?.uv;if(!uv)return
-      const px=uv.x*canvas.width+Math.sin(count*2.4)*115,py=(1-uv.y)*canvas.height+Math.cos(count*1.9)*90
-      ctx.save();ctx.translate(px,py);ctx.rotate(Math.sin(count*2.1)*.5);ctx.fillStyle=['#ffc629','#fa6489','#65d9ca','#f8f6eb','#76aaf7'][count%5]
-      ctx.beginPath();ctx.ellipse(0,10,24,30,0,0,Math.PI*2);ctx.fill()
-      for(const [fx,fy] of [[-19,-23],[-7,-32],[7,-33],[20,-24],[-32,3]]){ctx.beginPath();ctx.ellipse(fx,fy,7,17,fx===-32?-.8:0,0,Math.PI*2);ctx.fill()}
-      ctx.restore();paint.needsUpdate=true
+      // Spread pairs of prints across the visible face and its upper surface.
+      const px=uv.x*canvas.width+Math.sin(count*2.4)*310,py=(1-uv.y)*canvas.height+Math.cos(count*1.9)*185
+      const color=['#ffc629','#fa6489','#65d9ca','#f8f6eb','#76aaf7'][count%5]
+      for(const side of [-1,1]){
+        const x=((px+side*45)%canvas.width+canvas.width)%canvas.width,y=THREE.MathUtils.clamp(py+side*15,100,canvas.height-100)
+        ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(count*2.1)*.5+side*.14);ctx.scale(side,1);ctx.fillStyle=color
+        ctx.beginPath();ctx.ellipse(0,10,30,36,0,0,Math.PI*2);ctx.fill()
+        for(const [fx,fy] of [[-23,-28],[-8,-39],[8,-40],[24,-29],[-38,3]]){ctx.beginPath();ctx.ellipse(fx,fy,8,20,fx===-38?-.8:0,0,Math.PI*2);ctx.fill()}
+        ctx.restore()
+      }
+      paint.needsUpdate=true
     }
     const finish=()=>{mat.map=original;mat.needsUpdate=true}
     window.addEventListener('rock-paint-reset',reset);window.addEventListener('rock-paint-slap',slap);window.addEventListener('rock-paint-finish',finish)

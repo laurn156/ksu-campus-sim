@@ -30,7 +30,7 @@ export interface CharacterProps {
   backpack?: boolean
   /** world-space point the right hand reaches toward (in this character's parent space) */
   reach?: React.MutableRefObject<THREE.Vector3 | null>
-  /** performance.now() of the latest swing; the right arm sweeps through a stroke for ~0.4 s */
+  /** performance.now() of the latest two-handed slap. */
   swingAt?: React.MutableRefObject<number>
   /** walking speed 0..1 (drives the walk cycle) */
   walk?: React.MutableRefObject<number>
@@ -434,10 +434,12 @@ export function Character({
     // (dev builds can slow the stroke down via window.__swingMs to inspect it)
     const swingMs = (import.meta.env.DEV && (window as any).__swingMs) || 420
     const sw = swingAt ? (performance.now() - swingAt.current) / swingMs : 9
-    if (rArm.current && sw >= 0 && sw < 1) {
+    if (rArm.current && lArm.current && sw >= 0 && sw < 1) {
       const e = Math.sin(sw * Math.PI)
-      rArm.current.rotation.x = -0.3 - 2.3 * e // big forward/up stroke, readable from any angle
-      rArm.current.rotation.z = -1.3 + 1.7 * sw
+      // Both hands pull back and sweep forward together for a clear slap.
+      rArm.current.rotation.x = lArm.current.rotation.x = -0.3 - 2.3 * e
+      rArm.current.rotation.z = -0.45 - .45 * e
+      lArm.current.rotation.z = 0.45 + .45 * e
       return
     }
     // Pointing: right arm up toward the board with a small emphasis bob, left arm relaxed.
