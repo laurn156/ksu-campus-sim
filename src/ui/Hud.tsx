@@ -162,7 +162,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
     player.tp={x:player.view.x,z:player.view.z,yaw:player.view.yaw,buildingId:player.view.buildingId}
     player.view=null;player.viewChanged=true;setViewing(false)
   }
-  useEffect(()=>()=>{player.view=null},[])
+  useEffect(()=>{const reset=()=>setViewing(false);window.addEventListener('activity-travel',reset);return()=>{window.removeEventListener('activity-travel',reset);player.view=null}},[])
   useEffect(() => {
     if (mode !== 'life') return
     const closest = () => {
