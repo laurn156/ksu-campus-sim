@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import * as THREE from 'three'
 import { centroid, Collider, distToSeg, pointInPoly, type Area, type Campus, type Pt } from '../campus'
@@ -150,6 +150,29 @@ function SlapTheRock({ at }: { at: Pt }) {
     return g
   }, [])
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ map: rockTexture(), roughness: 0.35, metalness: 0.05, flatShading: true }), [])
+  const rockMesh = useRef<THREE.Mesh>(null)
+  useEffect(() => {
+    const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=1024
+    const ctx=canvas.getContext('2d')!,paint=new THREE.CanvasTexture(canvas);paint.colorSpace=THREE.SRGBColorSpace;paint.anisotropy=8
+    const original=mat.map
+    const reset=()=>{ctx.fillStyle='#111315';ctx.fillRect(0,0,canvas.width,canvas.height);paint.needsUpdate=true;mat.map=paint;mat.needsUpdate=true}
+    const slap=(event:Event)=>{
+      const mesh=rockMesh.current;if(!mesh)return
+      const {x,z,count}=(event as CustomEvent<{x:number;z:number;count:number}>).detail
+      const center=new THREE.Vector3();mesh.updateWorldMatrix(true,false);mesh.getWorldPosition(center)
+      const outward=new THREE.Vector3(x-center.x,0,z-center.z).normalize()
+      const ray=new THREE.Raycaster(center.clone().addScaledVector(outward,8).setY(1.25),outward.clone().negate())
+      const uv=ray.intersectObject(mesh)[0]?.uv;if(!uv)return
+      const px=uv.x*canvas.width+Math.sin(count*2.4)*115,py=(1-uv.y)*canvas.height+Math.cos(count*1.9)*90
+      ctx.save();ctx.translate(px,py);ctx.rotate(Math.sin(count*2.1)*.5);ctx.fillStyle=['#ffc629','#fa6489','#65d9ca','#f8f6eb','#76aaf7'][count%5]
+      ctx.beginPath();ctx.ellipse(0,10,24,30,0,0,Math.PI*2);ctx.fill()
+      for(const [fx,fy] of [[-19,-23],[-7,-32],[7,-33],[20,-24],[-32,3]]){ctx.beginPath();ctx.ellipse(fx,fy,7,17,fx===-32?-.8:0,0,Math.PI*2);ctx.fill()}
+      ctx.restore();paint.needsUpdate=true
+    }
+    const finish=()=>{mat.map=original;mat.needsUpdate=true}
+    window.addEventListener('rock-paint-reset',reset);window.addEventListener('rock-paint-slap',slap);window.addEventListener('rock-paint-finish',finish)
+    return()=>{window.removeEventListener('rock-paint-reset',reset);window.removeEventListener('rock-paint-slap',slap);window.removeEventListener('rock-paint-finish',finish);finish();paint.dispose()}
+  },[mat])
   return (
     <group position={[at[0], 0, at[1]]} rotation={[0, 0.6, 0]}>
       {/* mulch / dirt bed */}
@@ -157,7 +180,7 @@ function SlapTheRock({ at }: { at: Pt }) {
         <circleGeometry args={[2.9, 40]} />
         <meshStandardMaterial color="#6e5440" roughness={1} />
       </mesh>
-      <mesh geometry={geo} material={mat} position={[0, 0.6, 0]} scale={1.4} castShadow receiveShadow />
+      <mesh ref={rockMesh} geometry={geo} material={mat} position={[0, 0.6, 0]} scale={1.4} castShadow receiveShadow />
     </group>
   )
 }

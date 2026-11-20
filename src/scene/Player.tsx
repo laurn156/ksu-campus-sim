@@ -82,6 +82,7 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
   const walk = useRef(0)
   const seated = useRef(0)
   const throwing = useRef(0)
+  const slapSwing = useRef(-1000)
   const keys = useRef(new Set<string>())
   const dist = useRef(30)
   const preRaceDistance = useRef<number|null>(null)
@@ -159,10 +160,11 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05)
-    if(activityState.mode==='bathtub'&&preRaceDistance.current===null){preRaceDistance.current=dist.current;dist.current=Math.min(dist.current,18)}
-    else if(activityState.mode!=='bathtub'&&preRaceDistance.current!==null){dist.current=preRaceDistance.current;preRaceDistance.current=null}
+    if((activityState.mode==='bathtub'||activityState.mode==='rock')&&preRaceDistance.current===null){preRaceDistance.current=dist.current;dist.current=activityState.mode==='rock'?7:Math.min(dist.current,18)}
+    else if(activityState.mode!=='bathtub'&&activityState.mode!=='rock'&&preRaceDistance.current!==null){dist.current=preRaceDistance.current;preRaceDistance.current=null}
     seated.current = activityState.mode === 'bathtub' || activityState.mode === 'busdrive' ? 1 : 0
     throwing.current = (activityState.mode === 'disc' || activityState.mode === 'rock') && performance.now() < activityState.throwUntil ? 1 : 0
+    if(activityState.mode==='rock'&&performance.now()<activityState.throwUntil&&performance.now()-slapSwing.current>330)slapSwing.current=performance.now()
     busCaller.riding = player.busRide?.index ?? -1
     if (indoorState.active) { busCaller.x = NaN; busCaller.z = NaN } else { busCaller.x = player.x; busCaller.z = player.z }
     if (indoorState.active) { if(player.busRide){const bus=busPositions[player.busRide.index];if(bus){player.x=bus.x;player.z=bus.z}} keys.current.clear(); player.moving = false; return }
@@ -252,7 +254,7 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
   return (
     <group>
       <group ref={body}>
-        <Character {...look} walk={walk} point={throwing} sit={seated} sitLift={.112} scale={1.15} />
+        <Character {...look} walk={walk} point={throwing} swingAt={slapSwing} sit={seated} sitLift={.112} scale={1.15} />
         {name && <Html position={[0, 2.25, 0]} center zIndexRange={[20, 0]}><div className="player-tag">{name}</div></Html>}
       </group>
     </group>

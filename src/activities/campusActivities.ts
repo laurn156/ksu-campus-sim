@@ -2,17 +2,21 @@ import { centroid, Collider, pointInPoly, type Campus, type Pt } from '../campus
 import { discGolfSpots } from '../scene/discGolf.ts'
 
 export const letters=['H','O','O','T','Y','H','O','O'] as const
-/** Clues follow the same building order as the letter positions. */
+/** Multiple riddles per landmark; none gives away the building's name. */
 export const huntClues=[
- 'Food and friends meet under one roof; find the campus hub where students gather.',
- 'I hold a world of stories on my shelves. Look outside the library.',
- 'Equations and numbers fill the day; seek the building where mathematicians stay.',
- 'Experiments and science are my trade; look near the Crawford lab.',
- 'Code, computers and a sandwich stack: find the Atrium to get on track.',
- 'Sketches, studios and buildings by design: the architecture building is your sign.',
- 'Climb, lift or shoot a hoop; seek the recreation center where students regroup.',
- 'When hunger calls, Owls gather to dine. Look outside Stingers to find mine.',
+ ['Grab a bite, meet a friend, or take a break between classes.', 'Find the busy campus gathering place where lunch and conversation meet.', 'Where student life gathers, your first letter waits outside.'],
+ ['Quiet pages and countless stories wait behind these doors.', 'Where knowledge sits on shelves, look outside for a letter.', 'Shhh! Find the place where Owls borrow stories and study quietly.'],
+ ['Numbers, proofs and patterns are the language spoken here.', 'Where equations cover the board, a letter waits outside.', 'Follow the signs of fractions, formulas and functions.'],
+ ['Safety goggles and experiments belong near this letter.', 'Where discoveries begin with a hypothesis, look outside.', 'Beakers and experiments point the way to this letter.'],
+ ['Debugging, keyboards and a place for a sandwich meet nearby.', 'Find the place where programmers gather and sandwiches are stacked.', 'Lines of code and a sandwich counter share a home near this letter.'],
+ ['Sketches and tiny models become plans for buildings here.', 'Find the studio where future spaces begin as drawings.', 'Drafting tables and design critiques will lead you to this letter.'],
+ ['Find the place where Owls lift, climb and shoot hoops.', 'Sneakers, weights and a climbing wall are your clues.', 'Where students work up a sweat and play, look outside.'],
+ ['Hungry Owls gather here for a meal together.', 'Follow the scent of lunch to a favorite gathering spot.', 'Trays and tables await inside; a letter waits outdoors.'],
 ] as const
+/** Choose a fresh variation for each clue whenever a new hunt starts. */
+export function chooseHuntClues(previous:readonly string[]=[],random:()=>number=Math.random):string[]{
+ return huntClues.map((options,i)=>{const choices=options.filter(c=>c!==previous[i]);return choices[Math.floor(random()*choices.length)]})
+}
 /** Find reachable outdoor positions near existing landmarks, never inside footprints. */
 export function huntPositions(campus:Campus):Pt[]{
  const codes=['A','C','D','E','J','N','S1','X'],collider=new Collider(campus.buildings)
