@@ -608,14 +608,21 @@ function hornetHubParts(b:Building){
     const box=(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.MeshStandardMaterial)=>out.push({geo:plane(new THREE.BoxGeometry(w,h,d),x,y,z),mat:m})
     fn(box,length,plane)
   }
-  // The north edge faces the ETC. Each bay is kept clear for future team logos.
-  wall(b.poly[3],b.poly[2],(box,len)=>{
+  // The north edge faces the ETC: one garage bay per competition team, lettered with its initials.
+  const teams=['ARCT','SAE','EVT','SVT','AUV','KSU']
+  wall(b.poly[3],b.poly[2],(box,len,plane)=>{
     const spacing=len/6
     for(let i=0;i<6;i++){
       const x=-len/2+spacing*(i+.5),w=spacing-.65
       box(w,3.3,.16,x,1.65,.11,garage)
       for(let y=.55;y<3.3;y+=.55)box(w,.045,.05,x,y,.22,trim)
       for(const dx of [-w/2,w/2])box(.1,3.45,.2,x+dx,1.72,.15,metal)
+      const c=document.createElement('canvas');c.width=512;c.height=200
+      const g=c.getContext('2d')!;g.fillStyle='#1c1e1f';g.beginPath();g.roundRect(6,6,500,188,26);g.fill();g.strokeStyle='#f2c52e';g.lineWidth=10;g.stroke()
+      g.fillStyle='#f2c52e';g.font='900 128px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(teams[i],256,108,460)
+      const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace
+      const lw=Math.min(w*.72,2.4)
+      out.push({geo:plane(new THREE.PlaneGeometry(lw,lw*200/512),x,2.35,.27),mat:new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide,roughness:.6})})
     }
   })
   // The long east facade faces the same viewing direction as the ETC entrance.
