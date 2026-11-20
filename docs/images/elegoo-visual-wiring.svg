@@ -1,0 +1,399 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1500" viewBox="0 0 1800 1500" role="img" aria-labelledby="title desc"><title id="title">Nest Life ELEGOO Mega visual wiring guide</title><desc id="desc">Illustrated wiring guide showing Mega 2560 pins, breadboard rails, joystick, ultrasonic module, GY-521 through a bidirectional level shifter, two buttons, photoresistor and LEDs.</desc><style>text{font-family:Arial, sans-serif} .note{font-size:16px}</style>
+<rect x="0" y="0" width="1800" height="1500" rx="0" fill="#f6f5ed" stroke="#f6f5ed" stroke-width="2"/>
+<text x="55" y="65" font-size="30" font-weight="bold" fill="#98771b" text-anchor="start">NEST LIFE  /  ELEGOO CONTROLLER</text>
+<text x="55" y="110" font-size="46" font-weight="bold" fill="#142b21" text-anchor="start">Visual wiring guide</text>
+<text x="55" y="145" font-size="21" font-weight="normal" fill="#172b24" text-anchor="start">Unplug USB before wiring. Follow pin labels on your own modules; layouts may vary.</text>
+<rect x="45" y="200" width="370" height="620" rx="24" fill="#127b81" stroke="#0e5960" stroke-width="4"/>
+<rect x="30" y="243" width="60" height="85" rx="5" fill="#bcc7c6" stroke="#536a68" stroke-width="2"/>
+<text x="50" y="237" font-size="17" font-weight="normal" fill="#172b24" text-anchor="start">USB</text>
+<rect x="68" y="355" width="300" height="175" rx="8" fill="#202b2d" stroke="#10191b" stroke-width="2"/>
+<text x="90" y="394" font-size="28" font-weight="bold" fill="#f3f3e9" text-anchor="start">ELEGOO</text>
+<text x="90" y="429" font-size="30" font-weight="bold" fill="#f3f3e9" text-anchor="start">MEGA 2560</text>
+<text x="90" y="463" font-size="20" font-weight="normal" fill="#badbd4" text-anchor="start">5 V logic</text>
+<rect x="78" y="576" width="155" height="48" rx="14" fill="#202b2d" stroke="#b7c2ba" stroke-width="2"/>
+<text x="93" y="608" font-size="16" font-weight="normal" fill="#f3f3e9" text-anchor="start">ATmega2560</text>
+<rect x="337" y="231" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="243" r="5" fill="#d93b39"/>
+<text x="326" y="249" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">5V</text>
+<rect x="337" y="268" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="280" r="5" fill="#303b3d"/>
+<text x="326" y="286" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">GND</text>
+<rect x="337" y="305" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="317" r="5" fill="#b967c5"/>
+<text x="326" y="323" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">3.3V</text>
+<rect x="337" y="342" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="354" r="5" fill="#e78a24"/>
+<text x="326" y="360" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">A0</text>
+<rect x="337" y="379" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="391" r="5" fill="#e9c227"/>
+<text x="326" y="397" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">A1</text>
+<rect x="337" y="416" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="428" r="5" fill="#a76a38"/>
+<text x="326" y="434" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">A2</text>
+<rect x="337" y="453" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="465" r="5" fill="#b062b8"/>
+<text x="326" y="471" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">D2</text>
+<rect x="337" y="490" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="502" r="5" fill="#d8742e"/>
+<text x="326" y="508" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">D3</text>
+<rect x="337" y="527" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="539" r="5" fill="#a36a24"/>
+<text x="326" y="545" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">D4</text>
+<rect x="337" y="564" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="576" r="5" fill="#388ed2"/>
+<text x="326" y="582" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">D6</text>
+<rect x="337" y="601" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="613" r="5" fill="#308bd3"/>
+<text x="326" y="619" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">D7</text>
+<rect x="337" y="638" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="650" r="5" fill="#d93b39"/>
+<text x="326" y="656" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">D8</text>
+<rect x="337" y="675" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="687" r="5" fill="#3a9b56"/>
+<text x="326" y="693" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">D9</text>
+<rect x="337" y="712" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="724" r="5" fill="#4471b7"/>
+<text x="326" y="730" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">D20 SDA</text>
+<rect x="337" y="749" width="60" height="24" rx="3" fill="#182a2b" stroke="#182a2b" stroke-width="1"/>
+<circle cx="390" cy="761" r="5" fill="#61969a"/>
+<text x="326" y="767" font-size="16" font-weight="bold" fill="#fff" text-anchor="end">D21 SCL</text>
+<text x="46" y="850" font-size="20" font-weight="bold" fill="#172b24" text-anchor="start">Mega connections</text>
+<rect x="620" y="220" width="650" height="585" rx="18" fill="#eceee9" stroke="#b3bdb5" stroke-width="3"/>
+<text x="645" y="255" font-size="24" font-weight="bold" fill="#263c33" text-anchor="start">BREADBOARD</text>
+<text x="645" y="279" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">Rows on each side are connected in groups of five.</text>
+<text x="642" y="320" font-size="16" font-weight="bold" fill="#df4844" text-anchor="start">+5 V</text>
+<line x1="710" y1="315" x2="1235" y2="315" stroke="#df4844" stroke-width="3"/>
+<circle cx="725" cy="315" r="3" fill="#df4844"/>
+<circle cx="743" cy="315" r="3" fill="#df4844"/>
+<circle cx="761" cy="315" r="3" fill="#df4844"/>
+<circle cx="779" cy="315" r="3" fill="#df4844"/>
+<circle cx="797" cy="315" r="3" fill="#df4844"/>
+<circle cx="815" cy="315" r="3" fill="#df4844"/>
+<circle cx="833" cy="315" r="3" fill="#df4844"/>
+<circle cx="851" cy="315" r="3" fill="#df4844"/>
+<circle cx="869" cy="315" r="3" fill="#df4844"/>
+<circle cx="887" cy="315" r="3" fill="#df4844"/>
+<circle cx="905" cy="315" r="3" fill="#df4844"/>
+<circle cx="923" cy="315" r="3" fill="#df4844"/>
+<circle cx="941" cy="315" r="3" fill="#df4844"/>
+<circle cx="959" cy="315" r="3" fill="#df4844"/>
+<circle cx="977" cy="315" r="3" fill="#df4844"/>
+<circle cx="995" cy="315" r="3" fill="#df4844"/>
+<circle cx="1013" cy="315" r="3" fill="#df4844"/>
+<circle cx="1031" cy="315" r="3" fill="#df4844"/>
+<circle cx="1049" cy="315" r="3" fill="#df4844"/>
+<circle cx="1067" cy="315" r="3" fill="#df4844"/>
+<circle cx="1085" cy="315" r="3" fill="#df4844"/>
+<circle cx="1103" cy="315" r="3" fill="#df4844"/>
+<circle cx="1121" cy="315" r="3" fill="#df4844"/>
+<circle cx="1139" cy="315" r="3" fill="#df4844"/>
+<circle cx="1157" cy="315" r="3" fill="#df4844"/>
+<circle cx="1175" cy="315" r="3" fill="#df4844"/>
+<circle cx="1193" cy="315" r="3" fill="#df4844"/>
+<circle cx="1211" cy="315" r="3" fill="#df4844"/>
+<circle cx="1229" cy="315" r="3" fill="#df4844"/>
+<text x="642" y="350" font-size="16" font-weight="bold" fill="#364847" text-anchor="start">GND</text>
+<line x1="710" y1="345" x2="1235" y2="345" stroke="#364847" stroke-width="3"/>
+<circle cx="725" cy="345" r="3" fill="#364847"/>
+<circle cx="743" cy="345" r="3" fill="#364847"/>
+<circle cx="761" cy="345" r="3" fill="#364847"/>
+<circle cx="779" cy="345" r="3" fill="#364847"/>
+<circle cx="797" cy="345" r="3" fill="#364847"/>
+<circle cx="815" cy="345" r="3" fill="#364847"/>
+<circle cx="833" cy="345" r="3" fill="#364847"/>
+<circle cx="851" cy="345" r="3" fill="#364847"/>
+<circle cx="869" cy="345" r="3" fill="#364847"/>
+<circle cx="887" cy="345" r="3" fill="#364847"/>
+<circle cx="905" cy="345" r="3" fill="#364847"/>
+<circle cx="923" cy="345" r="3" fill="#364847"/>
+<circle cx="941" cy="345" r="3" fill="#364847"/>
+<circle cx="959" cy="345" r="3" fill="#364847"/>
+<circle cx="977" cy="345" r="3" fill="#364847"/>
+<circle cx="995" cy="345" r="3" fill="#364847"/>
+<circle cx="1013" cy="345" r="3" fill="#364847"/>
+<circle cx="1031" cy="345" r="3" fill="#364847"/>
+<circle cx="1049" cy="345" r="3" fill="#364847"/>
+<circle cx="1067" cy="345" r="3" fill="#364847"/>
+<circle cx="1085" cy="345" r="3" fill="#364847"/>
+<circle cx="1103" cy="345" r="3" fill="#364847"/>
+<circle cx="1121" cy="345" r="3" fill="#364847"/>
+<circle cx="1139" cy="345" r="3" fill="#364847"/>
+<circle cx="1157" cy="345" r="3" fill="#364847"/>
+<circle cx="1175" cy="345" r="3" fill="#364847"/>
+<circle cx="1193" cy="345" r="3" fill="#364847"/>
+<circle cx="1211" cy="345" r="3" fill="#364847"/>
+<circle cx="1229" cy="345" r="3" fill="#364847"/>
+<text x="936" y="389" font-size="15" font-weight="normal" fill="#61736a" text-anchor="middle">center gap</text>
+<text x="659" y="407" font-size="15" font-weight="normal" fill="#708078" text-anchor="end">1</text>
+<text x="1201" y="407" font-size="15" font-weight="normal" fill="#708078" text-anchor="start">1</text>
+<circle cx="700" cy="402" r="3" fill="#61736a"/>
+<circle cx="724" cy="402" r="3" fill="#61736a"/>
+<circle cx="748" cy="402" r="3" fill="#61736a"/>
+<circle cx="772" cy="402" r="3" fill="#61736a"/>
+<circle cx="796" cy="402" r="3" fill="#61736a"/>
+<circle cx="920" cy="402" r="3" fill="#61736a"/>
+<circle cx="944" cy="402" r="3" fill="#61736a"/>
+<circle cx="968" cy="402" r="3" fill="#61736a"/>
+<circle cx="992" cy="402" r="3" fill="#61736a"/>
+<circle cx="1016" cy="402" r="3" fill="#61736a"/>
+<text x="659" y="436" font-size="15" font-weight="normal" fill="#708078" text-anchor="end">2</text>
+<text x="1201" y="436" font-size="15" font-weight="normal" fill="#708078" text-anchor="start">2</text>
+<circle cx="700" cy="431" r="3" fill="#61736a"/>
+<circle cx="724" cy="431" r="3" fill="#61736a"/>
+<circle cx="748" cy="431" r="3" fill="#61736a"/>
+<circle cx="772" cy="431" r="3" fill="#61736a"/>
+<circle cx="796" cy="431" r="3" fill="#61736a"/>
+<circle cx="920" cy="431" r="3" fill="#61736a"/>
+<circle cx="944" cy="431" r="3" fill="#61736a"/>
+<circle cx="968" cy="431" r="3" fill="#61736a"/>
+<circle cx="992" cy="431" r="3" fill="#61736a"/>
+<circle cx="1016" cy="431" r="3" fill="#61736a"/>
+<text x="659" y="465" font-size="15" font-weight="normal" fill="#708078" text-anchor="end">3</text>
+<text x="1201" y="465" font-size="15" font-weight="normal" fill="#708078" text-anchor="start">3</text>
+<circle cx="700" cy="460" r="3" fill="#61736a"/>
+<circle cx="724" cy="460" r="3" fill="#61736a"/>
+<circle cx="748" cy="460" r="3" fill="#61736a"/>
+<circle cx="772" cy="460" r="3" fill="#61736a"/>
+<circle cx="796" cy="460" r="3" fill="#61736a"/>
+<circle cx="920" cy="460" r="3" fill="#61736a"/>
+<circle cx="944" cy="460" r="3" fill="#61736a"/>
+<circle cx="968" cy="460" r="3" fill="#61736a"/>
+<circle cx="992" cy="460" r="3" fill="#61736a"/>
+<circle cx="1016" cy="460" r="3" fill="#61736a"/>
+<text x="659" y="494" font-size="15" font-weight="normal" fill="#708078" text-anchor="end">4</text>
+<text x="1201" y="494" font-size="15" font-weight="normal" fill="#708078" text-anchor="start">4</text>
+<circle cx="700" cy="489" r="3" fill="#61736a"/>
+<circle cx="724" cy="489" r="3" fill="#61736a"/>
+<circle cx="748" cy="489" r="3" fill="#61736a"/>
+<circle cx="772" cy="489" r="3" fill="#61736a"/>
+<circle cx="796" cy="489" r="3" fill="#61736a"/>
+<circle cx="920" cy="489" r="3" fill="#61736a"/>
+<circle cx="944" cy="489" r="3" fill="#61736a"/>
+<circle cx="968" cy="489" r="3" fill="#61736a"/>
+<circle cx="992" cy="489" r="3" fill="#61736a"/>
+<circle cx="1016" cy="489" r="3" fill="#61736a"/>
+<text x="659" y="523" font-size="15" font-weight="normal" fill="#708078" text-anchor="end">5</text>
+<text x="1201" y="523" font-size="15" font-weight="normal" fill="#708078" text-anchor="start">5</text>
+<circle cx="700" cy="518" r="3" fill="#61736a"/>
+<circle cx="724" cy="518" r="3" fill="#61736a"/>
+<circle cx="748" cy="518" r="3" fill="#61736a"/>
+<circle cx="772" cy="518" r="3" fill="#61736a"/>
+<circle cx="796" cy="518" r="3" fill="#61736a"/>
+<circle cx="920" cy="518" r="3" fill="#61736a"/>
+<circle cx="944" cy="518" r="3" fill="#61736a"/>
+<circle cx="968" cy="518" r="3" fill="#61736a"/>
+<circle cx="992" cy="518" r="3" fill="#61736a"/>
+<circle cx="1016" cy="518" r="3" fill="#61736a"/>
+<text x="659" y="552" font-size="15" font-weight="normal" fill="#708078" text-anchor="end">6</text>
+<text x="1201" y="552" font-size="15" font-weight="normal" fill="#708078" text-anchor="start">6</text>
+<circle cx="700" cy="547" r="3" fill="#61736a"/>
+<circle cx="724" cy="547" r="3" fill="#61736a"/>
+<circle cx="748" cy="547" r="3" fill="#61736a"/>
+<circle cx="772" cy="547" r="3" fill="#61736a"/>
+<circle cx="796" cy="547" r="3" fill="#61736a"/>
+<circle cx="920" cy="547" r="3" fill="#61736a"/>
+<circle cx="944" cy="547" r="3" fill="#61736a"/>
+<circle cx="968" cy="547" r="3" fill="#61736a"/>
+<circle cx="992" cy="547" r="3" fill="#61736a"/>
+<circle cx="1016" cy="547" r="3" fill="#61736a"/>
+<text x="659" y="581" font-size="15" font-weight="normal" fill="#708078" text-anchor="end">7</text>
+<text x="1201" y="581" font-size="15" font-weight="normal" fill="#708078" text-anchor="start">7</text>
+<circle cx="700" cy="576" r="3" fill="#61736a"/>
+<circle cx="724" cy="576" r="3" fill="#61736a"/>
+<circle cx="748" cy="576" r="3" fill="#61736a"/>
+<circle cx="772" cy="576" r="3" fill="#61736a"/>
+<circle cx="796" cy="576" r="3" fill="#61736a"/>
+<circle cx="920" cy="576" r="3" fill="#61736a"/>
+<circle cx="944" cy="576" r="3" fill="#61736a"/>
+<circle cx="968" cy="576" r="3" fill="#61736a"/>
+<circle cx="992" cy="576" r="3" fill="#61736a"/>
+<circle cx="1016" cy="576" r="3" fill="#61736a"/>
+<text x="659" y="610" font-size="15" font-weight="normal" fill="#708078" text-anchor="end">8</text>
+<text x="1201" y="610" font-size="15" font-weight="normal" fill="#708078" text-anchor="start">8</text>
+<circle cx="700" cy="605" r="3" fill="#61736a"/>
+<circle cx="724" cy="605" r="3" fill="#61736a"/>
+<circle cx="748" cy="605" r="3" fill="#61736a"/>
+<circle cx="772" cy="605" r="3" fill="#61736a"/>
+<circle cx="796" cy="605" r="3" fill="#61736a"/>
+<circle cx="920" cy="605" r="3" fill="#61736a"/>
+<circle cx="944" cy="605" r="3" fill="#61736a"/>
+<circle cx="968" cy="605" r="3" fill="#61736a"/>
+<circle cx="992" cy="605" r="3" fill="#61736a"/>
+<circle cx="1016" cy="605" r="3" fill="#61736a"/>
+<text x="659" y="639" font-size="15" font-weight="normal" fill="#708078" text-anchor="end">9</text>
+<text x="1201" y="639" font-size="15" font-weight="normal" fill="#708078" text-anchor="start">9</text>
+<circle cx="700" cy="634" r="3" fill="#61736a"/>
+<circle cx="724" cy="634" r="3" fill="#61736a"/>
+<circle cx="748" cy="634" r="3" fill="#61736a"/>
+<circle cx="772" cy="634" r="3" fill="#61736a"/>
+<circle cx="796" cy="634" r="3" fill="#61736a"/>
+<circle cx="920" cy="634" r="3" fill="#61736a"/>
+<circle cx="944" cy="634" r="3" fill="#61736a"/>
+<circle cx="968" cy="634" r="3" fill="#61736a"/>
+<circle cx="992" cy="634" r="3" fill="#61736a"/>
+<circle cx="1016" cy="634" r="3" fill="#61736a"/>
+<text x="659" y="668" font-size="15" font-weight="normal" fill="#708078" text-anchor="end">10</text>
+<text x="1201" y="668" font-size="15" font-weight="normal" fill="#708078" text-anchor="start">10</text>
+<circle cx="700" cy="663" r="3" fill="#61736a"/>
+<circle cx="724" cy="663" r="3" fill="#61736a"/>
+<circle cx="748" cy="663" r="3" fill="#61736a"/>
+<circle cx="772" cy="663" r="3" fill="#61736a"/>
+<circle cx="796" cy="663" r="3" fill="#61736a"/>
+<circle cx="920" cy="663" r="3" fill="#61736a"/>
+<circle cx="944" cy="663" r="3" fill="#61736a"/>
+<circle cx="968" cy="663" r="3" fill="#61736a"/>
+<circle cx="992" cy="663" r="3" fill="#61736a"/>
+<circle cx="1016" cy="663" r="3" fill="#61736a"/>
+<text x="659" y="697" font-size="15" font-weight="normal" fill="#708078" text-anchor="end">11</text>
+<text x="1201" y="697" font-size="15" font-weight="normal" fill="#708078" text-anchor="start">11</text>
+<circle cx="700" cy="692" r="3" fill="#61736a"/>
+<circle cx="724" cy="692" r="3" fill="#61736a"/>
+<circle cx="748" cy="692" r="3" fill="#61736a"/>
+<circle cx="772" cy="692" r="3" fill="#61736a"/>
+<circle cx="796" cy="692" r="3" fill="#61736a"/>
+<circle cx="920" cy="692" r="3" fill="#61736a"/>
+<circle cx="944" cy="692" r="3" fill="#61736a"/>
+<circle cx="968" cy="692" r="3" fill="#61736a"/>
+<circle cx="992" cy="692" r="3" fill="#61736a"/>
+<circle cx="1016" cy="692" r="3" fill="#61736a"/>
+<text x="659" y="726" font-size="15" font-weight="normal" fill="#708078" text-anchor="end">12</text>
+<text x="1201" y="726" font-size="15" font-weight="normal" fill="#708078" text-anchor="start">12</text>
+<circle cx="700" cy="721" r="3" fill="#61736a"/>
+<circle cx="724" cy="721" r="3" fill="#61736a"/>
+<circle cx="748" cy="721" r="3" fill="#61736a"/>
+<circle cx="772" cy="721" r="3" fill="#61736a"/>
+<circle cx="796" cy="721" r="3" fill="#61736a"/>
+<circle cx="920" cy="721" r="3" fill="#61736a"/>
+<circle cx="944" cy="721" r="3" fill="#61736a"/>
+<circle cx="968" cy="721" r="3" fill="#61736a"/>
+<circle cx="992" cy="721" r="3" fill="#61736a"/>
+<circle cx="1016" cy="721" r="3" fill="#61736a"/>
+<polyline points="796,402 847,402" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="796,402 847,402" fill="none" stroke="#495453" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="869,402 920,402" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="869,402 920,402" fill="none" stroke="#495453" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+<rect x="847" y="388" width="22" height="28" rx="4" fill="#343c3a" stroke="#202927" stroke-width="2"/>
+<text x="1040" y="408" font-size="16" font-weight="bold" fill="#25382f" text-anchor="start">BUTTON 1</text>
+<polyline points="796,460 847,460" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="796,460 847,460" fill="none" stroke="#495453" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="869,460 920,460" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="869,460 920,460" fill="none" stroke="#495453" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+<rect x="847" y="446" width="22" height="28" rx="4" fill="#343c3a" stroke="#202927" stroke-width="2"/>
+<text x="1040" y="466" font-size="16" font-weight="bold" fill="#25382f" text-anchor="start">BUTTON 2</text>
+<polyline points="790,315 810,315 810,450" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="790,315 810,315 810,450" fill="none" stroke="#db4540" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="810,482 810,518 796,518" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="810,482 810,518 796,518" fill="none" stroke="#b78a46" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+<rect x="797" y="450" width="26" height="32" rx="9" fill="#b89047" stroke="#886a38" stroke-width="2"/>
+<text x="1040" y="522" font-size="16" font-weight="bold" fill="#25382f" text-anchor="start">PHOTORESISTOR</text>
+<polyline points="748,518 748,548" fill="none" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><polyline points="748,518 748,548" fill="none" stroke="#b67b39" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<rect x="738" y="548" width="20" height="24" rx="5" fill="#e4c998" stroke="#8b724a" stroke-width="2"/>
+<polyline points="748,572 748,576" fill="none" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><polyline points="748,572 748,576" fill="none" stroke="#b67b39" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<text x="1040" y="580" font-size="16" font-weight="bold" fill="#25382f" text-anchor="start">10 kΩ → GND</text>
+<polyline points="748,605 748,613" fill="none" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><polyline points="748,605 748,613" fill="none" stroke="#777" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<rect x="738" y="613" width="20" height="16" rx="4" fill="#e5c998" stroke="#8b724a" stroke-width="2"/>
+<polyline points="748,629 748,634" fill="none" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><polyline points="748,629 748,634" fill="none" stroke="#777" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="796,634 840,634 840,615" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="796,634 840,634 840,615" fill="none" stroke="#e44542" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+<circle cx="840" cy="609" r="11" fill="#e44542" stroke="#325443" stroke-width="2"/>
+<polyline points="851,609 920,609 920,634" fill="none" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><polyline points="851,609 920,609 920,634" fill="none" stroke="#364847" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<text x="1040" y="621" font-size="16" font-weight="bold" fill="#25382f" text-anchor="start">220 Ω + RED LED</text>
+<polyline points="748,663 748,671" fill="none" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><polyline points="748,663 748,671" fill="none" stroke="#777" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<rect x="738" y="671" width="20" height="16" rx="4" fill="#e5c998" stroke="#8b724a" stroke-width="2"/>
+<polyline points="748,687 748,692" fill="none" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><polyline points="748,687 748,692" fill="none" stroke="#777" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="796,692 840,692 840,673" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="796,692 840,692 840,673" fill="none" stroke="#3eab60" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+<circle cx="840" cy="667" r="11" fill="#3eab60" stroke="#325443" stroke-width="2"/>
+<polyline points="851,667 920,667 920,692" fill="none" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><polyline points="851,667 920,667 920,692" fill="none" stroke="#364847" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+<text x="1040" y="679" font-size="16" font-weight="bold" fill="#25382f" text-anchor="start">220 Ω + GREEN LED</text>
+<text x="650" y="775" font-size="17" font-weight="normal" fill="#365348" text-anchor="start">See the numbered row map below before placing wires.</text>
+<rect x="1310" y="195" width="440" height="210" rx="14" fill="#fff" stroke="#ced9ce" stroke-width="2"/>
+<text x="1335" y="229" font-size="21" font-weight="bold" fill="#17362a" text-anchor="start">JOYSTICK MODULE</text>
+<rect x="1340" y="245" width="110" height="100" rx="9" fill="#225784" stroke="#1b4160" stroke-width="2"/>
+<circle cx="1395" cy="291" r="33" fill="#192c32"/><circle cx="1395" cy="291" r="21" fill="#42575c"/>
+<text x="1480" y="255" font-size="16" font-weight="bold" fill="#172b24" text-anchor="start">VCC  →  +5 V rail</text>
+<text x="1480" y="282" font-size="16" font-weight="bold" fill="#172b24" text-anchor="start">GND  →  GND rail</text>
+<text x="1480" y="309" font-size="16" font-weight="bold" fill="#172b24" text-anchor="start">VRx  →  A0</text>
+<text x="1480" y="336" font-size="16" font-weight="bold" fill="#172b24" text-anchor="start">VRy  →  A1</text>
+<text x="1480" y="363" font-size="16" font-weight="bold" fill="#172b24" text-anchor="start">SW  →  D2</text>
+<rect x="1310" y="425" width="440" height="185" rx="14" fill="#fff" stroke="#ced9ce" stroke-width="2"/>
+<text x="1335" y="459" font-size="21" font-weight="bold" fill="#17362a" text-anchor="start">HC-SR04 ULTRASONIC</text>
+<rect x="1340" y="475" width="110" height="80" rx="8" fill="#1f6e9a" stroke="#1c5171" stroke-width="2"/>
+<circle cx="1367" cy="515" r="22" fill="#aab5b6" stroke="#4e656a" stroke-width="5"/><circle cx="1367" cy="515" r="15" fill="#d6d9d5"/>
+<circle cx="1422" cy="515" r="22" fill="#aab5b6" stroke="#4e656a" stroke-width="5"/><circle cx="1422" cy="515" r="15" fill="#d6d9d5"/>
+<text x="1480" y="485" font-size="16" font-weight="bold" fill="#172b24" text-anchor="start">VCC  →  +5 V rail</text>
+<text x="1480" y="512" font-size="16" font-weight="bold" fill="#172b24" text-anchor="start">GND  →  GND rail</text>
+<text x="1480" y="539" font-size="16" font-weight="bold" fill="#172b24" text-anchor="start">TRIG  →  D6</text>
+<text x="1480" y="566" font-size="16" font-weight="bold" fill="#172b24" text-anchor="start">ECHO  →  D7</text>
+<rect x="1310" y="630" width="440" height="285" rx="14" fill="#fff" stroke="#ced9ce" stroke-width="2"/>
+<text x="1335" y="664" font-size="21" font-weight="bold" fill="#17362a" text-anchor="start">GY-521 + LEVEL SHIFTER</text>
+<rect x="1340" y="686" width="85" height="130" rx="8" fill="#236a91" stroke="#175071" stroke-width="2"/>
+<rect x="1362" y="720" width="40" height="40" rx="3" fill="#273637" stroke="#101d20" stroke-width="2"/>
+<text x="1382" y="840" font-size="16" font-weight="bold" fill="#24453b" text-anchor="middle">GY-521</text>
+<rect x="1450" y="700" width="85" height="95" rx="8" fill="#8358a3" stroke="#603d7b" stroke-width="2"/>
+<text x="1492" y="756" font-size="18" font-weight="bold" fill="white" text-anchor="middle">I²C</text>
+<text x="1492" y="840" font-size="16" font-weight="bold" fill="#24453b" text-anchor="middle">SHIFTER</text>
+<polyline points="1425,720 1450,720" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="1425,720 1450,720" fill="none" stroke="#4471b7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="1425,748 1450,748" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="1425,748 1450,748" fill="none" stroke="#61969a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+<text x="1553" y="704" font-size="15" font-weight="bold" fill="#17362a" text-anchor="start">GY SDA → LV1</text>
+<text x="1553" y="732" font-size="15" font-weight="bold" fill="#17362a" text-anchor="start">GY SCL → LV2</text>
+<text x="1553" y="760" font-size="15" font-weight="bold" fill="#17362a" text-anchor="start">D20 SDA → HV1</text>
+<text x="1553" y="788" font-size="15" font-weight="bold" fill="#17362a" text-anchor="start">D21 SCL → HV2</text>
+<text x="1553" y="816" font-size="15" font-weight="bold" fill="#17362a" text-anchor="start">HV → 5 V, LV → 3.3 V</text>
+<text x="1553" y="844" font-size="15" font-weight="bold" fill="#17362a" text-anchor="start">GND → GND rail</text>
+<text x="1335" y="880" font-size="15" font-weight="bold" fill="#9f3831" text-anchor="start">GY VCC: +5 V only if its onboard regulator is verified.</text>
+<text x="1335" y="902" font-size="15" font-weight="bold" fill="#9f3831" text-anchor="start">Otherwise use a suitable regulated 3.3 V supply.</text>
+<rect x="45" y="895" width="1225" height="480" rx="14" fill="#fff" stroke="#d5ddd1" stroke-width="2"/>
+<text x="75" y="936" font-size="27" font-weight="bold" fill="#17362a" text-anchor="start">Breadboard row map</text>
+<text x="75" y="966" font-size="18" font-weight="normal" fill="#172b24" text-anchor="start">Each numbered row has two separate strips: LEFT (a–e) and RIGHT (f–j).</text>
+<text x="80" y="1004" font-size="16" font-weight="bold" fill="#96751b" text-anchor="start">ROW</text>
+<text x="160" y="1004" font-size="16" font-weight="bold" fill="#96751b" text-anchor="start">LEFT STRIP</text>
+<text x="460" y="1004" font-size="16" font-weight="bold" fill="#96751b" text-anchor="start">RIGHT STRIP</text>
+<text x="730" y="1004" font-size="16" font-weight="bold" fill="#96751b" text-anchor="start">COMPONENT</text>
+<rect x="68" y="1015" width="1160" height="32" rx="5" fill="#f2f5eb" stroke="#f2f5eb" stroke-width="0"/>
+<text x="82" y="1037" font-size="17" font-weight="bold" fill="#183a2c" text-anchor="start">1</text>
+<text x="160" y="1037" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">D3 → left strip</text>
+<text x="460" y="1037" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">Right strip → GND rail</text>
+<text x="730" y="1037" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">Button 1 bridges the center gap</text>
+<text x="82" y="1074" font-size="17" font-weight="bold" fill="#183a2c" text-anchor="start">3</text>
+<text x="160" y="1074" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">D4 → left strip</text>
+<text x="460" y="1074" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">Right strip → GND rail</text>
+<text x="730" y="1074" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">Button 2 bridges the center gap</text>
+<rect x="68" y="1089" width="1160" height="32" rx="5" fill="#f2f5eb" stroke="#f2f5eb" stroke-width="0"/>
+<text x="82" y="1111" font-size="17" font-weight="bold" fill="#183a2c" text-anchor="start">5</text>
+<text x="160" y="1111" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">A2 → left strip</text>
+<text x="460" y="1111" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">—</text>
+<text x="730" y="1111" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">+5 V → photoresistor → row 5</text>
+<text x="82" y="1148" font-size="17" font-weight="bold" fill="#183a2c" text-anchor="start">7</text>
+<text x="160" y="1148" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">GND rail → left strip</text>
+<text x="460" y="1148" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">—</text>
+<text x="730" y="1148" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">10 kΩ resistor connects rows 5 and 7</text>
+<rect x="68" y="1163" width="1160" height="32" rx="5" fill="#f2f5eb" stroke="#f2f5eb" stroke-width="0"/>
+<text x="82" y="1185" font-size="17" font-weight="bold" fill="#183a2c" text-anchor="start">8</text>
+<text x="160" y="1185" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">D8 → left strip</text>
+<text x="460" y="1185" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">—</text>
+<text x="730" y="1185" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">220 Ω resistor connects rows 8 and 9</text>
+<text x="82" y="1222" font-size="17" font-weight="bold" fill="#183a2c" text-anchor="start">9</text>
+<text x="160" y="1222" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">LED anode → left</text>
+<text x="460" y="1222" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">LED cathode → right</text>
+<text x="730" y="1222" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">Right strip → GND rail (red LED)</text>
+<rect x="68" y="1237" width="1160" height="32" rx="5" fill="#f2f5eb" stroke="#f2f5eb" stroke-width="0"/>
+<text x="82" y="1259" font-size="17" font-weight="bold" fill="#183a2c" text-anchor="start">10</text>
+<text x="160" y="1259" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">D9 → left strip</text>
+<text x="460" y="1259" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">—</text>
+<text x="730" y="1259" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">220 Ω resistor connects rows 10 and 11</text>
+<text x="82" y="1296" font-size="17" font-weight="bold" fill="#183a2c" text-anchor="start">11</text>
+<text x="160" y="1296" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">LED anode → left</text>
+<text x="460" y="1296" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">LED cathode → right</text>
+<text x="730" y="1296" font-size="16" font-weight="normal" fill="#172b24" text-anchor="start">Right strip → GND rail (green LED)</text>
+<text x="80" y="1358" font-size="17" font-weight="bold" fill="#9f3831" text-anchor="start">LED long leg = anode (+); short leg / flat edge = cathode (−). Never omit the resistors.</text>
+<polyline points="397,243 530,243 530,315 620,315" fill="none" stroke="white" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><polyline points="397,243 530,243 530,315 620,315" fill="none" stroke="#df4844" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="397,280 505,280 505,345 620,345" fill="none" stroke="white" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><polyline points="397,280 505,280 505,345 620,345" fill="none" stroke="#364847" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+<text x="448" y="225" font-size="16" font-weight="bold" fill="#ce3737" text-anchor="start">5 V</text>
+<text x="435" y="300" font-size="16" font-weight="bold" fill="#364847" text-anchor="start">GND</text>
+<rect x="1310" y="942" width="440" height="433" rx="14" fill="#e8f0e5" stroke="#bdd0c0" stroke-width="2"/>
+<text x="1335" y="982" font-size="24" font-weight="bold" fill="#17362a" text-anchor="start">Before powering on</text>
+<text x="1335" y="1020" font-size="17" font-weight="normal" fill="#172b24" text-anchor="start">1  Check 5 V and GND are not shorted.</text>
+<text x="1335" y="1058" font-size="17" font-weight="normal" fill="#172b24" text-anchor="start">2  Check the GY-521 regulator and use</text>
+<text x="1335" y="1096" font-size="17" font-weight="normal" fill="#172b24" text-anchor="start">    the bidirectional level shifter.</text>
+<text x="1335" y="1134" font-size="17" font-weight="normal" fill="#172b24" text-anchor="start">3  Wire joystick and sensors by pin label.</text>
+<text x="1335" y="1172" font-size="17" font-weight="normal" fill="#172b24" text-anchor="start">4  Place buttons across the center gap.</text>
+<text x="1335" y="1210" font-size="17" font-weight="normal" fill="#172b24" text-anchor="start">5  Check LED polarity and resistors.</text>
+<text x="1335" y="1248" font-size="17" font-weight="normal" fill="#172b24" text-anchor="start">6  Connect USB and upload the firmware.</text>
+<text x="1335" y="1286" font-size="17" font-weight="normal" fill="#172b24" text-anchor="start">7  Test one component at a time.</text>
+<text x="1335" y="1340" font-size="16" font-weight="normal" fill="#365348" text-anchor="start">The optional buzzer is omitted here;</text>
+<text x="1335" y="1364" font-size="16" font-weight="normal" fill="#365348" text-anchor="start">see the pin table for D10 wiring.</text>
+<text x="55" y="1450" font-size="18" font-weight="normal" fill="#50675b" text-anchor="start">Colored wires show breadboard power. Other connections are identified by pin and row labels for readability.</text>
+</svg>

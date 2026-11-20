@@ -1,6 +1,6 @@
 # Nest Life ELEGOO controller: wiring and setup
 
-This is the proposed **single-player** controller wiring, before software integration. Power the Mega off and unplug USB while wiring. Each signal uses a different pin. The photoresistor and LEDs are optional for initial individual tests; leave RFID and LCD1602 disconnected.
+This is the **single-player** controller wiring. Power the Mega off and unplug USB while wiring. Each signal uses a different pin. The photoresistor and LEDs are optional for initial individual tests; leave RFID and LCD1602 disconnected.
 
 ## Parts
 
@@ -14,6 +14,10 @@ This is the proposed **single-player** controller wiring, before software integr
 ELEGOO lists the GY-521 in its [Mega Most Complete Starter Kit](https://us.elegoo.com/products/elegoo-mega-2560-the-most-complete-starter-kit); contents can vary. Verify the labels on your actual modules.
 
 ## Visual wiring diagram
+
+![Illustrated Mega, breadboard, modules and breadboard row map](images/elegoo-visual-wiring.svg)
+
+[Open the full-size visual diagram](images/elegoo-visual-wiring.svg). The colored lines show the breadboard power rails; the pin and row labels specify the remaining connections without obscuring the components.
 
 The two rails marked +5 V and GND run along the breadboard. The 3.3 V connection below goes to the shifter's LV supply, **not** to the 5 V rail. All grounds are common.
 
@@ -84,7 +88,7 @@ The [Mega pinout](https://docs.arduino.cc/resources/pinouts/A000067-full-pinout.
 
 ## Test each part
 
-Upload the controller firmware after it is provided. With the board connected, use the Arduino IDE Serial Monitor at the firmware's stated baud rate; close the monitor before connecting from the browser because only one program can own the port.
+Upload [the controller firmware](../hardware/elegoo/NestLifeController.ino) at 115200 baud. With the board connected, use the Arduino IDE Serial Monitor at the firmware's stated baud rate; close the monitor before connecting from the browser because only one program can own the port.
 
 - Joystick: center, move in all four directions, then press SW. Values should change and the switch should toggle.
 - Buttons: press each and verify its separate input changes; it should return when released.
