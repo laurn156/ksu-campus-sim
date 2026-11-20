@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { Html } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
@@ -9,7 +9,7 @@ import { indoorState } from '../scene/indoorState'
 import { supabase } from './client'
 import { DEFAULT_PROFILE } from '../ui/Welcome'
 import './connect.css'
-export type Peer={id:string;name:string;username?:string;look:AvatarLook;x:number;y?:number;z:number;heading:number;moving:boolean;location:string;online:boolean;slapping?:boolean;waveUntil?:number}
+export type Peer={id:string;name:string;username?:string;look:AvatarLook;x:number;y?:number;z:number;heading:number;moving:boolean;location:string;online:boolean;slapping?:boolean;activity?:'bathtub'|'';discFlight?:{x:number;y:number;z:number}|null;waveUntil?:number}
 type Chat={id:string;name:string;text:string}
 export type GamePacket={to:string;match:string;kind:string;revision?:number;index?:number}
 export type World={peers:Peer[];onlineIds:string[];messages:Chat[];status:string;send:(text:string)=>Promise<boolean>;wave:()=>void;sendGame:(packet:GamePacket)=>boolean;error:string}
@@ -75,11 +75,11 @@ export function useConnectWorld(userId:string,username:string):World {
  return {peers,onlineIds,messages,status,send:text=>sendRef.current(text),wave:()=>waveRef.current(),sendGame:packet=>gameRef.current(packet),error}
 }
 function Remote({peer}:{peer:Peer}){
- const ref=useRef<THREE.Group>(null),walk=useRef(0),[near,setNear]=useState(false),nearRef=useRef(false),swingAt=useRef(-1000)
+ const ref=useRef<THREE.Group>(null),walk=useRef(0),[near,setNear]=useState(false),nearRef=useRef(false),swingAt=useRef(-1000),sit=useRef(0)
  const isNear=()=>{const p=indoorState.active?indoorState:player;return (indoorState.active?indoorState.location:'campus')===peer.location&&Math.hypot(p.x-peer.x,p.z-peer.z)<12}
- useFrame((_,dt)=>{if(ref.current){const target=new THREE.Vector3(peer.x,peer.y??0,peer.z);if(ref.current.position.distanceTo(target)>20)ref.current.position.copy(target);else ref.current.position.lerp(target,Math.min(1,dt*10));ref.current.rotation.y=peer.heading}walk.current=THREE.MathUtils.lerp(walk.current,peer.moving?.75:0,Math.min(1,dt*8));if(peer.slapping&&performance.now()-swingAt.current>330)swingAt.current=performance.now();const next=isNear();if(next!==nearRef.current){nearRef.current=next;setNear(next)}})
+ useFrame((_,dt)=>{if(ref.current){const target=new THREE.Vector3(peer.x,peer.y??0,peer.z);if(ref.current.position.distanceTo(target)>20)ref.current.position.copy(target);else ref.current.position.lerp(target,Math.min(1,dt*10));ref.current.rotation.y=peer.heading}walk.current=THREE.MathUtils.lerp(walk.current,peer.moving?.75:0,Math.min(1,dt*8));sit.current=peer.activity==='bathtub'?1:0;if(peer.slapping&&performance.now()-swingAt.current>330)swingAt.current=performance.now();const next=isNear();if(next!==nearRef.current){nearRef.current=next;setNear(next)}})
  const open=()=>{if(isNear())window.dispatchEvent(new CustomEvent('connect-player',{detail:peer.id}))}
- return <group ref={ref} position={[peer.x,peer.y??0,peer.z]} onClick={event=>{event.stopPropagation();open()}}><Character {...peer.look} walk={walk} swingAt={swingAt} scale={1.15}/>{near&&<Html position={[0,2,0]} center distanceFactor={18}><button className="student-label" onClick={event=>{event.stopPropagation();open()}}><span style={{color:peer.online?'#57d07e':'#a7adab'}}>●</span> {peer.name} {peer.waveUntil && peer.waveUntil>Date.now()?'👋':''}</button></Html>}</group>
+ return <group ref={ref} position={[peer.x,peer.y??0,peer.z]} onClick={event=>{event.stopPropagation();open()}}>{peer.activity==='bathtub'&&<group><mesh position={[0,.12,0]} scale={[.72,1,1.08]}><latheGeometry args={[[new THREE.Vector2(.05,.12),new THREE.Vector2(.72,.12),new THREE.Vector2(1,.3),new THREE.Vector2(1.18,.78),new THREE.Vector2(1.24,.9),new THREE.Vector2(1.09,.92),new THREE.Vector2(1,.8),new THREE.Vector2(.82,.42),new THREE.Vector2(.66,.35),new THREE.Vector2(.05,.35)],24]}/><meshStandardMaterial color="#f4f6ef" side={THREE.DoubleSide}/></mesh>{[-.83,.83].flatMap(x=>[-.8,.8].map(z=><mesh key={x+':'+z} position={[x,.23,z]} rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[.29,.29,.18,12]}/><meshStandardMaterial color="#252a2a"/></mesh>))}</group>}<Character {...peer.look} walk={walk} swingAt={swingAt} sit={sit} sitLift={.112} scale={1.15}/>{near&&<Html position={[0,2,0]} center distanceFactor={18}><button className="student-label" onClick={event=>{event.stopPropagation();open()}}><span style={{color:peer.online?'#57d07e':'#a7adab'}}>●</span> {peer.name} {peer.waveUntil && peer.waveUntil>Date.now()?'👋':''}</button></Html>}</group>
 }
-export function OnlinePlayers({peers}:{peers:Peer[]}){return <>{peers.map(p=><Remote key={p.id} peer={p}/>)}</>}
+export function OnlinePlayers({peers}:{peers:Peer[]}){return <>{peers.map(p=><React.Fragment key={p.id}><Remote peer={p}/>{p.discFlight&&<mesh position={[p.discFlight.x,p.discFlight.y,p.discFlight.z]}><cylinderGeometry args={[.42,.42,.09,20]}/><meshStandardMaterial color="#f6bf29"/></mesh>}</React.Fragment>)}</>}
 export function ConnectChat({world}:{world:World}){const [open,setOpen]=useState(true),[text,setText]=useState('');return <div className="connect-chat"><button onClick={()=>setOpen(!open)}>💬 Campus chat {open?'−':'+'}</button><small>{world.status} · {world.peers.length} other players</small>{open&&<><div className="connect-messages">{world.messages.length===0?<p>No messages yet. Say hello!</p>:world.messages.map(m=><p key={m.id}><b>{m.name}:</b> {m.text}</p>)}</div><form onSubmit={e=>{e.preventDefault();if(text.trim()){const message=text;void world.send(message).then(ok=>{if(ok)setText(current=>current===message?'':current)})}}}><input aria-label="Campus chat message" maxLength={200} value={text} onChange={e=>setText(e.target.value)} placeholder="Message everyone…"/><button>Send</button></form>{world.error&&<small role="alert">{world.error}</small>}</>}</div>}

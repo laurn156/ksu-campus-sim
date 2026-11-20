@@ -17,6 +17,7 @@ import { supabase } from './connect/client'
 import { useDemoWorld, DemoSocial } from './connect/DemoWorld'
 import { useRockChallenge, RockChallengePanel } from './connect/RockChallenge'
 import { usePhotoSession, PhotoSessionPanel } from './connect/PhotoSession'
+import { useCampusContest, CampusContestPanel } from './connect/CampusContest'
 import { NearbyPlayer } from './connect/NearbyPlayer'
 import { useConnectWorld, OnlinePlayers, ConnectChat } from './connect/World'
 import { useSocial, SocialPanel } from './connect/Social'
@@ -126,6 +127,7 @@ function LifeSession({campus,profile,onEdit,onMenu}:{campus:Campus;profile:NestP
   const demo=useDemoWorld(profile.displayName,look)
   const game=useMultiplayerGame(demo.id,demo.world.onlineIds,demo.world.sendGame,[])
   const rockGame=useRockChallenge(demo,campus)
+  const contest=useCampusContest(demo,campus)
   const photoGame=usePhotoSession(demo)
   const photoPeer=demo.world.peers.find(p=>p.id===photoGame.session?.peer)
   return <>
@@ -133,7 +135,7 @@ function LifeSession({campus,profile,onEdit,onMenu}:{campus:Campus;profile:NestP
       <color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/>
       <hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={look} name={profile.displayName}/><CampusStudents campus={campus} minute={life.state.minute}/><ActivityWorld campus={campus}/><VehicleWorld campus={campus}/><OnlinePlayers peers={demo.world.peers.filter(p=>p.location==='campus')}/>
     </Canvas>
-    <CampusActivities campus={campus} identity={profile.playerId}/><VehicleActivities campus={campus}/><SlapRockActivity campus={campus} identity={profile.playerId}/><BuildingInteriors campus={campus} look={look} peers={demo.world.peers}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onMenu}/><ActivityMenu campus={campus}/><PhotoBooth look={look} name={profile.displayName} friends={[...demo.world.peers.map(p=>({name:p.name,look:p.look})),...CLASSMATES]} shared={photoGame.session?.phase==='active'&&photoPeer?{host:photoGame.session.host,companion:{name:photoPeer.name,look:photoPeer.look},send:photoGame.transmit,leave:photoGame.leave}:undefined}/><ClassroomActivity globalLauncher/><LifeUI campus={campus} life={life} playerName={profile.displayName} onEdit={onEdit} players={selected=><DemoSocial demo={demo} onChallenge={game.start} onRock={rockGame.invite} onPhoto={photoGame.invite} selectedPlayer={selected}/>}/><ConnectChat world={demo.world}/><MultiplayerGamePanel game={game} peers={demo.world.peers} onlineIds={demo.world.onlineIds}/><RockChallengePanel game={rockGame} demo={demo}/><PhotoSessionPanel game={photoGame} demo={demo}/><NearbyPlayer peers={demo.world.peers}/>
+    <CampusActivities campus={campus} identity={profile.playerId}/><VehicleActivities campus={campus}/><SlapRockActivity campus={campus} identity={profile.playerId}/><BuildingInteriors campus={campus} look={look} peers={demo.world.peers}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onMenu}/><ActivityMenu campus={campus}/><PhotoBooth look={look} name={profile.displayName} friends={[...demo.world.peers.map(p=>({name:p.name,look:p.look})),...CLASSMATES]} shared={photoGame.session?.phase==='active'&&photoPeer?{host:photoGame.session.host,companion:{name:photoPeer.name,look:photoPeer.look},send:photoGame.transmit,leave:photoGame.leave}:undefined}/><ClassroomActivity globalLauncher/><LifeUI campus={campus} life={life} playerName={profile.displayName} onEdit={onEdit} players={selected=><DemoSocial demo={demo} onChallenge={game.start} onRock={rockGame.invite} onPhoto={photoGame.invite} onContest={contest.invite} selectedPlayer={selected}/>}/><ConnectChat world={demo.world}/><MultiplayerGamePanel game={game} peers={demo.world.peers} onlineIds={demo.world.onlineIds}/><RockChallengePanel game={rockGame} demo={demo}/><PhotoSessionPanel game={photoGame} demo={demo}/><NearbyPlayer peers={demo.world.peers}/><CampusContestPanel game={contest} demo={demo}/>
   </>
 }
 

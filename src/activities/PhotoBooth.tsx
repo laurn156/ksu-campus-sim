@@ -125,7 +125,7 @@ function Backdrop({ id }: { id: ThemeId }) {
       <group position={[5.2, 0, -2]}><Box p={[0, 1.2, 0]} s={[.08, 2.4, .08]} c="#4a5052" /><Sign text="BUS STOP" p={[0, 2.4, 0]} w={1} h={.4} bg="#2f6fb0" fg="#fff" /></group></>
     case 'rock': return <><Sky stops={[[0, '#8fcbee'], [1, '#f2f6e6']]} /><Ground c="#79ad55" /><Tree p={[-5, 0, -6]} /><Tree p={[5.5, 0, -6.5]} s={1.2} /><Tree p={[-7.5, 0, -7]} s={.9} />
       <group scale={.8}><SlapTheRock at={[1.7, -4.7]} /></group><Sign text="SLAP THE ROCK" p={[-2.1, 1.3, -3]} w={2} h={.45} bg="#1c1e1f" fg="#f2c52e" /><Box p={[-2.1, .55, -3.05]} s={[.08, 1.1, .08]} c="#2f3332" /></>
-    case 'globe': return <><Sky stops={[[0, '#9fd2ee'], [1, '#eef4f2']]} /><Ground c="#c9c6bd" /><GlobePlaza at={[0, -4.5]} />
+    case 'globe': return <><Sky stops={[[0, '#9fd2ee'], [1, '#eef4f2']]} /><Ground c="#c9c6bd" /><GlobePlaza at={[0, -9]} />
       <group position={[0, 0, -9]}><Box p={[0, 2, 0]} s={[22, 4, .3]} c="#a3533c" /><Box p={[0, 4.4, 0]} s={[22, .8, .32]} c="#dedfd8" />{[-8, -5, -2, 2, 5, 8].map(x => <Box key={x} p={[x, 2, .17]} s={[1.6, 2, .04]} c="#4f8f84" />)}</group>
       {[-3, -2.3, -1.6].map((x, i) => <group key={x} position={[x - 2, 0, -6]}><Box p={[0, 2.6, 0]} s={[.06, 5.2, .06]} c="#c9ced0" /><Box p={[.45, 4.8, 0]} s={[.8, .5, .02]} c={['#1c1e1f', '#c4473c', '#2f5d8a'][i]} /></group>)}
       <Tree p={[5, 0, -6]} s={1.2} /><Tree p={[-6.5, 0, -7]} /></>
@@ -433,7 +433,6 @@ export function PhotoBooth({ look, name, friends, shared }: { look: AvatarLook; 
       <div className="polaroid"><img src={photo} alt={`Photo of ${name} at ${themeInfo.name}`} /></div>
       {savedToPhone&&<p role="status" style={{color:'white'}}>{savedToPhone}</p>}<div className="booth-result-actions">
         <button className="booth-shoot small" disabled={savedToPhone==='Saved to phone!'} onClick={()=>{void savePhonePhoto(photo,`${name || 'Owl'} · ${themeInfo.name}`).then(ok=>setSavedToPhone(ok?'Saved to phone!':'Could not save; browser storage may be full.'))}}>📱 Save to phone</button>
-        <a className="booth-shoot small" href={photo} download={`nest-life-${theme}-${Date.now()}.png`}>⬇ Save photo</a>
         <button className="booth-secondary" onClick={() => setPhoto(null)}>Retake</button>
         <button className="booth-secondary" onClick={close}>Done</button>
       </div>
