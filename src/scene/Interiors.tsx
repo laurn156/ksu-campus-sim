@@ -11,6 +11,8 @@ import { OnlinePlayers, type Peer } from '../connect/World'
 function interiorKind(b: Building): InteriorKind {
   const n=(b.name+' '+b.short+' '+b.kind).toLowerCase()
   if (b.code==='A') return 'student'
+  if (b.code==='B') return 'admin'
+  if (b.code==='D') return 'math'
   if (b.code==='P60'||/parking|deck|garage parking/.test(n)) return 'parking'
   if (n.includes('greenhouse')) return 'greenhouse'
   if (n.includes('hornet hub') || b.id==='1504299650' || b.code==='O' || n.includes('competition')) return 'garage'

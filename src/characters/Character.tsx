@@ -38,6 +38,7 @@ export interface CharacterProps {
   /** Vertical lift while seated, in character-local units. */
   sitLift?: number
   eat?: React.MutableRefObject<number>
+  work?: React.MutableRefObject<number>
   /** both arms raised (goalkeeper reaching high) */
   armsUp?: boolean
   /** sideways lean in radians (goalkeeper stepping); positive leans to the character's left */
@@ -301,6 +302,7 @@ export function Character({
   sit,
   sitLift = .23,
   eat,
+  work,
   armsUp = false,
   lean = 0,
   position,
@@ -371,6 +373,13 @@ export function Character({
     if ((eat?.current??0)>0 && rArm.current) {
       rArm.current.rotation.x=THREE.MathUtils.lerp(rArm.current.rotation.x,-1.0-Math.max(0,Math.sin(t*2.2))*.8,.15)
       rArm.current.rotation.z=THREE.MathUtils.lerp(rArm.current.rotation.z,-.35,.15)
+      return
+    }
+    // Desk-height gestures for writing, typing, and presenting.
+    if ((work?.current??0)>0 && rArm.current && lArm.current) {
+      rArm.current.rotation.x=THREE.MathUtils.lerp(rArm.current.rotation.x,-.65+Math.sin(t*2.6)*.22,.15)
+      lArm.current.rotation.x=THREE.MathUtils.lerp(lArm.current.rotation.x,-.55+Math.sin(t*2.1+1)*.15,.15)
+      rArm.current.rotation.z=THREE.MathUtils.lerp(rArm.current.rotation.z,-.25,.15)
       return
     }
     // right arm IK-lite: aim the arm toward the reach target
