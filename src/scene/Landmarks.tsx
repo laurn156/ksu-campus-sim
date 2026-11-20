@@ -125,7 +125,7 @@ function rockTexture(): THREE.CanvasTexture {
 }
 
 /** "Slap the Rock": a big, low, lumpy boulder in glossy black paint with handprints, on a mulch bed. */
-function SlapTheRock({ at }: { at: Pt }) {
+export function SlapTheRock({ at }: { at: Pt }) {
   const geo = useMemo(() => {
     const g = new THREE.SphereGeometry(1, 44, 26)
     const p = g.getAttribute('position')
@@ -192,7 +192,7 @@ function SlapTheRock({ at }: { at: Pt }) {
 }
 
 /** Freestanding block letters, with yellow faces and deep black sides. */
-function KsuLetters({ at, yaw }: { at: Pt; yaw: number }) {
+export function KsuLetters({ at, yaw }: { at: Pt; yaw: number }) {
   const textures = useMemo(() => {
     const make = (face: boolean) => {
       const canvas = document.createElement('canvas')
@@ -281,7 +281,7 @@ function globeTexture(): THREE.CanvasTexture {
 
 /** The Globe sculpture: open wire globe with steel continents in a tilted meridian ring, on a stone
  *  pedestal in a round brick-edged planter (mulch + shrubs), in its circular plaza. */
-function GlobePlaza({ at }: { at: Pt }) {
+export function GlobePlaza({ at }: { at: Pt }) {
   const mats = useMemo(() => {
     const tex = globeTexture()
     return {

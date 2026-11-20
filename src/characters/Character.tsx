@@ -42,6 +42,8 @@ export interface CharacterProps {
   work?: React.MutableRefObject<number>
   /** Right arm raised forward and up, as if pointing at a board in front of the character. */
   point?: React.MutableRefObject<number>
+  /** A prop held in the right hand (kept upright as the arm moves). */
+  hold?: React.ReactNode
   /** both arms raised (goalkeeper reaching high) */
   armsUp?: boolean
   /** sideways lean in radians (goalkeeper stepping); positive leans to the character's left */
@@ -288,7 +290,13 @@ function Glasses({ style }: { style: Accessory }) {
   )
 }
 
-function Arm({ side, body, armRef, top, topColor }: { side: -1 | 1; body: THREE.Material; armRef?: React.Ref<THREE.Group>; top: NonNullable<CharacterProps['top']>; topColor: string }) {
+/** Keeps a held prop upright while the arm swings: cancels the arm's rotation each frame. */
+function HandMount({ children }: { children: React.ReactNode }) {
+  const g = useRef<THREE.Group>(null)
+  useFrame(() => { const arm = g.current?.parent?.parent; if (g.current && arm) { g.current.rotation.set(-arm.rotation.x, -arm.rotation.y, -arm.rotation.z, 'ZYX') } })
+  return <group position={[0, -0.24, 0.05]}><group ref={g}>{children}</group></group>
+}
+function Arm({ side, body, armRef, top, topColor, hold }: { side: -1 | 1; body: THREE.Material; armRef?: React.Ref<THREE.Group>; top: NonNullable<CharacterProps['top']>; topColor: string; hold?: React.ReactNode }) {
   const longSleeve = top === 'hoodie' || top === 'ksu-hoodie'
   return <group ref={armRef} position={[side * 0.245, 0.68, 0]} rotation={[0, 0, side * 0.24]}>
     {top === 'none' ? <mesh position={[0,-0.105,0]} material={body}><capsuleGeometry args={[0.075,0.10,10,20]} /></mesh> : <>
@@ -298,6 +306,7 @@ function Arm({ side, body, armRef, top, topColor }: { side: -1 | 1; body: THREE.
       {longSleeve && <mesh position={[0,-0.195,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[0.075,0.026,10,24]} /><meshStandardMaterial color={topColor} roughness={0.97}/></mesh>}
     </>}
     <mesh position={[0,-0.235,0.012]} material={body}><sphereGeometry args={[0.087,24,18]} /></mesh>
+    {hold && <HandMount>{hold}</HandMount>}
   </group>
 }
 
@@ -366,6 +375,7 @@ export function Character({
   eat,
   work,
   point,
+  hold,
   armsUp = false,
   lean = 0,
   position,
@@ -530,7 +540,7 @@ export function Character({
         </group>}
         {(backpack || bag !== 'none') && bagStyle === 'sling' && <SlingBag color={bag === 'cream' ? '#e8dfca' : bag === 'black' ? '#2c2e30' : '#8a6248'} trim={bag === 'cream' ? '#c9bba3' : bag === 'black' ? '#1b1c1d' : '#5f4332'} profile={top === 'none' ? null : shirtProfile} zScale={shirtZ} />}
         {(backpack || bag !== 'none') && bagStyle !== 'sling' && <Backpack color={bag === 'cream' ? '#e8dfca' : bag === 'black' ? '#2c2e30' : '#8a6248'} trim={bag === 'cream' ? '#c9bba3' : bag === 'black' ? '#1b1c1d' : '#5f4332'} back={top === 'none' ? 0.2 : shirtR*shirtZ} front={top === 'none' ? 0.2 : shirtR*shirtZ} />}
-        <Arm side={-1} body={body} top={top} topColor={topColor} armRef={rArm} />
+        <Arm side={-1} body={body} top={top} topColor={topColor} armRef={rArm} hold={hold} />
         <Arm side={1} body={body} top={top} topColor={topColor} armRef={lArm} />
         {/* head */}
         <mesh position={[0, HEAD_Y, 0]} scale={[1, 0.95, 0.95]} castShadow material={body}>

@@ -1687,34 +1687,8 @@ function textileCenterParts(b: Building) {
   return parts
 }
 
-/** K3 pump house: low brick walls, rooftop trim, owl mural and patio seating. */
-function pumpHouseParts(b: Building) {
-  const out: {geo: THREE.BufferGeometry; mat: THREE.MeshStandardMaterial}[] = []
-  const material = (color: string) => new THREE.MeshStandardMaterial({color, roughness: .9, side: THREE.DoubleSide})
-  const brick = new THREE.MeshStandardMaterial({map: facade('librarybrick'), roughness: .9, side: THREE.DoubleSide})
-  const trim = material('#d4d1c8'), roof = material('#a5a29a'), metal = material('#a4aaa5')
-  const dark = material('#242c2c'), pavement = material('#c6c1b5'), canopy = material('#242928')
-  const box = (w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial) => {
-    const geo = new THREE.BoxGeometry(w,h,d); geo.translate(x,y,z); out.push({geo,mat})
-  }
-  out.push({geo:wallsGeometry(b),mat:brick}, {geo:flatGeometry(b.poly,b.h+.02),mat:roof})
-  // A light coping runs around the flat, weathered roof.
-  for (let i=0;i<b.poly.length;i++) {
-    const a=b.poly[i], c=b.poly[(i+1)%b.poly.length]
-    const dx=c[0]-a[0], dz=c[1]-a[1], len=Math.hypot(dx,dz)
-    const geo=new THREE.BoxGeometry(len,.18,.22);geo.rotateY(-Math.atan2(dz,dx));geo.translate((a[0]+c[0])/2,b.h+.12,(a[1]+c[1])/2)
-    out.push({geo,mat:trim})
-  }
-  const vent=new THREE.CylinderGeometry(.23,.32,.65,8);vent.translate(-187,4.12,99.3);out.push({geo:vent,mat:metal})
-  for(const [x,z] of [[-189.9,97],[-184.4,102.3]]){const v=new THREE.CylinderGeometry(.09,.09,.22,8);v.translate(x,3.92,z);out.push({geo:v,mat:dark})}
-  // Rotate the wall details and patio together one face clockwise.
-  const detailsStart = out.length
-  // Service door and utility panels on the opposite wall.
-  box(.1,2.35,1.3,-191.67,1.18,100.2,metal)
-  box(.13,2.05,1.05,-191.75,1.18,100.2,dark)
-  box(.16,1.85,.9,-191.82,1.19,100.2,metal)
-  box(.15,.55,.65,-191.72,2.75,98.2,trim)
-  // The owl mural follows the actual south wall, including its slight angle.
+/** The angular owl mural on the K3 pump house (also used as a photo-booth backdrop). */
+export function owlMuralTexture(){
   const c=document.createElement('canvas');c.width=1024;c.height=512
   const g=c.getContext('2d')!;g.clearRect(0,0,1024,512)
   const poly=(points:number[][],color:string) => {g.fillStyle=color;g.beginPath();points.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill()}
@@ -1747,6 +1721,37 @@ function pumpHouseParts(b: Building) {
   poly([[354,328],[410,354],[471,340],[512,377],[553,340],[614,354],[670,328],[632,391],[512,432],[392,391]],grey)
   poly([[410,355],[471,345],[512,379],[553,345],[614,355],[598,385],[512,412],[426,385]],black)
   const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace
+  return tex
+}
+/** K3 pump house: low brick walls, rooftop trim, owl mural and patio seating. */
+function pumpHouseParts(b: Building) {
+  const out: {geo: THREE.BufferGeometry; mat: THREE.MeshStandardMaterial}[] = []
+  const material = (color: string) => new THREE.MeshStandardMaterial({color, roughness: .9, side: THREE.DoubleSide})
+  const brick = new THREE.MeshStandardMaterial({map: facade('librarybrick'), roughness: .9, side: THREE.DoubleSide})
+  const trim = material('#d4d1c8'), roof = material('#a5a29a'), metal = material('#a4aaa5')
+  const dark = material('#242c2c'), pavement = material('#c6c1b5'), canopy = material('#242928')
+  const box = (w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.MeshStandardMaterial) => {
+    const geo = new THREE.BoxGeometry(w,h,d); geo.translate(x,y,z); out.push({geo,mat})
+  }
+  out.push({geo:wallsGeometry(b),mat:brick}, {geo:flatGeometry(b.poly,b.h+.02),mat:roof})
+  // A light coping runs around the flat, weathered roof.
+  for (let i=0;i<b.poly.length;i++) {
+    const a=b.poly[i], c=b.poly[(i+1)%b.poly.length]
+    const dx=c[0]-a[0], dz=c[1]-a[1], len=Math.hypot(dx,dz)
+    const geo=new THREE.BoxGeometry(len,.18,.22);geo.rotateY(-Math.atan2(dz,dx));geo.translate((a[0]+c[0])/2,b.h+.12,(a[1]+c[1])/2)
+    out.push({geo,mat:trim})
+  }
+  const vent=new THREE.CylinderGeometry(.23,.32,.65,8);vent.translate(-187,4.12,99.3);out.push({geo:vent,mat:metal})
+  for(const [x,z] of [[-189.9,97],[-184.4,102.3]]){const v=new THREE.CylinderGeometry(.09,.09,.22,8);v.translate(x,3.92,z);out.push({geo:v,mat:dark})}
+  // Rotate the wall details and patio together one face clockwise.
+  const detailsStart = out.length
+  // Service door and utility panels on the opposite wall.
+  box(.1,2.35,1.3,-191.67,1.18,100.2,metal)
+  box(.13,2.05,1.05,-191.75,1.18,100.2,dark)
+  box(.16,1.85,.9,-191.82,1.19,100.2,metal)
+  box(.15,.55,.65,-191.72,2.75,98.2,trim)
+  // The owl mural follows the actual south wall, including its slight angle.
+  const tex=owlMuralTexture()
   const mural=new THREE.PlaneGeometry(7.7,3.15)
   const left=b.poly[3], right=b.poly[2]
   mural.rotateY(-Math.atan2(right[1]-left[1],right[0]-left[0]))

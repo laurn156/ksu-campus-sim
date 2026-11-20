@@ -4,18 +4,22 @@ import * as THREE from 'three'
 import { Character, type Face } from '../characters/Character'
 import type { AvatarLook } from '../scene/Player'
 import { ScrappyFigure } from '../scene/Scrappy'
+import { GlobePlaza, KsuLetters, SlapTheRock } from '../scene/Landmarks'
+import { owlMuralTexture } from '../scene/Campus'
 import { activityState } from './activityState'
 import './photobooth.css'
 
 // ---------------------------------------------------------------------------------------------
 // Data
 // ---------------------------------------------------------------------------------------------
-type ThemeId = 'bus' | 'rock' | 'innovation' | 'green' | 'graduation' | 'beach' | 'space' | 'snow' | 'blossom' | 'city' | 'disco' | 'underwater' | 'clouds' | 'halloween' | 'winter'
+type ThemeId = 'bus' | 'rock' | 'globe' | 'sign' | 'mural' | 'green' | 'graduation' | 'beach' | 'space' | 'snow' | 'blossom' | 'city' | 'disco' | 'underwater' | 'clouds' | 'halloween' | 'winter'
 type Theme = { id: ThemeId; name: string; icon: string; swatch: string; suggest: AccessoryId[] }
 const KSU_THEMES: Theme[] = [
   { id: 'bus', name: 'Big Owl Bus', icon: '🚌', swatch: 'linear-gradient(#bfe0f2,#e9eef0 60%,#7d8687 60%)', suggest: ['pennant', 'gradcap'] },
-  { id: 'rock', name: 'The Rock', icon: '🪨', swatch: 'linear-gradient(#bfe0f2,#e9f0dc 62%,#7fae5a 62%)', suggest: ['pennant', 'sunglasses'] },
-  { id: 'innovation', name: 'Innovation Center', icon: '🤖', swatch: 'linear-gradient(90deg,#7a4434 0 30%,#2f4f55 30% 100%)', suggest: ['goggles', 'bowtie'] },
+  { id: 'rock', name: 'Slap the Rock', icon: '🪨', swatch: 'radial-gradient(ellipse at 50% 70%,#1d1f20 0 28%,transparent 29%),linear-gradient(#bfe0f2,#e9f0dc 62%,#7fae5a 62%)', suggest: ['pennant', 'sunglasses'] },
+  { id: 'globe', name: 'The Globe', icon: '🌐', swatch: 'radial-gradient(circle at 50% 45%,#c9ced3 0 22%,transparent 23%),linear-gradient(#bfe0f2,#e9eef0 62%,#b9b6ad 62%)', suggest: ['pennant', 'medal'] },
+  { id: 'sign', name: 'KSU Sign', icon: '🔤', swatch: 'linear-gradient(#bfe0f2,#e9f0dc 45%,#f2c52e 45% 70%,#7fae5a 70%)', suggest: ['pennant', 'gradcap'] },
+  { id: 'mural', name: 'Owl Mural', icon: '🦉', swatch: 'radial-gradient(circle at 50% 45%,#1b1d1c 0 20%,#f8c500 21% 26%,transparent 27%),linear-gradient(#a65a43,#8f4c39)', suggest: ['sunglasses', 'microphone'] },
   { id: 'green', name: 'Campus Green', icon: '🌳', swatch: 'linear-gradient(#bfe0f2,#dff0d0 58%,#79ad55 58%)', suggest: ['icecream', 'flowers'] },
   { id: 'graduation', name: 'KSU Graduation', icon: '🎓', swatch: 'linear-gradient(#1f2324,#1f2324 55%,#f2c52e 55%)', suggest: ['gradcap', 'diploma', 'medal'] },
 ]
@@ -113,29 +117,29 @@ function Backdrop({ id }: { id: ThemeId }) {
   switch (id) {
     case 'bus': return <><Sky stops={[[0, '#9fd2ee'], [1, '#eef4f2']]} /><Ground c="#8a9091" />
       <Box p={[0, .01, -1.6]} s={[30, .02, .25]} c="#f2c52e" />
-      <group position={[0, 0, -4.2]}><Box p={[0, 1.55, 0]} s={[9, 2.5, 2.4]} c="#1c1e1f" /><Box p={[0, 1.1, 1.21]} s={[9, .5, .02]} c="#f2c52e" />
+      <group position={[0, 0, -4.2]}><Box p={[0, 1.75, 0]} s={[9, 2.9, 2.4]} c="#1c1e1f" /><Box p={[0, 1.1, 1.21]} s={[9, .5, .02]} c="#f2c52e" />
         {[-3.2, -1.6, 0, 1.6, 3.2].map(x => <Box key={x} p={[x, 2.15, 1.21]} s={[1.3, .8, .02]} c="#9cc3c8" />)}
-        <Sign text="BIG OWL BUS" p={[0, 1.1, 1.23]} w={4.2} h={.42} bg="#f2c52e" fg="#1c1e1f" />
+        <Box p={[0, 3.05, 1.21]} s={[9, .5, .02]} c="#f2c52e" /><Sign text="BIG OWL BUS" p={[0, 3.05, 1.23]} w={4.4} h={.46} bg="#f2c52e" fg="#1c1e1f" />
         {[-3, 3].map(x => <mesh key={x} position={[x, .5, 1.1]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.5, .5, .3, 20]} /><meshStandardMaterial color="#111" /></mesh>)}</group>
       <group position={[5.2, 0, -2]}><Box p={[0, 1.2, 0]} s={[.08, 2.4, .08]} c="#4a5052" /><Sign text="BUS STOP" p={[0, 2.4, 0]} w={1} h={.4} bg="#2f6fb0" fg="#fff" /></group></>
     case 'rock': return <><Sky stops={[[0, '#8fcbee'], [1, '#f2f6e6']]} /><Ground c="#79ad55" /><Tree p={[-5, 0, -6]} /><Tree p={[5.5, 0, -6.5]} s={1.2} /><Tree p={[-7.5, 0, -7]} s={.9} />
-      <group position={[0, 0, -3.6]}><mesh position={[0, 1, 0]} scale={[2.3, 1.15, 1.4]}><icosahedronGeometry args={[1, 1]} /><meshStandardMaterial color="#c9573f" flatShading /></mesh>
-        {[['#f2c52e', -.7, 1.4, 1.05], ['#3f74b5', .6, 1.6, .95], ['#f4f1e6', .1, .9, 1.25], ['#3f9a55', -1.2, .7, .8], ['#9b6bc0', 1.3, .9, .9]].map(([c, x, y, z], i) => <mesh key={i} position={[x as number, y as number, z as number]} scale={[1, .7, .2]}><sphereGeometry args={[.42, 12, 8]} /><meshStandardMaterial color={c as string} /></mesh>)}
-        <Sign text="GO OWLS!" p={[0, 1.1, 1.42]} w={1.8} h={.4} bg="#1c1e1f" fg="#f2c52e" /></group></>
-    case 'innovation': return <><Sky stops={[[0, '#a9d6f0'], [1, '#e9f0f2']]} /><Ground c="#c9c6bd" />
-      <group position={[0, 0, -4.5]}><Box p={[0, 2.5, 0]} s={[14, 5, .3]} c="#76483a" />
-        {[-4.5, -1.5, 1.5, 4.5].map(x => <Box key={x} p={[x, 2, .16]} s={[2.4, 3.2, .04]} c="#2f5257" />)}
-        {[-4.5, -1.5, 1.5, 4.5].map(x => [-.6, .6].map(d => <Box key={x + ':' + d} p={[x + d, 2, .19]} s={[.05, 3.2, .04]} c="#1b2b2d" />))}
-        <Sign text="SHORE INNOVATION CENTER" p={[0, 4.2, .17]} w={7} h={.6} bg="#1c2a2b" fg="#f4f1e6" /></group>
-      <Spin speed={.8}><group position={[3.6, 0, -2.4]}><mesh position={[0, .3, 0]}><cylinderGeometry args={[.3, .35, .6, 14]} /><meshStandardMaterial color="#50696b" /></mesh><Box p={[0, .95, 0]} s={[.15, .8, .15]} c="#e0b84c" /><Box p={[.35, 1.35, 0]} s={[.8, .14, .14]} c="#e0b84c" /></group></Spin></>
+      <group scale={.8}><SlapTheRock at={[1.7, -4.7]} /></group><Sign text="SLAP THE ROCK" p={[-2.1, 1.3, -3]} w={2} h={.45} bg="#1c1e1f" fg="#f2c52e" /><Box p={[-2.1, .55, -3.05]} s={[.08, 1.1, .08]} c="#2f3332" /></>
+    case 'globe': return <><Sky stops={[[0, '#9fd2ee'], [1, '#eef4f2']]} /><Ground c="#c9c6bd" /><GlobePlaza at={[0, -4.5]} />
+      <group position={[0, 0, -9]}><Box p={[0, 2, 0]} s={[22, 4, .3]} c="#a3533c" /><Box p={[0, 4.4, 0]} s={[22, .8, .32]} c="#dedfd8" />{[-8, -5, -2, 2, 5, 8].map(x => <Box key={x} p={[x, 2, .17]} s={[1.6, 2, .04]} c="#4f8f84" />)}</group>
+      {[-3, -2.3, -1.6].map((x, i) => <group key={x} position={[x - 2, 0, -6]}><Box p={[0, 2.6, 0]} s={[.06, 5.2, .06]} c="#c9ced0" /><Box p={[.45, 4.8, 0]} s={[.8, .5, .02]} c={['#1c1e1f', '#c4473c', '#2f5d8a'][i]} /></group>)}
+      <Tree p={[5, 0, -6]} s={1.2} /><Tree p={[-6.5, 0, -7]} /></>
+    case 'sign': return <><Sky stops={[[0, '#8fcbee'], [1, '#f2f6e6']]} /><Ground c="#7fb35a" /><group position={[0, 1.1, 0]} scale={1.7}><KsuLetters at={[0, -3.2]} yaw={0} /></group><Box p={[0, .55, -5.4]} s={[6, 1.1, .6]} c="#3a4447" />
+      <Tree p={[-5.5, 0, -6.5]} s={1.2} /><Tree p={[5.8, 0, -6]} /><Tree p={[0, 0, -9]} s={1.3} />
+      {[-3.6, 3.6].map(x => <group key={x} position={[x, 0, -3]}>{[0, 1, 2].map(k => <Ball key={k} p={[(k - 1) * .3, .2, 0]} r={.18} c={k % 2 ? '#f2c52e' : '#5d8f43'} />)}</group>)}</>
+    case 'mural': return <MuralBackdrop />
     case 'green': return <><Sky stops={[[0, '#8fcbee'], [1, '#f4f8ea']]} /><Ground c="#7fb35a" /><Box p={[0, .01, -2.5]} s={[2, .02, 14]} c="#d8d4c6" />
       {[[-4, -5, 1.2], [4.5, -5.5, 1.1], [-6.5, -7, 1], [6.5, -7.5, 1.3], [-2.5, -8, .9], [2.5, -8.5, 1]].map(([x, z, s], i) => <Tree key={i} p={[x, 0, z]} s={s} c={i % 2 ? '#5d8f43' : '#6a9a4b'} />)}
       <group position={[-3, 0, -2.5]}><Box p={[0, .45, 0]} s={[1.6, .08, .5]} c="#8a6a4c" /><Box p={[0, .8, -.22]} s={[1.6, .5, .06]} c="#8a6a4c" /></group>
       <group position={[3.4, 0, -3]}><Box p={[0, 1.5, 0]} s={[.08, 3, .08]} c="#2f3332" /><Ball p={[0, 3.05, 0]} r={.16} c="#fff6d8" e="#7a6a40" /></group></>
     case 'graduation': return <><color attach="background" args={['#1b1d20']} /><Ground c="#2a2d31" />
       <group position={[0, 0, -4]}><Box p={[0, .3, 0]} s={[12, .6, 3]} c="#3b3f45" /><Box p={[0, 3, -1.4]} s={[12, 5, .2]} c="#141617" />
-        <Sign text="CONGRATULATIONS GRADUATES" p={[0, 3.9, -1.28]} w={8} h={.8} bg="#141617" fg="#f2c52e" />
-        <Sign text="KENNESAW STATE UNIVERSITY" p={[0, 3.1, -1.28]} w={5} h={.45} bg="#141617" fg="#f4f1e6" />
+        <Sign text="CONGRATULATIONS GRADUATES" p={[0, 3.9, -1.28]} w={6} h={.62} bg="#141617" fg="#f2c52e" />
+        <Sign text="KENNESAW STATE UNIVERSITY" p={[0, 3.25, -1.28]} w={4.2} h={.4} bg="#141617" fg="#f4f1e6" />
         {[-5.5, 5.5].map(x => <group key={x}><Box p={[x, 2.5, -1.2]} s={[.8, 4, .05]} c="#f2c52e" /><Box p={[x, 2.5, -1.18]} s={[.3, 4, .05]} c="#1c1e1f" /></group>)}</group>
       <Confetti />{[[-2.5, 3.4], [2.8, 3.8], [.6, 4.2]].map(([x, y], i) => <Bob key={i} amp={.25} speed={1.2} phase={i}><group position={[x, y, -2.5]} rotation={[.3, i, .2]}><Box p={[0, 0, 0]} s={[.55, .04, .55]} c="#141617" /><Box p={[0, -.08, 0]} s={[.3, .12, .3]} c="#141617" /></group></Bob>)}</>
     case 'beach': return <><Sky stops={[[0, '#5cb6e4'], [.7, '#bfe7f5'], [1, '#fdf1d6']]} /><Ground c="#efd59a" />
@@ -180,6 +184,13 @@ function Backdrop({ id }: { id: ThemeId }) {
         <mesh position={[0, 1.36, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[.22, .05, 8, 20]} /><meshStandardMaterial color="#c4473c" /></mesh></group>
       {[[-2.8, '#c4473c'], [-2.2, '#3f7a55'], [-2.5, '#2f6fb0']].map(([x, c], i) => <group key={i} position={[x as number, .25 + (i === 2 ? .45 : 0), -2 - (i === 2 ? 0 : 0)]}><Box p={[0, 0, 0]} s={[.5, .5, .5]} c={c as string} /><Box p={[0, 0, 0]} s={[.52, .52, .1]} c="#f2c52e" /></group>)}<Snowfall /></>
   }
+}
+function MuralBackdrop() {
+  const tex = useMemo(() => owlMuralTexture(), [])
+  return <><Sky stops={[[0, '#9fd2ee'], [1, '#eef4f2']]} /><Ground c="#c9c6bd" />
+    <group position={[0, 0, -3.4]}><Box p={[0, 2.5, -.2]} s={[11, 5, .3]} c="#9c513b" /><Box p={[0, 5.05, -.2]} s={[11.2, .2, .4]} c="#dedfd8" />
+      <mesh position={[0, 3.1, -.03]}><planeGeometry args={[7.7, 3.15]} /><meshStandardMaterial map={tex} transparent /></mesh></group>
+    <Tree p={[-6.5, 0, -5]} /><Tree p={[6.8, 0, -5.5]} s={1.1} /></>
 }
 function Confetti() {
   const pieces = useMemo(() => { const r = rand(7); return Array.from({ length: 70 }, () => ({ p: [(r() - .5) * 12, r() * 6, -1.5 - r() * 3] as V, c: ['#f2c52e', '#fff', '#3f74b5', '#c4473c'][Math.floor(r() * 4)], s: r() })) }, [])
@@ -235,18 +246,18 @@ function holdPoint(pose: Pose, t: number): V {
 }
 function HandItem({ id, at }: { id: AccessoryId; at: V }) {
   switch (id) {
-    case 'beachball': return <group position={[at[0] + .1, at[1] + .05, at[2] + .12]}>{['#e8604c', '#ffffff', '#2f6fb0', '#ffd34d', '#ffffff', '#3f9a55'].map((c, i) => <mesh key={i}><sphereGeometry args={[.22, 16, 12, i * Math.PI / 3, Math.PI / 3]} /><meshStandardMaterial color={c} /></mesh>)}</group>
-    case 'balloon': return <group position={at}><mesh position={[-.1, .65, 0]}><cylinderGeometry args={[.006, .006, 1.3, 4]} /><meshBasicMaterial color="#555" /></mesh><mesh position={[-.2, 1.45, 0]} scale={[1, 1.2, 1]}><sphereGeometry args={[.22, 18, 14]} /><meshStandardMaterial color="#e8404c" roughness={.3} /></mesh></group>
+    case 'beachball': return <group position={[at[0], at[1] + .2, at[2] + .05]}>{['#e8604c', '#ffffff', '#2f6fb0', '#ffd34d', '#ffffff', '#3f9a55'].map((c, i) => <mesh key={i}><sphereGeometry args={[.22, 16, 12, i * Math.PI / 3, Math.PI / 3]} /><meshStandardMaterial color={c} /></mesh>)}</group>
+    case 'balloon': return <group position={at}><mesh position={[0, .55, 0]}><cylinderGeometry args={[.006, .006, 1.1, 4]} /><meshBasicMaterial color="#555" /></mesh><mesh position={[0, 1.25, 0]} scale={[1, 1.2, 1]}><sphereGeometry args={[.22, 18, 14]} /><meshStandardMaterial color="#e8404c" roughness={.3} /></mesh></group>
     case 'pennant': return <group position={at}><mesh position={[0, .25, 0]}><cylinderGeometry args={[.015, .015, .7, 6]} /><meshStandardMaterial color="#c9a54a" /></mesh><mesh position={[-.22, .45, 0]} rotation={[0, 0, Math.PI / 2]}><coneGeometry args={[.13, .42, 3]} /><meshStandardMaterial color="#1c1e1f" /></mesh><mesh position={[-.22, .45, .01]} rotation={[0, 0, Math.PI / 2]}><coneGeometry args={[.07, .25, 3]} /><meshStandardMaterial color="#f2c52e" /></mesh></group>
     case 'icecream': return <group position={at}><mesh position={[0, .08, 0]} rotation={[Math.PI, 0, 0]}><coneGeometry args={[.07, .22, 12]} /><meshStandardMaterial color="#d9a35f" /></mesh><Ball p={[0, .24, 0]} r={.09} c="#f7c3d4" /><Ball p={[0, .33, 0]} r={.07} c="#fff6e0" /></group>
     case 'diploma': return <group position={at} rotation={[0, 0, .5]}><mesh rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.05, .05, .4, 12]} /><meshStandardMaterial color="#f4ecd8" /></mesh><mesh rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.055, .055, .06, 12]} /><meshStandardMaterial color="#c4473c" /></mesh></group>
-    case 'pumpkin': return <group position={[at[0], at[1] - .12, at[2]]}><mesh scale={[1.1, .85, 1.1]}><sphereGeometry args={[.15, 14, 10]} /><meshStandardMaterial color="#e2782d" /></mesh><mesh position={[0, .16, 0]}><torusGeometry args={[.13, .012, 6, 16, Math.PI]} /><meshStandardMaterial color="#2b2f30" /></mesh></group>
+    case 'pumpkin': return <group position={[at[0], at[1] - .14, at[2]]}><mesh scale={[1.1, .85, 1.1]}><sphereGeometry args={[.15, 14, 10]} /><meshStandardMaterial color="#e2782d" /></mesh><mesh position={[0, .16, 0]}><torusGeometry args={[.13, .012, 6, 16, Math.PI]} /><meshStandardMaterial color="#2b2f30" /></mesh></group>
     case 'microphone': return <group position={at} rotation={[.5, 0, 0]}><mesh><cylinderGeometry args={[.025, .02, .22, 8]} /><meshStandardMaterial color="#2b2f30" /></mesh><Ball p={[0, .14, 0]} r={.055} c="#9aa1a3" /></group>
-    case 'snowball': return <Ball p={[at[0], at[1] + .05, at[2]]} r={.09} c="#ffffff" />
+    case 'snowball': return <Ball p={[at[0], at[1] + .1, at[2]]} r={.09} c="#ffffff" />
     default: return null
   }
 }
-function Worn({ worn, hand }: { worn: Worn; hand: React.RefObject<THREE.Group | null> }) {
+function Worn({ worn }: { worn: Worn }) {
   return <>
     {worn.head === 'helmet' && <group><mesh position={[0, 1.1, 0]}><sphereGeometry args={[.5, 28, 20]} /><meshStandardMaterial color="#dff3ff" transparent opacity={.28} roughness={.05} metalness={.2} depthWrite={false} /></mesh><mesh position={[0, .76, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[.32, .07, 10, 28]} /><meshStandardMaterial color="#f4f4f0" /></mesh><Box p={[.36, .9, -.2]} s={[.1, .1, .1]} c="#e8604c" /></group>}
     {worn.head === 'partyhat' && <group position={[.06, 1.42, 0]} rotation={[0, 0, -.25]}><mesh position={[0, .16, 0]}><coneGeometry args={[.14, .36, 18]} /><meshStandardMaterial color="#9b6bff" /></mesh><mesh position={[0, .12, 0]}><coneGeometry args={[.1, .03, 18]} /><meshStandardMaterial color="#ffd34d" /></mesh><Ball p={[0, .36, 0]} r={.05} c="#ff5fb0" /></group>}
@@ -264,14 +275,12 @@ function Worn({ worn, hand }: { worn: Worn; hand: React.RefObject<THREE.Group | 
     {worn.neck === 'lei' && <group position={[0, .74, 0]} rotation={[-.35, 0, 0]}>{Array.from({ length: 16 }, (_, i) => <Ball key={i} p={[Math.sin(i * Math.PI / 8) * .25, 0, Math.cos(i * Math.PI / 8) * .23]} r={.045} c={['#ff6fa5', '#ffd34d', '#ff8c42', '#fff'][i % 4]} />)}</group>}
     {worn.neck === 'bowtie' && <group position={[0, .74, .26]}>{[-1, 1].map(s => <mesh key={s} position={[s * .06, 0, 0]} rotation={[0, 0, s * Math.PI / 2]}><coneGeometry args={[.05, .1, 4]} /><meshStandardMaterial color="#c4342b" /></mesh>)}<Ball p={[0, 0, .01]} r={.025} c="#a42a22" /></group>}
     {worn.neck === 'medal' && <group><mesh position={[0, .75, .05]} rotation={[.3, 0, 0]}><torusGeometry args={[.2, .015, 6, 24, Math.PI]} /><meshStandardMaterial color="#2f6fb0" /></mesh><mesh position={[0, .55, .27]} rotation={[Math.PI / 2 - .2, 0, 0]}><cylinderGeometry args={[.07, .07, .02, 20]} /><meshStandardMaterial color="#f2c52e" metalness={.6} roughness={.25} /></mesh></group>}
-    <group ref={hand}>{worn.hand && <HandItem id={worn.hand} at={[0, 0, 0]} />}</group>
   </>
 }
 
 /** A posed student in the booth. Wraps Character so accessory positions share the character's local space. */
 function Posed({ look, pose, face, worn, position, rotation = 0, phase = 0 }: { look: AvatarLook; pose: Pose; face?: Face; worn: Worn; position: V; rotation?: number; phase?: number }) {
   const g = useRef<THREE.Group>(null), reach = useRef<THREE.Vector3 | null>(null), point = useRef(0), think = useRef(0)
-  const hand = useRef<THREE.Group>(null)
   useFrame(({ clock }) => {
     const time = clock.elapsedTime + phase
     if (!g.current) return
@@ -280,12 +289,11 @@ function Posed({ look, pose, face, worn, position, rotation = 0, phase = 0 }: { 
     think.current = pose === 'think' ? 1 : 0
     const usesReach = pose === 'wave' || pose === 'peace' || (pose === 'relaxed' && !!worn.hand)
     if (usesReach) { const p = holdPoint(pose, time); reach.current = g.current.localToWorld(new THREE.Vector3(...p)) } else reach.current = null
-    hand.current?.position.set(...holdPoint(pose, time))
   })
   const hideHat = worn.head && HEAD_ITEMS.has(worn.head)
   return <group ref={g} position={position} rotation={[0, rotation, 0]}>
-    <Character {...look} headwear={hideHat ? 'none' : look.headwear} accessory={worn.face ? 'none' : look.accessory} face={face ?? look.face} reach={reach} point={point} eat={think} armsUp={pose === 'cheer' || pose === 'jump'}>
-      <Worn worn={worn} hand={hand} />
+    <Character {...look} headwear={hideHat ? 'none' : look.headwear} accessory={worn.face ? 'none' : look.accessory} face={face ?? look.face} reach={reach} point={point} eat={think} armsUp={pose === 'cheer' || pose === 'jump'} hold={worn.hand ? <HandItem id={worn.hand} at={[0, 0, 0]} /> : undefined}>
+      <Worn worn={worn} />
     </Character>
   </group>
 }
@@ -294,10 +302,10 @@ function BoothCamera({ zoom, height, shift, width }: { zoom: number; height: num
   const { camera } = useThree(), target = useRef(new THREE.Vector3(0, 1, 0))
   useFrame((_, dt) => {
     // Always back off far enough to fit everyone (portrait frame: horizontal half-FOV is narrow).
-    const fit = width > 0 ? (width + .8) / (Math.tan(THREE.MathUtils.degToRad(16)) * .8) : 0
-    const dist = Math.max(THREE.MathUtils.lerp(2.2, 7.5, zoom), fit)
-    const look = new THREE.Vector3(shift, (fit ? 1.05 : THREE.MathUtils.lerp(1.15, .9, zoom)) + height, 0)
-    const want = new THREE.Vector3(shift, look.y + (fit ? .5 : .15), dist)
+    const fit = width > 0 ? (width + .8) / (Math.tan(THREE.MathUtils.degToRad(22)) * .8) : 0
+    const dist = Math.max(THREE.MathUtils.lerp(2, 8.5, zoom), fit)
+    const look = new THREE.Vector3(shift, (fit ? 1.3 : THREE.MathUtils.lerp(1.15, 1.6, zoom)) + height, 0)
+    const want = new THREE.Vector3(shift, look.y + (fit ? .3 : .15), dist)
     camera.position.lerp(want, 1 - Math.exp(-dt * 8)); target.current.lerp(look, 1 - Math.exp(-dt * 8)); camera.lookAt(target.current)
   })
   return null
@@ -313,11 +321,11 @@ const SPOTS: V[] = [[-1, 0, -.25], [1, 0, -.25], [-1.9, 0, -.6], [1.9, 0, -.6]]
 export function PhotoBooth({ look, name, friends }: { look: AvatarLook; name: string; friends: BoothFriend[] }) {
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<Tab>('Background'), [category, setCategory] = useState<'ksu' | 'fun'>('ksu')
-  const [theme, setTheme] = useState<ThemeId>('rock')
+  const [theme, setTheme] = useState<ThemeId>('globe')
   const [pose, setPose] = useState<Pose>('peace'), [face, setFace] = useState<Face | undefined>(undefined)
   const [worn, setWorn] = useState<Worn>({})
   const [withScrappy, setWithScrappy] = useState(false), [crew, setCrew] = useState<number[]>([])
-  const [zoom, setZoom] = useState(.45), [height, setHeight] = useState(0), [shift, setShift] = useState(0)
+  const [zoom, setZoom] = useState(.6), [height, setHeight] = useState(0), [shift, setShift] = useState(0)
   const [countdown, setCountdown] = useState(0), [flash, setFlash] = useState(false), [photo, setPhoto] = useState<string | null>(null)
   const gl = useRef<THREE.WebGLRenderer | null>(null), timers = useRef<number[]>([])
   const themeInfo = ALL_THEMES.find(t => t.id === theme)!
@@ -362,7 +370,7 @@ export function PhotoBooth({ look, name, friends }: { look: AvatarLook; name: st
   return <div className="booth" role="dialog" aria-modal="true" aria-label="Campus Photo Booth">
     <div className="booth-stage">
       <div className="booth-frame">
-        <Canvas gl={{ preserveDrawingBuffer: true, antialias: true }} dpr={[1, 2]} camera={{ fov: 32, position: [0, 1.2, 5] }} onCreated={s => { gl.current = s.gl }}>
+        <Canvas gl={{ preserveDrawingBuffer: true, antialias: true }} dpr={[1, 2]} camera={{ fov: 44, position: [0, 1.2, 5] }} onCreated={s => { gl.current = s.gl }}>
           <ambientLight intensity={1.6} /><directionalLight position={[3, 6, 5]} intensity={1.8} /><hemisphereLight args={['#ffffff', '#88a', .5]} />
           <Backdrop id={theme} />
           <Posed look={look} pose={pose} face={face} worn={worn} position={[0, 0, .2]} />
@@ -400,11 +408,11 @@ export function PhotoBooth({ look, name, friends }: { look: AvatarLook; name: st
           <button className="booth-link" onClick={() => setWorn({})}>Remove all props</button>
         </>}
         {tab === 'Camera' && <>
-          <div className="booth-seg">{[['Close-up', .1], ['Half', .45], ['Full', .85]].map(([n, z]) => <button key={n} aria-pressed={Math.abs(zoom - (z as number)) < .02} onClick={() => setZoom(z as number)}>{n}</button>)}</div>
+          <div className="booth-seg">{[['Close-up', .15], ['Half', .4], ['Wide', .6], ['Scene', .9]].map(([n, z]) => <button key={n} aria-pressed={Math.abs(zoom - (z as number)) < .02} onClick={() => setZoom(z as number)}>{n}</button>)}</div>
           <label className="booth-range">Zoom<input type="range" min={0} max={1} step={.01} value={zoom} onChange={e => setZoom(+e.target.value)} /></label>
           <label className="booth-range">Height<input type="range" min={-.4} max={.6} step={.01} value={height} onChange={e => setHeight(+e.target.value)} /></label>
           <label className="booth-range">Left / right<input type="range" min={-1.5} max={1.5} step={.01} value={shift} onChange={e => setShift(+e.target.value)} /></label>
-          <button className="booth-link" onClick={() => { setZoom(.45); setHeight(0); setShift(0) }}>Reset framing</button>
+          <button className="booth-link" onClick={() => { setZoom(.6); setHeight(0); setShift(0) }}>Reset framing</button>
         </>}
       </div>
     </aside>
