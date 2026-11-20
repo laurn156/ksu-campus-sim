@@ -15,7 +15,7 @@ const obstacles={
  parking:[...[-9,-4,4,9].map(x=>[x+1.8,-6,2,4]),[2,5,1,1]],
 }
 for(const [kind,rects] of Object.entries(obstacles)){
- const sim=new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?7:5)
+ const sim=new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:5)
  assert(sim.agents.length>=4,`${kind}: insufficient people on entry`)
  assert(sim.agents.some(a=>a.position[0]<0)&&sim.agents.some(a=>a.position[0]>0),`${kind}: people not spread out`)
  const visited=sim.agents.map(a=>new Set([a.activity]))
@@ -27,3 +27,17 @@ for(const [kind,rects] of Object.entries(obstacles)){
  assert(visited.every(s=>s.size>=2),`${kind}: an agent never changed activity`)
  console.log(`${kind}: populated, distributed, and moving safely`)
 }
+// Reproduce two people meeting head-on; both must eventually get past one another.
+const headOn=new InteriorCrowd([],'student',2)
+headOn.activities[0]={position:[2,0]};headOn.activities[1]={position:[-2,0]}
+for(const [i,a] of headOn.agents.entries()){
+ a.position=[i===0?-2:2,0];a.activity=i;a.route=[[i===0?2:-2,0]];a.blocked=0;a.stuckFor=0;a.seated=false
+}
+let crossed=[false,false]
+for(let frame=0;frame<800;frame++){
+ headOn.step(.05,[0,9])
+ for(const a of headOn.agents)if(a.id===0?a.position[0]>1.5:a.position[0]<-1.5)crossed[a.id]=true
+ assert(Math.hypot(headOn.agents[0].position[0]-headOn.agents[1].position[0],headOn.agents[0].position[1]-headOn.agents[1].position[1])>=.6,'head-on students overlap')
+}
+assert(crossed.every(Boolean),'head-on students failed to get past each other')
+console.log('Head-on students continue past one another without overlapping.')

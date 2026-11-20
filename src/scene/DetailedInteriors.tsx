@@ -55,8 +55,8 @@ function Move({look,rects}:{look:AvatarLook;rects:Rect[]}) {
  })
  return <group ref={body}><Character {...look} walk={walk} scale={1.15}/></group>
 }
-function Pool(){return <group><Block p={[9,.8,-6]} s={[3.1,.35,1.8]} c="#624332"/><Block p={[9,1,-6]} s={[2.8,.08,1.5]} c="#387153"/>{[-1.3,0,1.3].map(x=>[-.7,.7].map(z=><Ball key={`${x}:${z}`} p={[9+x,1.08,-6+z]} color="#242820" r={.13}/>))}{[0,1,2,3,4].map(i=><Ball key={i} p={[8.6+i*.17,1.1,-6+(i%2)*.17]} color={['#f1e8ca','#db4840','#e3ba3d','#404c85','#252b27'][i]} r={.08}/>)}{[-1,1].map(x=>[-.6,.6].map(z=><Block key={`${x}:${z}`} p={[9+x,.4,-6+z]} s={[.22,.8,.22]} c="#564638"/>))}<Block p={[9,1.13,-5.3]} s={[2.7,.05,.05]} c="#c3a275"/></group>}
-function PingPong(){return <group><Block p={[9,.8,-1]} s={[3,.16,1.6]} c="#426e91"/><Block p={[9,1,-1]} s={[.04,.35,1.6]} c="#e6e6dd"/>{[-1.2,1.2].map(x=>[-.6,.6].map(z=><Block key={`${x}:${z}`} p={[9+x,.4,-1+z]} s={[.13,.8,.13]} c="#444e4b"/>))}<Ball p={[9.5,.96,-1]} color="#f6eee0" r={.08}/><mesh position={[8.5,.93,-.8]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[.25,12]}/><meshStandardMaterial color="#c65b4b"/></mesh></group>}
+function Pool(){return <group><Block p={[9,.8,-6]} s={[3.1,.35,1.8]} c="#624332"/><Block p={[9,1,-6]} s={[2.8,.08,1.5]} c="#387153"/>{[-1.3,0,1.3].map(x=>[-.7,.7].map(z=><Ball key={`${x}:${z}`} p={[9+x,1.08,-6+z]} color="#242820" r={.13}/>))}{[-1,1].map(x=>[-.6,.6].map(z=><Block key={`${x}:${z}`} p={[9+x,.4,-6+z]} s={[.22,.8,.22]} c="#564638"/>))}</group>}
+function PingPong(){return <group><Block p={[9,.8,-1]} s={[3,.16,1.6]} c="#426e91"/><Block p={[9,1,-1]} s={[.04,.35,1.6]} c="#e6e6dd"/>{[-1.2,1.2].map(x=>[-.6,.6].map(z=><Block key={`${x}:${z}`} p={[9+x,.4,-1+z]} s={[.13,.8,.13]} c="#444e4b"/>))}<mesh position={[8.5,.93,-.8]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[.25,12]}/><meshStandardMaterial color="#c65b4b"/></mesh></group>}
 function StudentTable({z,index}:{z:number;index:number}) {return <group>
  <DiningModel name="tablecross" p={[0,0,z]} scale={2.75}/>
  {[-1,1].map(side=><DiningModel key={side} name="chaircushion" p={[side*1.85,0,z]} r={side<0?Math.PI/2:-Math.PI/2} scale={2.05}/>)}
@@ -310,17 +310,31 @@ function ActivityZones({kind}:{kind:CrowdKind}) {
 }
 function InteriorDetails({kind}:{kind:CrowdKind}) {return <><RoomFinish kind={kind}/><ActivityZones kind={kind}/ >{kind==='student'?<FoodCounterDetails/>:kind==='classroom'?<ClassroomDetails/>:kind==='library'?<LibraryDetails/>:kind==='dorm'?<DormDetails/>:kind==='lab'?<LabDetails/>:kind==='garage'?<GarageDetails/>:kind==='greenhouse'?<GreenhouseDetails/>:kind==='recreation'?<RecreationDetails/>:kind==='office'?<OfficeDetails/>:<ParkingDetails/>}</>}
 
-function InteriorAgent({agent,look}:{agent:IndoorAgent;look:AvatarLook}) {
- const group=useRef<THREE.Group>(null),walk=useRef(0),sit=useRef(agent.seated?1:0)
+function InteriorAgent({agent,look,sim}:{agent:IndoorAgent;look:AvatarLook;sim:InteriorCrowd}) {
+ const group=useRef<THREE.Group>(null),prop=useRef<THREE.Group>(null),walk=useRef(0),sit=useRef(agent.seated?1:0),eat=useRef(0)
  const colors=['orange','green','blue','yellow','purple','cream'] as const
- useFrame((_,dt)=>{if(group.current){group.current.position.set(agent.position[0],0,agent.position[1]);group.current.rotation.y=agent.heading}walk.current=THREE.MathUtils.lerp(walk.current,agent.walk?.75:0,Math.min(1,dt*8));sit.current=THREE.MathUtils.lerp(sit.current,agent.seated?1:0,Math.min(1,dt*5))})
- return <group ref={group} position={[agent.position[0],0,agent.position[1]]} rotation={[0,agent.heading,0]}><Character {...look} color={colors[agent.id%colors.length]} top="tee" topColor={['#d6a939','#63867b','#b96555','#586f91','#92768e'][agent.id%5]} scale={1.15} walk={walk} sit={sit} sitLift={.112}/></group>
+ const arrived=()=>{const goal=sim.activities[agent.activity];return !agent.route.length&&Math.hypot(agent.position[0]-goal.position[0],agent.position[1]-goal.position[1])<.18}
+ useFrame(({clock},dt)=>{
+  const activity=sim.activities[agent.activity],active=arrived()&&!agent.walk,role=active?activity.role:undefined
+  if(group.current){group.current.position.set(agent.position[0],0,agent.position[1]);group.current.rotation.y=agent.heading}
+  if(prop.current){prop.current.visible=role==='pool'||role==='ping';prop.current.rotation.x=role==='pool'?.12+Math.sin(clock.elapsedTime*2+agent.id)*.2:Math.sin(clock.elapsedTime*3+agent.id)*.55;prop.current.children[0].visible=role==='pool';prop.current.children[1].visible=role==='ping'}
+  walk.current=THREE.MathUtils.lerp(walk.current,agent.walk?.75:0,Math.min(1,dt*8));sit.current=THREE.MathUtils.lerp(sit.current,agent.seated?1:0,Math.min(1,dt*5));eat.current=role==='eat'||role==='pool'||role==='ping'?1:0
+ })
+ return <group ref={group} position={[agent.position[0],0,agent.position[1]]} rotation={[0,agent.heading,0]}><Character {...look} color={colors[agent.id%colors.length]} top="tee" topColor={['#d6a939','#63867b','#b96555','#586f91','#92768e'][agent.id%5]} scale={1.15} walk={walk} sit={sit} sitLift={.112} eat={eat}/><group ref={prop} visible={false} position={[.3,.75,.35]}><mesh rotation={[Math.PI/2,0,0]} position={[0,0,.65]}><cylinderGeometry args={[.025,.035,1.6,7]}/><meshStandardMaterial color="#ba9268"/></mesh><group><mesh rotation={[-Math.PI/2,0,0]} position={[0,.03,.22]}><circleGeometry args={[.23,12]}/><meshStandardMaterial color="#c74739" side={THREE.DoubleSide}/></mesh><Block p={[0,0,0]} s={[.06,.06,.32]} c="#856746"/></group></group></group>
+}
+function StudentGameBalls({sim}:{sim:InteriorCrowd}) {
+ const ping=useRef<THREE.Mesh>(null),pool=useRef<THREE.Group>(null)
+ useFrame(({clock})=>{const t=clock.elapsedTime;const active=(role:'pool'|'ping')=>sim.agents.some(a=>{const goal=sim.activities[a.activity];return goal.role===role&&!a.route.length&&Math.hypot(a.position[0]-goal.position[0],a.position[1]-goal.position[1])<.18})
+  if(ping.current){const moving=active('ping');ping.current.position.set(9+(moving?Math.sin(t*3)*1.1:0),1.06+(moving?Math.abs(Math.sin(t*3))*.42:0),-1)}
+  if(pool.current){const moving=active('pool');pool.current.children.forEach((ball,i)=>{ball.position.x=8.45+i*.21+(moving?Math.sin(t*.9+i)*.16:0);ball.position.z=-6+(i%2)*.18+(moving?Math.cos(t*.8+i)*.13:0)})}
+ })
+ return <><mesh ref={ping} position={[9,1.06,-1]}><sphereGeometry args={[.08,10,8]}/><meshStandardMaterial color="#f6eee0"/></mesh><group ref={pool}>{['#f4e9d4','#db4840','#e3ba3d','#404c85','#252b27'].map((color,i)=><mesh key={i} position={[8.45+i*.21,1.12,-6+(i%2)*.18]}><sphereGeometry args={[.08,10,8]}/><meshStandardMaterial color={color}/></mesh>)}</group></>
 }
 function InteriorPeople({kind,rects,look}:{kind:CrowdKind;rects:Rect[];look:AvatarLook}) {
- const sim=useMemo(()=>new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?7:5),[kind,rects])
+ const sim=useMemo(()=>new InteriorCrowd(rects,kind,kind==='classroom'?8:kind==='student'?9:5),[kind,rects])
  useEffect(()=>()=>{indoorState.npcPositions=[]},[])
  useFrame((_,dt)=>{sim.step(Math.min(dt,.05),[indoorState.x,indoorState.z]);indoorState.npcPositions=sim.agents.map(a=>a.position)})
- return <>{sim.agents.map(agent=><InteriorAgent key={agent.id} agent={agent} look={look}/>)}</>
+ return <>{sim.agents.map(agent=><InteriorAgent key={agent.id} agent={agent} look={look} sim={sim}/>)}{kind==='student'&&<StudentGameBalls sim={sim}/>}</>
 }
 export function DetailedRoom({kind,look}:{kind:InteriorKind;look:AvatarLook}) {
  const student=kind==='student',classroom=kind==='classroom'
