@@ -90,8 +90,8 @@ export function MenuBackground({ campus, look }: { campus: Campus | null; look: 
   </div>
 }
 
-type MenuProps = { campus: Campus | null; look?: AvatarLook; returning: string | null; onPlay: () => void; onCustomize: () => void; onHelp: () => void; children?: ReactNode }
-export function MainMenu({ campus, look, returning, onPlay, onCustomize, onHelp, children }: MenuProps) {
+type MenuProps = { campus: Campus | null; look?: AvatarLook; returning: string | null; onPlay: () => void; onCustomize: () => void; onHelp: () => void; onAccount?: () => void; children?: ReactNode }
+export function MainMenu({ campus, look, returning, onPlay, onCustomize, onHelp, onAccount, children }: MenuProps) {
   return <main className="menu">
     <MenuBackground campus={campus} look={look ?? PRESETS[0].look ?? DEFAULT_PROFILE.look} />
     <section className="menu-panel">
@@ -102,7 +102,7 @@ export function MainMenu({ campus, look, returning, onPlay, onCustomize, onHelp,
       <div className="menu-buttons">
         <button className="menu-btn primary" onClick={onPlay}><span aria-hidden="true">▶</span> Play</button>
         <button className="menu-btn" onClick={onCustomize}><span aria-hidden="true">👤</span> Customize Character</button>
-        <button className="menu-btn" onClick={onHelp}><span aria-hidden="true">📖</span> How to Play</button>
+        <button className="menu-btn" onClick={onHelp}><span aria-hidden="true">📖</span> How to Play</button>{onAccount&&<button className="menu-btn" onClick={onAccount}><span aria-hidden="true">🌐</span> Online Account</button>}
       </div>
       <small className="menu-foot">KSU MARIETTA CAMPUS</small>
     </section>

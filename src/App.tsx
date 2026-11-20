@@ -14,9 +14,11 @@ import { BuildingInteriors } from './scene/Interiors'
 import { Hud } from './ui/Hud'
 import { CampusStudents } from './scene/Community'
 import { supabase } from './connect/client'
+import { AccountPanel } from './connect/AccountPanel'
 import { useConnectWorld, OnlinePlayers, ConnectChat } from './connect/World'
 import { useSocial, SocialPanel } from './connect/Social'
 import { useOfflinePlayers } from './connect/OfflineFriends'
+import { useMultiplayerGame, MultiplayerGamePanel } from './connect/MultiplayerGame'
 import type { User } from '@supabase/supabase-js'
 import { useLife } from './life/useLife'
 import { LifeUI } from './life/LifeUI'
@@ -24,7 +26,7 @@ import { Welcome, type Profile } from './ui/Welcome'
 import { MainMenu, HowToPlay } from './ui/MainMenu'
 import { Onboarding, CampusGreeting } from './ui/Onboarding'
 import { PhotoBooth, type BoothFriend } from './activities/PhotoBooth'
-import { PRESETS, cleanName, draftProfile, loadNestProfile, saveNestProfile, type NestProfile } from './ui/nestProfile'
+import { PRESETS, cleanName, draftProfile, loadNestProfile, saveNestProfile, validLook, type NestProfile } from './ui/nestProfile'
 import './ui/ui.css'
 
 const DRAFT_KEY = 'nest-life-draft-v1'
@@ -76,6 +78,7 @@ export default function App() {
   const [draft, setDraftState] = useState<NestProfile>(() => loadNestProfile() ?? loadDraft())
   const [screen, setScreen] = useState<Screen>('menu')
   const [help, setHelp] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
   const [onboardStep, setOnboardStep] = useState<'welcome' | 'character'>('welcome')
   const [customizeFrom, setCustomizeFrom] = useState<'menu' | 'onboard' | 'play'>('menu')
   const [nameError, setNameError] = useState('')
@@ -97,11 +100,21 @@ export default function App() {
         setUser(u)
         if (p.playerId !== u.id) persist({ ...p, playerId: u.id })
       } catch {
-        setUser(null); setNotice('Could not reach multiplayer right now, so you are exploring offline.')
+        setUser(null); setNotice('Playing offline. Open Online Account from the main menu to sign in and join other players.')
       }
     }
     try { sessionStorage.removeItem(DRAFT_KEY) } catch { /* optional */ }
     setScreen('play')
+  }
+  const accountReady = async (account:User) => {
+    if(!supabase)return
+    const {data,error}=await supabase.from('campus_profiles').select('username,appearance').eq('id',account.id).maybeSingle()
+    if(error)throw new Error('Signed in, but the campus profile could not be loaded. Check the Supabase setup.')
+    const appearance=data?.appearance as (Record<string,unknown>|null|undefined)
+    const previous=saved??draft, look=validLook(appearance)??previous.characterAppearance
+    const accountName=typeof appearance?.displayName==='string'?appearance.displayName:typeof data?.username==='string'?data.username:typeof account.user_metadata?.username==='string'?account.user_metadata.username:previous.displayName
+    const name=cleanName(accountName.slice(0,20)).error?'Student':cleanName(accountName.slice(0,20)).name
+    persist({...previous,playerId:account.id,displayName:name,characterAppearance:look});setUser(account)
   }
   const play = () => {
     if (saved) { void enter(saved); return }
@@ -143,13 +156,14 @@ export default function App() {
     const toMenu = () => setScreen('menu')
     return <>
       {user ? <OnlineCampus campus={campus} user={user} profile={p} onEdit={() => openCustomize('play')} onMenu={toMenu} />
-        : <LifeSession campus={campus} profile={p} onEdit={() => openCustomize('play')} onMenu={toMenu} />}
+        : <LifeSession campus={campus} profile={p} onEdit={() => openCustomize('play')} onMenu={toMenu} onConnect={()=>{setScreen('menu');setAccountOpen(true)}} />}
       {greeting}
       {notice && <div className="controls-toast" role="status" style={{ animationDuration: '7s' }} onAnimationEnd={() => setNotice('')}>{notice}</div>}
     </>
   }
   return <MainMenu campus={campus} look={saved?.characterAppearance} returning={saved?.displayName ?? null}
-    onPlay={play} onCustomize={() => openCustomize('menu')} onHelp={() => setHelp(true)}>
+    onPlay={play} onCustomize={() => openCustomize('menu')} onHelp={() => setHelp(true)} onAccount={supabase?()=>setAccountOpen(true):undefined}>
+    {accountOpen && <AccountPanel onClose={()=>setAccountOpen(false)} onSignedIn={accountReady} onSignedOut={()=>setUser(null)}/>}
     {help && <HowToPlay onBack={() => setHelp(false)} />}
     {screen === 'onboard' && <Onboarding draft={draft} startStep={onboardStep} onChange={setDraft} onCustomize={() => openCustomize('onboard')}
       onCancel={() => setScreen('menu')} onDone={() => void enter({ ...draft })} busy={false} error={joinError} />}
@@ -157,7 +171,7 @@ export default function App() {
   </MainMenu>
 }
 
-function LifeSession({campus,profile,onEdit,onMenu}:{campus:Campus;profile:NestProfile;onEdit:()=>void;onMenu:()=>void}) {
+function LifeSession({campus,profile,onEdit,onMenu,onConnect}:{campus:Campus;profile:NestProfile;onEdit:()=>void;onMenu:()=>void;onConnect:()=>void}) {
   const life=useLife(profile.playerId,profile.displayName)
   const look=profile.characterAppearance
   return <>
@@ -165,6 +179,7 @@ function LifeSession({campus,profile,onEdit,onMenu}:{campus:Campus;profile:NestP
       <color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/>
       <hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={look} name={profile.displayName}/><CampusStudents campus={campus} minute={life.state.minute}/><ActivityWorld campus={campus}/><VehicleWorld campus={campus}/>
     </Canvas>
+    {supabase&&<button className="connect-offline" onClick={onConnect}>● Offline · Sign in to join campus</button>}
     <CampusActivities campus={campus} identity={profile.playerId}/><VehicleActivities campus={campus}/><SlapRockActivity campus={campus} identity={profile.playerId}/><BuildingInteriors campus={campus} look={look}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onMenu}/><ActivityMenu campus={campus}/><PhotoBooth look={look} name={profile.displayName} friends={CLASSMATES}/><ClassroomActivity globalLauncher/><LifeUI campus={campus} life={life} playerName={profile.displayName} onEdit={onEdit}/>
   </>
 }
@@ -173,8 +188,9 @@ function OnlineCampus({campus,user,profile,onEdit,onMenu}:{campus:Campus;user:Us
  const world=useConnectWorld(user.id,profile.displayName)
  const look=profile.characterAppearance
  const social=useSocial(user.id)
+ const multiplayerGame=useMultiplayerGame(user.id,world.onlineIds,world.sendGame,social.blocked)
  const offline=useOfflinePlayers(campus,user.id,world.onlineIds,world.status==='Connected')
  const peers=[...world.peers,...offline].filter(p=>!social.blocked.includes(p.id))
  const life=useLife(user.id,profile.displayName)
- return <><Canvas shadows="percentage" camera={{position:[0,40,40],fov:45,near:.5,far:3000}} dpr={[1,2]}><color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/><hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={look} name={profile.displayName}/><CampusStudents campus={campus} minute={life.state.minute}/><ActivityWorld campus={campus}/><VehicleWorld campus={campus}/><OnlinePlayers peers={peers.filter(p=>p.location==='campus')}/></Canvas><CampusActivities campus={campus} identity={user.id}/><VehicleActivities campus={campus}/><SlapRockActivity campus={campus} identity={profile.playerId}/><BuildingInteriors campus={campus} look={look} peers={peers}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onMenu}/><ActivityMenu campus={campus}/><PhotoBooth look={look} name={profile.displayName} friends={[...peers.filter(p=>p.online!==false).slice(0,6).map(p=>({name:p.name,look:p.look})),...CLASSMATES]}/><ClassroomActivity globalLauncher/><LifeUI campus={campus} life={life} playerName={profile.displayName} onEdit={onEdit}/><ConnectChat world={world}/><SocialPanel userId={user.id} peers={peers} onlineIds={world.onlineIds} social={social} wave={world.wave} allowRoaming={!user.is_anonymous}/></>
+ return <><Canvas shadows="percentage" camera={{position:[0,40,40],fov:45,near:.5,far:3000}} dpr={[1,2]}><color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/><hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={look} name={profile.displayName}/><CampusStudents campus={campus} minute={life.state.minute}/><ActivityWorld campus={campus}/><VehicleWorld campus={campus}/><OnlinePlayers peers={peers.filter(p=>p.location==='campus')}/></Canvas><CampusActivities campus={campus} identity={user.id}/><VehicleActivities campus={campus}/><SlapRockActivity campus={campus} identity={profile.playerId}/><BuildingInteriors campus={campus} look={look} peers={peers}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onMenu}/><ActivityMenu campus={campus}/><PhotoBooth look={look} name={profile.displayName} friends={[...peers.filter(p=>p.online!==false).slice(0,6).map(p=>({name:p.name,look:p.look})),...CLASSMATES]}/><ClassroomActivity globalLauncher/><LifeUI campus={campus} life={life} playerName={profile.displayName} onEdit={onEdit}/><ConnectChat world={world}/><SocialPanel userId={user.id} peers={peers} onlineIds={world.onlineIds} social={social} wave={world.wave} allowRoaming={!user.is_anonymous} onChallenge={multiplayerGame.start}/><MultiplayerGamePanel game={multiplayerGame} peers={peers} onlineIds={world.onlineIds}/></>
 }
