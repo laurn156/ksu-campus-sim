@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import {discTrajectory,stepDisc} from '../src/activities/campusActivities.ts'
-import {busPenetration,crossingPosition,crossingsForStops} from '../src/activities/busHazards.ts'
+import {discTrajectory,stepDisc,discAim,discLaunch} from '../src/activities/campusActivities.ts'
+import {busPenetration,busObstacleBlocks,crossingPosition,crossingsForStops} from '../src/activities/busHazards.ts'
 import {busScore} from '../src/activities/busDrive.ts'
 import {trafficStopAction} from '../src/scene/trafficSafety.ts'
 const path=discTrajectory([0,0],0,.65,[.4,-.2]);assert(path.length>4)
@@ -10,3 +10,13 @@ const crossings=crossingsForStops(Array.from({length:15},(_,i)=>[i*10,0]),[[100,
 const score={pickedUp:5,collisions:1,pedestrianHits:0,elapsed:20,lateStops:0};assert.equal(busScore(score)-busScore({...score,collisions:2,pedestrianHits:1}),50)
 assert.equal(trafficStopAction(true,20,15),'hold');assert.equal(trafficStopAction(true,8,9),'clear');assert.equal(trafficStopAction(false,8,9),'move')
 console.log('Trajectory preview, shuttle footprints, moving crossings and penalty verified')
+
+// A bus may reverse out of an overlap, but cannot drive deeper into it.
+assert(busObstacleBlocks([0,0],[0,.2],0,[0,5.8],.5))
+assert(!busObstacleBlocks([0,.2],[0,0],0,[0,5.8],.5))
+assert(!busObstacleBlocks([0,0],[0,.2],0,[30,30],.5))
+for(const distance of [8,12,16,20,24]){
+ const aim=discAim([0,0],[0,distance]);let disc=discLaunch([0,0],aim.angle,aim.power)
+ for(let i=0;i<120;i++){disc=stepDisc(disc,.05);if(disc.vy<0&&disc.y<=1)break}
+ assert(Math.abs(disc.z-distance)<.5,`screen aim reaches ${distance}m without wind`)
+}

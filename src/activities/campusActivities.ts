@@ -34,10 +34,22 @@ export function discTee(campus:Campus,basket:Pt,round:number,preferred:Pt):Pt {
   if(pointInPoly(x,z,campus.boundary)&&!collider.blocked(x,z,1.5)&&!campus.trees.some(t=>Math.hypot(x-t[0],z-t[1])<3))return [x,z]}
  return [preferred[0],preferred[1]]
 }
+/** Aim at a world-space point; wind still affects the displayed and actual flight. */
+export function discAim(lie:Pt,target:Pt){
+ const dx=target[0]-lie[0],dz=target[1]-lie[1],distance=Math.hypot(dx,dz)
+ const angle=Math.atan2(dx,dz);let low=0,high=1
+ for(let n=0;n<12;n++){
+  const power=(low+high)/2;let flight=discLaunch(lie,angle,power)
+  for(let i=0;i<120;i++){flight=stepDisc(flight,.05);if(flight.vy<0&&flight.y<=1)break}
+  if(Math.hypot(flight.x-lie[0],flight.z-lie[1])<distance)low=power;else high=power
+ }
+ return {angle,power:(low+high)/2}
+}
+export function discLaunch(lie:Pt,angle:number,power:number){const speed=4+power*15;return {x:lie[0],y:1,z:lie[1],vx:Math.sin(angle)*speed,vy:3+power*2,vz:Math.cos(angle)*speed}}
 /** Dots use the same wind and flight physics as a real throw. */
 export function discTrajectory(lie:Pt,angle:number,power:number,wind:Pt){
- const speed=6+power*13,points:{x:number;y:number;z:number}[]=[],dt=.05
- let flight={x:lie[0],y:1,z:lie[1],vx:Math.sin(angle)*speed,vy:3.8+power*2,vz:Math.cos(angle)*speed}
+ const points:{x:number;y:number;z:number}[]=[],dt=.05
+ let flight=discLaunch(lie,angle,power)
  for(let i=0;i<100;i++){flight=stepDisc(flight,dt,wind);if(flight.y<=.15)break;if(i%3===0)points.push({x:flight.x,y:flight.y,z:flight.z})}
  return points
 }

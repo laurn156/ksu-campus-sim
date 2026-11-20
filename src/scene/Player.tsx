@@ -111,6 +111,8 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase())
     const wheel = (e: WheelEvent) => (dist.current = THREE.MathUtils.clamp(dist.current * (1 + Math.sign(e.deltaY) * 0.1), 8, 140))
     const pdown = (e: PointerEvent) => {
+      // Disc golf uses left click on the world to aim and throw.
+      if (activityState.mode === 'disc' && e.button === 0) return
       // left or right drag looks around (no click-to-walk)
       if (e.button <= 2) { e.preventDefault(); gl.domElement.setPointerCapture(e.pointerId); drag.current = { x: e.clientX, y: e.clientY, pan: e.button === 1 || e.shiftKey } }
     }

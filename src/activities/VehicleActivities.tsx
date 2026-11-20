@@ -11,7 +11,7 @@ import { protectedShuttle } from '../scene/trafficSafety'
 import { player } from '../scene/Player'
 import { activityState } from './activityState'
 import { busStops, driveBus, toggleBusDoors, busScore, stopDeadline, stopHeading, insideBusStop, STOP_WIDTH, STOP_LENGTH, type BusRun } from './busDrive'
-import { busPenetration, crossingsForStops, crossingPosition, type Crossing } from './busHazards'
+import { busObstacleBlocks, crossingsForStops, crossingPosition, type Crossing } from './busHazards'
 
 type Session={run:BusRun;phase:'instructions'|'driving';savedYaw:number;savedPitch:number;index:number;notice:string;crossings:Crossing[]}
 let session:Session|null=null
@@ -28,12 +28,19 @@ export function VehicleWorld({campus}:{campus:Campus}){
  const [,refresh]=useState(0),group=useRef<THREE.Group>(null),collider=useMemo(()=>new Collider(campus.buildings),[campus]),last=useRef(0)
  useEffect(()=>{const f=()=>refresh(x=>x+1);listeners.add(f);return()=>{listeners.delete(f);close()}},[])
  useFrame((_,raw)=>{const s=session;if(!s||s.phase!=='driving')return;const crashes=s.run.collisions,carBefore=s.run.car;const inStop=(x:number,z:number)=>s.run.stops.some((stop,i)=>insideBusStop(x,z,stop,s.run.stopHeadings[i]??0));protectedShuttle.active=inStop(carBefore.x,carBefore.z);protectedShuttle.x=carBefore.x;protectedShuttle.z=carBefore.z;let pedestrian=false
- const obstacle=(x:number,z:number)=>{let overlap=0;const h=carBefore.heading
-  for(const tree of visibleTreePositions){if(Math.abs(tree[0]-x)>8||Math.abs(tree[1]-z)>8)continue;overlap=Math.max(overlap,busPenetration(x,z,h,tree[0],tree[1],.6))}
-  if(!inStop(x,z))busPositions.forEach((b,i)=>{if(!b||i===s.index||Math.hypot(b.x-x,b.z-z)>13)return;for(const offset of [-4,-2,0,2,4])overlap=Math.max(overlap,busPenetration(x,z,h,b.x+Math.sin(b.h)*offset,b.z+Math.cos(b.h)*offset,1.25))})
-  for(const c of s.crossings){const [px,pz]=crossingPosition(c,s.run.elapsed),hit=busPenetration(x,z,h,px,pz,.4);if(hit>0)pedestrian=true;overlap=Math.max(overlap,hit)}return overlap}
- const previous=obstacle(carBefore.x,carBefore.z);pedestrian=false
- driveBus(s.run,keys,raw,(x,z)=>collider.blocked(x,z,1.5)||!pointInPoly(x,z,campus.boundary)||obstacle(x,z)>previous+.0001)
+ const beforeX=carBefore.x,beforeZ=carBefore.z
+ driveBus(s.run,keys,raw,(x,z)=>{
+  // Compare each obstacle at the proposed heading, so turning does not make an
+  // existing overlap look like a new collision. Backing out must always work.
+  const h=carBefore.heading
+  const blocks=(ox:number,oz:number,radius:number)=>busObstacleBlocks([beforeX,beforeZ],[x,z],h,[ox,oz],radius)
+  if(collider.blocked(x,z,1.5)&&!collider.blocked(beforeX,beforeZ,1.5))return true
+  if(!pointInPoly(x,z,campus.boundary)&&pointInPoly(beforeX,beforeZ,campus.boundary))return true
+  for(const tree of visibleTreePositions){if(Math.abs(tree[0]-x)<8&&Math.abs(tree[1]-z)<8&&blocks(tree[0],tree[1],.35))return true}
+  if(!inStop(x,z))for(let i=0;i<busPositions.length;i++){const b=busPositions[i];if(!b||i===s.index||Math.hypot(b.x-x,b.z-z)>13)continue;for(const offset of [-4,-2,0,2,4])if(blocks(b.x+Math.sin(b.h)*offset,b.z+Math.cos(b.h)*offset,1.1))return true}
+  for(const c of s.crossings){const [px,pz]=crossingPosition(c,s.run.elapsed);if(blocks(px,pz,.4)){pedestrian=true;return true}}
+  return false
+ })
  if(s.run.collisions>crashes){if(pedestrian){s.run.pedestrianHits++;s.notice='Student crossing! Stop and let them pass. −50 points.'}else s.notice='Oh no! Collision — slow down and steer clear.'}const car=s.run.car;player.x=car.x;player.z=car.z;player.heading=car.heading;player.yaw=car.heading+Math.PI;if(group.current){group.current.position.set(car.x,0,car.z);group.current.rotation.y=car.heading}if(performance.now()-last.current>150){last.current=performance.now();notify()}})
  const s=session
  return s&&s.phase==='driving'?<><group ref={group}><Bus/>{s.run.doors&&[0,1,2].map(i=><BoardingStudent key={i} index={i}/>)}{s.run.doors&&<mesh position={[1.45,1.4,3]} rotation={[0,.7,0]}><boxGeometry args={[.12,2.3,1.6]}/><meshStandardMaterial color="#a8d3d3"/></mesh>}</group>{s.crossings.map((crossing,i)=><CrossingStudent key={i} crossing={crossing} index={i}/>)}{busRoute(campus).filter((_,i)=>i%6===0).map(([x,z],i)=><mesh key={'route'+i} position={[x,.13,z]}><cylinderGeometry args={[.35,.35,.05,8]}/><meshBasicMaterial color="#f6cd49"/></mesh>)}{s.run.stops.map(([x,z],i)=><group key={i} position={[x,0,z]}><mesh position={[0,.1,0]} rotation={[0,s.run.stopHeadings[i]??0,0]}><boxGeometry args={[STOP_WIDTH,.12,STOP_LENGTH]}/><meshBasicMaterial color={i===s.run.next?'#ffd12e':'#8b9690'} transparent opacity={.5}/></mesh><Text position={[0,4,0]} fontSize={1} color="#ffca29" anchorX="center">{i===s.run.next?'NEXT STOP':`STOP ${i+1}`}</Text></group>)}</>:null
