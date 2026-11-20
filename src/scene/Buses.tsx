@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { Campus, Pt } from '../campus'
 
+export const busDriver = { index: -1 }
 export const busPositions: { x: number; z: number; h: number }[] = []
 // Where the player is standing on campus (written by Player each frame). A bus
 // holds at its current spot while the player is next to it, so it can be boarded.
@@ -25,7 +26,7 @@ function busTexture() {
   return texture
 }
 
-function route(campus: Campus): Pt[] {
+export function busRoute(campus: Campus): Pt[] {
   // Follow OSM roads past the Student Center and south along Polytechnic Lane.
   const ross = campus.roads.filter(r => r.name?.startsWith('Rossbacher') && r.pts.some(([x,z]) => x > -220 && x < 20 && z < -300))
   const poly = campus.roads.find(r => r.name === 'Polytechnic Lane' && r.pts.length > 40)
@@ -52,6 +53,8 @@ function Shuttle({ path, offset, texture }: { path: Pt[]; offset: number; textur
   },[path,data])
   useFrame((_, dtRaw) => {
     if (!ref.current || data.length === 0) return
+    if (Math.round(offset * 4) === busDriver.index) { ref.current.visible=false; return }
+    ref.current.visible=true
     if (!motion.current) motion.current={distance:offset*data.length*2,wait:0,inStop:false}
     const m=motion.current, dt=Math.min(dtRaw,0.05), index=Math.round(offset * 4)
     const here=busPositions[index]
@@ -85,7 +88,7 @@ function Shuttle({ path, offset, texture }: { path: Pt[]; offset: number; textur
   </group>
 }
 export function Buses({ campus }: { campus: Campus }) {
-  const path = useMemo(() => route(campus), [campus])
+  const path = useMemo(() => busRoute(campus), [campus])
   const texture = useMemo(busTexture, [])
   if (path.length < 2) return null
   return <>{[0,1,2,3].map(i => <Shuttle key={i} path={path} offset={i/4} texture={texture} />)}</>

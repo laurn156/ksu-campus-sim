@@ -44,7 +44,7 @@ export function LifeUI({campus,life,playerName,onEdit}:{campus:Campus;life:LifeC
     const interval=setInterval(update,300);update();return()=>clearInterval(interval)
   },[campus])
   useEffect(()=>{
-    const key=(e:KeyboardEvent)=>{if(indoorState.active||activityState.mode||activityState.near||!['e','f'].includes(e.key.toLowerCase())||e.repeat||player.view||e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||e.target instanceof HTMLSelectElement)return
+    const key=(e:KeyboardEvent)=>{if(indoorState.active||activityState.mode||activityState.near||activityState.vehicleNear||activityState.parkingNear||!['e','f'].includes(e.key.toLowerCase())||e.repeat||player.view||e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement||e.target instanceof HTMLSelectElement)return
       const nearest=community.students.map(s=>({...s,d:Math.hypot(s.x-player.x,s.z-player.z)})).sort((a,b)=>a.d-b.d)[0]
       if(nearest&&nearest.d<5){setTalking(nearest.id);setAiReply('');life.setReply('')}
     }

@@ -147,7 +147,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05)
-    seated.current = activityState.mode === 'bathtub' ? 1 : 0
+    seated.current = activityState.mode === 'bathtub' || activityState.mode === 'busdrive' ? 1 : 0
     busCaller.riding = player.busRide?.index ?? -1
     if (indoorState.active) { busCaller.x = NaN; busCaller.z = NaN } else { busCaller.x = player.x; busCaller.z = player.z }
     if (indoorState.active) { if(player.busRide){const bus=busPositions[player.busRide.index];if(bus){player.x=bus.x;player.z=bus.z}} keys.current.clear(); player.moving = false; return }
@@ -206,6 +206,7 @@ export function Player({ campus, look }: { campus: Campus; look: AvatarLook }) {
     walk.current = THREE.MathUtils.lerp(walk.current, moving ? (k.has('shift') ? 1 : 0.75) : 0, Math.min(1, dt * 10))
     const groundY = westDeckGroundHeight(campus, player.x, player.z)
     if (body.current) {
+      body.current.visible = activityState.mode !== 'busdrive' && activityState.mode !== 'parking'
       body.current.position.set(player.x, groundY, player.z)
       body.current.rotation.y = player.heading
     }

@@ -1,4 +1,6 @@
 import { ActivityWorld, CampusActivities } from './activities/CampusActivities'
+import { VehicleWorld, VehicleActivities } from './activities/VehicleActivities'
+import { ParkingWorld, ParkingActivities } from './activities/ParkingActivities'
 import { Canvas } from '@react-three/fiber'
 import { useEffect, useState } from 'react'
 import { installSfx } from './audio/sfx'
@@ -106,9 +108,9 @@ function LifeSession({campus,username,profile,onEdit,onModes}:{campus:Campus;use
   return <>
     <Canvas shadows="percentage" camera={{position:[0,40,40],fov:45,near:.5,far:3000}} dpr={[1,2]}>
       <color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/>
-      <hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={profile.look}/><CampusStudents campus={campus} minute={life.state.minute}/><ActivityWorld campus={campus}/>
+      <hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={profile.look}/><CampusStudents campus={campus} minute={life.state.minute}/><ActivityWorld campus={campus}/><VehicleWorld campus={campus}/><ParkingWorld campus={campus}/>
     </Canvas>
-    <CampusActivities campus={campus} identity={username}/><BuildingInteriors campus={campus} look={profile.look}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onModes}/><LifeUI campus={campus} life={life} playerName={profile.name||username} onEdit={onEdit}/>
+    <CampusActivities campus={campus} identity={username}/><VehicleActivities campus={campus}/><ParkingActivities campus={campus}/><BuildingInteriors campus={campus} look={profile.look}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onModes}/><LifeUI campus={campus} life={life} playerName={profile.name||username} onEdit={onEdit}/>
   </>
 }
 
@@ -118,5 +120,5 @@ function OnlineCampus({campus,user,profile,username,onEdit,onLogout}:{campus:Cam
  const offline=useOfflinePlayers(campus,user.id,world.onlineIds,world.status==='Connected')
  const peers=[...world.peers,...offline].filter(p=>!social.blocked.includes(p.id))
  const life=useLife(username,profile.name||username)
- return <><Canvas shadows="percentage" camera={{position:[0,40,40],fov:45,near:.5,far:3000}} dpr={[1,2]}><color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/><hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={profile.look}/><CampusStudents campus={campus} minute={life.state.minute}/><ActivityWorld campus={campus}/><OnlinePlayers peers={peers.filter(p=>p.location==='campus')}/></Canvas><CampusActivities campus={campus} identity={user.id}/><BuildingInteriors campus={campus} look={profile.look} peers={peers}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onLogout}/><LifeUI campus={campus} life={life} playerName={profile.name||username} onEdit={onEdit}/><ConnectChat world={world}/><SocialPanel userId={user.id} peers={peers} onlineIds={world.onlineIds} social={social} wave={world.wave} allowRoaming={!user.is_anonymous}/></>
+ return <><Canvas shadows="percentage" camera={{position:[0,40,40],fov:45,near:.5,far:3000}} dpr={[1,2]}><color attach="background" args={['#cfe3f0']}/><fog attach="fog" args={['#cfe3f0',180,900]}/><hemisphereLight args={['#e8f3ff','#8aa86a',1.1]}/><Sun/><CampusScene campus={campus}/><Labels campus={campus}/><Player campus={campus} look={profile.look}/><CampusStudents campus={campus} minute={life.state.minute}/><ActivityWorld campus={campus}/><VehicleWorld campus={campus}/><ParkingWorld campus={campus}/><OnlinePlayers peers={peers.filter(p=>p.location==='campus')}/></Canvas><CampusActivities campus={campus} identity={user.id}/><VehicleActivities campus={campus}/><ParkingActivities campus={campus}/><BuildingInteriors campus={campus} look={profile.look} peers={peers}/><Hud campus={campus} onEdit={onEdit} mode="life" onModes={onLogout}/><LifeUI campus={campus} life={life} playerName={profile.name||username} onEdit={onEdit}/><ConnectChat world={world}/><SocialPanel userId={user.id} peers={peers} onlineIds={world.onlineIds} social={social} wave={world.wave} allowRoaming={!user.is_anonymous}/></>
 }

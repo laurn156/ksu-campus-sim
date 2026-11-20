@@ -195,7 +195,7 @@ export function Hud({ campus, onEdit, mode, onModes }: { campus: Campus; onEdit:
       {viewing && <div className="view-banner">Viewing location · <button onClick={travelToView}>Travel here</button> <button onClick={returnToPlayer}>Return to character</button></div>}
       {mapOpen && <CampusMap campus={campus} onClose={()=>setMapOpen(false)}/>}
       {mode === 'connect' && <div className="mode-hint">KSU Connect · limited online test</div>}
-      {mode === 'life' && !viewing && nearby && <div className="conversation"><b>{nearby.name}</b><span>{message || (nearby.kind === 'bus' ? 'Press F to board' : 'Press F to say hello')}</span>{message && <button onClick={() => setMessage('')}>Close</button>}</div>}
+      {mode === 'life' && !viewing && !activityState.mode && nearby && <div className="conversation"><b>{nearby.name}</b><span>{message || (nearby.kind === 'bus' ? 'Press F to board' : 'Press F to say hello')}</span>{message && <button onClick={() => setMessage('')}>Close</button>}</div>}
       {near && (
         <div className="nearcard" key={near.name}>
           <div className="kicker">You're at</div>
