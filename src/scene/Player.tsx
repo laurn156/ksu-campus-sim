@@ -11,7 +11,7 @@ import { WalkSurface } from './walkSurface'
 import { activityState } from '../activities/activityState'
 
 /** Shared, mutable player state (read by the HUD / minimap without re-rendering React every frame). */
-export const player = { x: 0, z: 0, heading: 0, yaw: 0.6, pitch: 1.0, moving: false, tp: null as null | { x: number; z: number; yaw: number; buildingId?:string }, travelOrigin: null as null | { x: number; z: number }, travelBuilding: null as string | null, view: null as null | { x:number; z:number; yaw:number; buildingId?:string }, viewChanged: false, busRide: null as null | { index: number; until: number }, rides: 0, speedMultiplier: 1 }
+export const player = { x: 0, y: 0, z: 0, heading: 0, yaw: 0.6, pitch: 1.0, moving: false, tp: null as null | { x: number; z: number; yaw: number; buildingId?:string }, travelOrigin: null as null | { x: number; z: number }, travelBuilding: null as string | null, view: null as null | { x:number; z:number; yaw:number; buildingId?:string }, viewChanged: false, busRide: null as null | { index: number; until: number }, rides: 0, speedMultiplier: 1 }
 
 const WALK = 5 // m/s (a brisk, game-paced walk)
 const RUN = 9.5
@@ -244,6 +244,7 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
     footY.current = target > footY.current ? THREE.MathUtils.lerp(footY.current, target, Math.min(1, dt * 18)) : Math.max(target, footY.current - dt * 6)
     if (Math.abs(footY.current - target) < 0.005) footY.current = target
     const groundY = footY.current
+    player.y = groundY
     if (body.current) {
       body.current.visible = activityState.mode !== 'busdrive' && activityState.mode !== 'parking'
       body.current.position.set(player.x, groundY, player.z)

@@ -8,6 +8,7 @@ import { GlobePlaza, KsuLetters, SlapTheRock } from '../scene/Landmarks'
 import { owlMuralTexture } from '../scene/Campus'
 import { activityState } from './activityState'
 import './photobooth.css'
+import { savePhonePhoto } from '../life/phonePhotos'
 
 // ---------------------------------------------------------------------------------------------
 // Data
@@ -318,7 +319,9 @@ type Tab = 'Background' | 'People' | 'Pose' | 'Props' | 'Camera'
 const TABS: { id: Tab; icon: string }[] = [{ id: 'Background', icon: '🖼️' }, { id: 'People', icon: '👥' }, { id: 'Pose', icon: '🤸' }, { id: 'Props', icon: '🎩' }, { id: 'Camera', icon: '🎥' }]
 const SPOTS: V[] = [[-1, 0, -.25], [1, 0, -.25], [-1.9, 0, -.6], [1.9, 0, -.6]]
 
-export function PhotoBooth({ look, name, friends }: { look: AvatarLook; name: string; friends: BoothFriend[] }) {
+export type SharedPhoto={host:boolean;companion:BoothFriend;send:(type:'photo-state'|'photo-shoot'|'photo-ready',state?:unknown)=>void;leave:()=>void}
+type PhotoState={theme:ThemeId;pose:Pose;face?:Face;worn:Worn;withScrappy:boolean;zoom:number;height:number;shift:number}
+export function PhotoBooth({ look, name, friends, shared }: { look: AvatarLook; name: string; friends: BoothFriend[]; shared?:SharedPhoto }) {
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<Tab>('Background'), [category, setCategory] = useState<'ksu' | 'fun'>('ksu')
   const [theme, setTheme] = useState<ThemeId>('globe')
@@ -326,26 +329,36 @@ export function PhotoBooth({ look, name, friends }: { look: AvatarLook; name: st
   const [worn, setWorn] = useState<Worn>({})
   const [withScrappy, setWithScrappy] = useState(false), [crew, setCrew] = useState<number[]>([])
   const [zoom, setZoom] = useState(.6), [height, setHeight] = useState(0), [shift, setShift] = useState(0)
+  const [savedToPhone,setSavedToPhone]=useState('')
   const [countdown, setCountdown] = useState(0), [flash, setFlash] = useState(false), [photo, setPhoto] = useState<string | null>(null)
   const gl = useRef<THREE.WebGLRenderer | null>(null), timers = useRef<number[]>([])
+  const sharedRef=useRef(shared);sharedRef.current=shared
+  const localFriends=shared?[shared.host?shared.companion:{name,look}]:friends
+  const mainLook=shared&&!shared.host?shared.companion.look:look
   const themeInfo = ALL_THEMES.find(t => t.id === theme)!
   const people = 1 + crew.length + (withScrappy ? 1 : 0)
 
   useEffect(() => {
-    const show = () => { setOpen(true); setPhoto(null); activityState.locked = true }
+    const show = () => { setOpen(true); setPhoto(null); setSavedToPhone(''); activityState.locked = true }
     window.addEventListener('open-photo-booth', show)
     return () => window.removeEventListener('open-photo-booth', show)
   }, [])
-  const close = () => { timers.current.forEach(clearTimeout); timers.current = []; setCountdown(0); setOpen(false); activityState.locked = false }
+  useEffect(()=>{if(shared){setOpen(true);setPhoto(null);setCrew([0]);activityState.locked=true;if(!shared.host)shared.send('photo-ready')}},[!!shared])
+  const close = () => { if(sharedRef.current)sharedRef.current.leave(); timers.current.forEach(clearTimeout); timers.current = []; setCountdown(0); setOpen(false); activityState.locked = false }
   useEffect(() => { if (!open) return; const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { if (photo) setPhoto(null); else close() } }; window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key) })
   useEffect(() => () => { timers.current.forEach(clearTimeout); if (open) activityState.locked = false }, [open])
 
+  useEffect(()=>{if(!open||!shared?.host)return;shared.send('photo-state',{theme,pose,face,worn,withScrappy,zoom,height,shift})},[open,shared?.host,theme,pose,face,worn,withScrappy,zoom,height,shift])
+  useEffect(()=>{const ready=()=>{if(sharedRef.current?.host)sharedRef.current.send('photo-state',{theme,pose,face,worn,withScrappy,zoom,height,shift})};window.addEventListener('shared-photo-ready',ready);return()=>window.removeEventListener('shared-photo-ready',ready)},[theme,pose,face,worn,withScrappy,zoom,height,shift])
+  useEffect(()=>{const receive=(event:Event)=>{if(!sharedRef.current||sharedRef.current.host)return;const value=(event as CustomEvent<PhotoState>).detail;if(!value||!ALL_THEMES.some(t=>t.id===value.theme)||!POSES.some(p=>p.id===value.pose))return;setTheme(value.theme);setPose(value.pose);setFace(FACES.some(f=>f.id===value.face)?value.face:undefined);setWorn(value.worn||{});setWithScrappy(value.withScrappy===true);setZoom(Math.max(0,Math.min(1,Number(value.zoom)||0)));setHeight(Math.max(-.4,Math.min(.6,Number(value.height)||0)));setShift(Math.max(-1.5,Math.min(1.5,Number(value.shift)||0)))};const remoteClose=()=>{timers.current.forEach(clearTimeout);timers.current=[];setCountdown(0);setOpen(false);activityState.locked=false};window.addEventListener('shared-photo-state',receive);window.addEventListener('close-shared-photo',remoteClose);return()=>{window.removeEventListener('shared-photo-state',receive);window.removeEventListener('close-shared-photo',remoteClose)}},[])
   const toggleAccessory = (id: AccessoryId, slot: Slot) => setWorn(w => ({ ...w, [slot]: w[slot] === id ? undefined : id }))
   const shoot = () => {
     if (countdown) return
+    if(sharedRef.current?.host)sharedRef.current.send('photo-shoot')
     setCountdown(3)
     timers.current.push(window.setTimeout(() => setCountdown(2), 800), window.setTimeout(() => setCountdown(1), 1600), window.setTimeout(capture, 2400))
   }
+  useEffect(()=>{const remoteShoot=()=>{if(!sharedRef.current||sharedRef.current.host)return;setCountdown(3);timers.current.push(window.setTimeout(()=>setCountdown(2),800),window.setTimeout(()=>setCountdown(1),1600),window.setTimeout(capture,2400))};window.addEventListener('shared-photo-shoot',remoteShoot);return()=>window.removeEventListener('shared-photo-shoot',remoteShoot)})
   const capture = () => {
     setCountdown(0)
     const canvas = gl.current?.domElement
@@ -362,7 +375,7 @@ export function PhotoBooth({ look, name, friends }: { look: AvatarLook; name: st
     g.fillStyle = '#8a8470'; g.font = '700 26px system-ui, sans-serif'
     g.fillText(`NEST LIFE · KSU MARIETTA · ${new Date().toLocaleDateString()}`, W / 2, pad + photoH + 132, W - 80)
     setFlash(true); timers.current.push(window.setTimeout(() => setFlash(false), 450))
-    setPhoto(card.toDataURL('image/png'))
+    setSavedToPhone('');setPhoto(card.toDataURL('image/png'))
   }
 
   if (!open) return null
@@ -373,20 +386,20 @@ export function PhotoBooth({ look, name, friends }: { look: AvatarLook; name: st
         <Canvas gl={{ preserveDrawingBuffer: true, antialias: true }} dpr={[1, 2]} camera={{ fov: 44, position: [0, 1.2, 5] }} onCreated={s => { gl.current = s.gl }}>
           <ambientLight intensity={1.6} /><directionalLight position={[3, 6, 5]} intensity={1.8} /><hemisphereLight args={['#ffffff', '#88a', .5]} />
           <Backdrop id={theme} />
-          <Posed look={look} pose={pose} face={face} worn={worn} position={[0, 0, .2]} />
-          {crew.map((idx, k) => friends[idx] && <Posed key={idx} look={friends[idx].look} pose={pose} face={(['happy', 'wink', 'dots', 'surprised'] as Face[])[k % 4]} worn={{}} position={SPOTS[k]} rotation={SPOTS[k][0] < 0 ? .25 : -.25} phase={k + 1} />)}
+          <Posed look={mainLook} pose={pose} face={face} worn={worn} position={[0, 0, .2]} />
+          {crew.map((idx, k) => localFriends[idx] && <Posed key={idx} look={localFriends[idx].look} pose={pose} face={(['happy', 'wink', 'dots', 'surprised'] as Face[])[k % 4]} worn={{}} position={SPOTS[k]} rotation={SPOTS[k][0] < 0 ? .25 : -.25} phase={k + 1} />)}
           {withScrappy && <group position={SPOTS[crew.length] ?? [2.2, 0, -.6]} rotation={[0, (SPOTS[crew.length]?.[0] ?? 1) < 0 ? .3 : -.3, 0]} scale={.72}><Bob amp={.04} speed={2}><ScrappyFigure /></Bob></group>}
           <BoothCamera zoom={zoom} height={height} shift={shift} width={people === 1 ? 0 : Math.abs(SPOTS[Math.min(people - 2, 3)][0])} />
         </Canvas>
         {countdown > 0 && <div className="booth-count" key={countdown}>{countdown}</div>}
         {flash && <div className="booth-flash" />}
       </div>
-      <button className="booth-shoot" onClick={shoot} disabled={countdown > 0}>📸 {countdown ? 'Smile!' : 'Take photo'}</button>
+      <button className="booth-shoot" onClick={shoot} disabled={countdown > 0 || !!shared&&!shared.host}>📸 {countdown ? 'Smile!' : shared&&!shared.host?'Your friend controls the camera':'Take photo'}</button>
     </div>
     <aside className="booth-panel">
       <header><div><small>NEST LIFE</small><h2>Campus Photo Booth</h2></div><button className="booth-x" onClick={close} aria-label="Close photo booth">×</button></header>
       <nav className="booth-tabs" aria-label="Photo booth options">{TABS.map(t => <button key={t.id} aria-pressed={tab === t.id} onClick={() => setTab(t.id)}><span aria-hidden="true">{t.icon}</span>{t.id}</button>)}</nav>
-      <div className="booth-body">
+      <div className="booth-body" style={shared&&!shared.host?{pointerEvents:'none',opacity:.7}:undefined}>
         {tab === 'Background' && <>
           <div className="booth-seg"><button aria-pressed={category === 'ksu'} onClick={() => setCategory('ksu')}>KSU Locations</button><button aria-pressed={category === 'fun'} onClick={() => setCategory('fun')}>Fun Themes</button></div>
           <div className="booth-thumbs">{themes.map(t => <button key={t.id} className="booth-thumb" aria-pressed={theme === t.id} onClick={() => setTheme(t.id)}><span className="thumb-art" style={{ background: t.swatch }}><span aria-hidden="true">{t.icon}</span></span><span>{t.name}</span></button>)}</div>
@@ -395,8 +408,8 @@ export function PhotoBooth({ look, name, friends }: { look: AvatarLook; name: st
           <p className="booth-hint">{people === 1 ? 'Solo selfie' : `Group photo · ${people} in frame`}</p>
           <label className="booth-toggle"><input type="checkbox" checked={withScrappy} onChange={e => setWithScrappy(e.target.checked)} /> <span>🦉 Add Scrappy</span></label>
           <h3>Friends <small>(up to 3)</small></h3>
-          <div className="booth-chips">{friends.map((f, i) => { const on = crew.includes(i); return <button key={i} aria-pressed={on} disabled={!on && crew.length >= 3} onClick={() => setCrew(c => on ? c.filter(x => x !== i) : [...c, i])}>{on ? '✓ ' : '+ '}{f.name}</button> })}</div>
-          {crew.length > 0 && <button className="booth-link" onClick={() => setCrew([])}>Back to solo</button>}
+          <div className="booth-chips">{localFriends.map((f, i) => { const on = crew.includes(i); return <button key={i} aria-pressed={on} disabled={!!shared||(!on && crew.length >= 3)} onClick={() => setCrew(c => on ? c.filter(x => x !== i) : [...c, i])}>{on ? '✓ ' : '+ '}{f.name}</button> })}</div>
+          {!shared && crew.length > 0 && <button className="booth-link" onClick={() => setCrew([])}>Back to solo</button>}
         </>}
         {tab === 'Pose' && <>
           <h3>Pose</h3><div className="booth-grid">{POSES.map(p => <button key={p.id} aria-pressed={pose === p.id} onClick={() => setPose(p.id)}><span aria-hidden="true">{p.icon}</span>{p.name}</button>)}</div>
@@ -418,7 +431,8 @@ export function PhotoBooth({ look, name, friends }: { look: AvatarLook; name: st
     </aside>
     {photo && <div className="booth-result" role="dialog" aria-label="Your photo">
       <div className="polaroid"><img src={photo} alt={`Photo of ${name} at ${themeInfo.name}`} /></div>
-      <div className="booth-result-actions">
+      {savedToPhone&&<p role="status" style={{color:'white'}}>{savedToPhone}</p>}<div className="booth-result-actions">
+        <button className="booth-shoot small" disabled={savedToPhone==='Saved to phone!'} onClick={()=>{void savePhonePhoto(photo,`${name || 'Owl'} · ${themeInfo.name}`).then(ok=>setSavedToPhone(ok?'Saved to phone!':'Could not save; browser storage may be full.'))}}>📱 Save to phone</button>
         <a className="booth-shoot small" href={photo} download={`nest-life-${theme}-${Date.now()}.png`}>⬇ Save photo</a>
         <button className="booth-secondary" onClick={() => setPhoto(null)}>Retake</button>
         <button className="booth-secondary" onClick={close}>Done</button>

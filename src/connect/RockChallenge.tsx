@@ -11,14 +11,14 @@ export function useRockChallenge(demo:DemoWorld,campus:Campus){
  const change=(m:Challenge|null)=>{ref.current=m;setMatch(m)}
  const invite=(peer:string)=>{if(ref.current){setNote('Finish your current rock challenge first.');return}if(!send.current({type:'rock-invite',to:peer}))setNote('Connect to campus first.');else setNote('Sending challenge…')}
  useEffect(()=>{
-  const message=(event:Event)=>{const m=(event as CustomEvent).detail as {type:string;challenge:string;from:string;delay:number;own:number;other:number};const current=ref.current
+  const message=(event:Event)=>{const m=(event as CustomEvent).detail as {type:string;challenge:string;from:string;delay:number;slot:number;own:number;other:number};const current=ref.current
    if(m.type==='rock-invite'){if(current){send.current({type:'rock-leave',challenge:m.challenge});return}setNote('');change({id:m.challenge,peer:m.from,phase:'incoming'});return}
    if(m.type==='rock-unavailable'){setNote('That player is already in a rock challenge.');return}
    if(m.type==='rock-wait'){setNote('');change({id:m.challenge,peer:m.from,phase:'waiting'});return}
    if(!current||current.id!==m.challenge)return
    if(m.type==='rock-start'){
     if(activityState.mode||indoorState.active){send.current({type:'rock-leave',challenge:m.challenge});change(null);setNote('Finish your current activity before starting.');return}
-    window.dispatchEvent(new Event('close-phone'));change({...current,phase:'countdown'});timer.current=setTimeout(()=>{const rock=landmarkSpots(campus).find(p=>p.name==='Slap the Rock')?.at;if(!rock||activityState.mode||indoorState.active){send.current({type:'rock-leave',challenge:m.challenge});change(null);setNote('Could not start the challenge.');return}window.dispatchEvent(new CustomEvent('activity-start',{detail:{name:'Slap the Rock Battle',target:{x:rock[0]+3,z:rock[1]+3}}}));change({...current,phase:'playing'})},m.delay);return
+    window.dispatchEvent(new Event('close-phone'));change({...current,phase:'countdown'});timer.current=setTimeout(()=>{const rock=landmarkSpots(campus).find(p=>p.name==='Slap the Rock')?.at;if(!rock||activityState.mode||indoorState.active){send.current({type:'rock-leave',challenge:m.challenge});change(null);setNote('Could not start the challenge.');return}window.dispatchEvent(new CustomEvent('activity-start',{detail:{name:'Slap the Rock Battle',target:{x:rock[0]+(m.slot===0?-2:2),z:rock[1]+4}}}));change({...current,phase:'playing'})},m.delay);return
    }
    if(m.type==='rock-result'){change({...current,phase:'result',own:m.own,other:m.other});return}
    if(m.type==='rock-left'){clearTimeout(timer.current);change({...current,phase:'left'});return}
