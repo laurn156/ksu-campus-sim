@@ -1,4 +1,4 @@
-import { combinedKeys, hardware } from '../hardware/controller'
+import { combinedKeys, hardware, daylightFromSensor } from '../hardware/controller'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import { useEffect, useMemo, useRef } from 'react'
@@ -290,6 +290,8 @@ export function Player({ campus, look, name }: { campus: Campus; look: AvatarLoo
 export function Sun() {
   const light = useRef<THREE.DirectionalLight>(null)
   const { scene } = useThree()
+  const daylight = useRef(1)
+  const colors = useMemo(()=>({daySky:new THREE.Color('#cfe3f0'),nightSky:new THREE.Color('#202d50'),daySun:new THREE.Color('#fff1dc'),nightSun:new THREE.Color('#8c9fd1'),sky:new THREE.Color(),sun:new THREE.Color()}),[])
   useEffect(() => {
     if (light.current) scene.add(light.current.target)
   }, [scene])
@@ -297,9 +299,16 @@ export function Sun() {
     const l = light.current
     if (!l) return
     const lit=hardware.enabled&&hardware.lightEnabled&&hardware.sample&&performance.now()-hardware.updated<500
-    const level=lit?Math.max(0,Math.min(1,(hardware.sample!.light-80)/700)):1
-    l.intensity=THREE.MathUtils.lerp(l.intensity,.25+1.95*level,1-Math.exp(-Math.min(dt,.1)*.35))
-    l.color.lerp(new THREE.Color(level<.45?'#8799d2':level<.75?'#ffbf83':'#fff1dc'),1-Math.exp(-Math.min(dt,.1)*.35))
+    const target=lit?daylightFromSensor(hardware.sample!.light):1
+    daylight.current=THREE.MathUtils.lerp(daylight.current,target,1-Math.exp(-Math.min(dt,.1)*.55))
+    const level=daylight.current
+    l.intensity=.12+2.08*level
+    l.color.copy(colors.sun.copy(colors.nightSun).lerp(colors.daySun,level))
+    colors.sky.copy(colors.nightSky).lerp(colors.daySky,level)
+    if(scene.background instanceof THREE.Color)scene.background.copy(colors.sky)
+    if(scene.fog instanceof THREE.Fog)scene.fog.color.copy(colors.sky)
+    const ambient=scene.children.find((object):object is THREE.HemisphereLight=>object instanceof THREE.HemisphereLight)
+    if(ambient)ambient.intensity=.18+.92*level
     l.position.set(player.x + 60, 110, player.z + 40)
     l.target.position.set(player.x, 0, player.z)
   })

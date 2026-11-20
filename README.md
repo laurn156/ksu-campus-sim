@@ -9,8 +9,7 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-Controls: **WASD** walk, **Shift** run, **drag** (left or right mouse) to look around, **Q/E** turn, mouse **wheel**
-zoom, **📍 Go to…** menu to jump to any building or landmark, **M** mute.
+Controls: **WASD** walk, **Shift** run, drag to look around, **Q/E** turn, mouse wheel to zoom, **G** enter a nearby building, **T** talk to a nearby character, **B** board a nearby bus, and **M** mute. Use **View location** to look around campus and **Activities** to start a game.
 
 ## How the campus is built
 
@@ -51,31 +50,13 @@ Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributor
 Open Database License (ODbL). Aerial imagery: USDA National Agriculture Imagery Program (NAIP), public domain,
 via the USGS National Map. Not an official Kennesaw State University product.
 
-### Unified campus and Supabase setup
+## Campus activities
 
-Registered players and AI students share one campus. Logged-in accounts use Supabase Presence for online status and private broadcast channels for movement; social requests and private messages use the existing database tables. Offline local profiles remain playable without online features.
+The Activities menu starts Bathtub Race, Disc Golf, Big Owl Bus, Slap the Rock, Hooty Hoo Hunt, classes, the photo booth, vending repair, and robot-arm tic-tac-toe. Walk around campus to find people and buildings; approach a building and press **G** to enter, or press **T** near a student or Scrappy to talk. Use the phone to view relationships, players, and saved photos.
 
-For an existing project that already has `supabase/setup.sql` and `supabase/migrations/social.sql`, run **`supabase/migrations/unified_campus.sql`** in that project's SQL editor. It adds the optional `offline_roaming` and `major` fields and allows authenticated users to connect to campus realtime channels. For a new project, apply `setup.sql`, `social.sql`, and `unified_campus.sql` in that order. The public Supabase URL and publishable key belong in `.env.local`; never put a service role key in frontend environment variables.
+## Guest multiplayer demo
 
-To join online, open **Online Account** on the main menu and sign in or create an email account. Confirm the email first if the Supabase project requires confirmation. The configured project may disable anonymous sign-in; in that case players without an account stay offline and can use the offline sign-in button to return to the account screen. Existing account appearance and display name are restored on sign-in.
-
-Online players can click another player or use **Social → Players** to open a profile, send a friend request, send a private message, or challenge an online player to tic-tac-toe. Campus chat reaches connected campus players; private messages and friend requests use the existing social tables. Tic-tac-toe runs over the same authenticated per-player Realtime channels, with turn validation and retries. Both players need to remain online; matches are session-only and are not shared between browser tabs or restored after a page reload. Other activities remain single-player.
-
-Open **Social → Settings** to opt into offline roaming. This is off by default and available to registered accounts, not anonymous demo accounts. Up to 10 opted-in accounts are shown in a deterministic, client-side approximation based on their IDs and the current time; Presence suppresses their offline representation when the owner is online. The current simulation uses short sidewalk segments and timed building appearances, and does not persist the exact last position or provide true shared NPC AI. Real players in the same building see one another; private messages work across locations. Friends and messages refresh about every three seconds.
-
-Before a multiplayer demonstration, configure and apply the migrations, then test with two distinct registered accounts in separate browser profiles: move outdoors and indoors, send and accept a friend request, exchange messages, enable offline roaming, disconnect one account, and reconnect. This repository cannot apply the migration without database administration access.
-
-Nest Life needs, relationships, story progress and memories remain in local browser storage rather than Supabase. Press F near an AI student to talk; their dialogue uses built-in rules unless Ollama with `qwen3:4b` is available to the local Vite development server. To enable local dialogue, install Ollama, run `ollama pull qwen3:4b`, and run the development server on localhost. Static builds use fallback dialogue. Do not expose the Vite development server publicly. Run the simulation checks with `node --experimental-strip-types scripts/test-life.mjs`.
-
-Before testing accounts, configure the Supabase Auth site URL, redirect allowlist, email/password sign-in, confirmation and password reset delivery. Anonymous demo identities are tied to their browser and cannot be recovered after sign-out. This multiplayer prototype is not ready for public release: presence claims are not identity-verified, and it lacks authoritative movement, server-side chat rate limiting and moderation tooling. Per-user broadcast channels and database RLS still restrict who can publish as a user or read private messages. In Supabase Realtime settings, disable public channel access so private-channel policies are enforced.
-
-### Hosting Ollama-powered classes and student conversations
-
-Run `npm run build` and then `npm run serve` on the machine hosting the game. The server serves the built game and calls Ollama on the server; players do not need to install Ollama. By default it listens on `127.0.0.1:4173` and uses `http://127.0.0.1:11434` with `qwen3:4b`. Set `HOST`, `PORT`, `OLLAMA_URL`, or `OLLAMA_MODEL` on the server to match your deployment. For example, `HOST=0.0.0.0 npm run serve` makes the server accessible on your local network. The Vite development server also provides the two AI endpoints on localhost. When Ollama cannot respond, conversations use their existing fallback and classes show an error with a retry option instead of an unrelated lesson. A static-only host has no AI endpoint; run the game server and Ollama on the host for classes to work.
-
-### Hackathon demo: play together without accounts
-
-Build and start the game server on one computer:
+The default campus session is account-free. To host on one computer:
 
 ```sh
 npm install
@@ -83,6 +64,34 @@ npm run build
 HOST=0.0.0.0 npm run serve
 ```
 
-On the host computer open `http://localhost:4173`. On another computer on the same network, open `http://<host-computer-local-IP>:4173` (and allow port 4173 through the host firewall if necessary). Each player chooses a name and character; there is no account or password. Both devices must connect to the same running server. For a deployed demo, use a Node host that supports WebSockets and serve the app with `npm run serve`.
+Open `http://localhost:4173` on the host. Another device on the same network can open `http://<host-local-IP>:4173`; allow port 4173 through the host firewall if needed. Both devices must connect to the same running server. For production hosting, the Node host must support WebSockets.
 
-Use **Campus chat** for everyone and **Players** to see who's online, send a friend request or private message, and invite someone to tic-tac-toe. Guest identities, friendships and messages are temporary and disappear on disconnect or server restart. Local character customization remains saved in the browser. Run `node scripts/test-demo-relay.mjs` to check the guest relay.
+Campus chat reaches everyone connected. Open the phone's **Players** tab for friend requests, private messages, and invitations to tic-tac-toe, Slap the Rock, the photo booth, disc golf, and bathtub racing. Guest identities, friendships, and messages are temporary and disappear on disconnect or server restart. Character customization stays in the browser. This is a hackathon demo; the guest relay is not a moderated or identity-verified public service.
+
+## Ollama classes and conversations
+
+Install Ollama on the game server, start it, and pull the model:
+
+```sh
+ollama pull qwen3:4b
+```
+
+The development server supports the AI endpoints on localhost. For a shared demo, `npm run serve` serves both the built game and its Ollama proxy; players do not need Ollama on their own devices. The defaults are `http://127.0.0.1:11434` and `qwen3:4b`. The server can be configured with `HOST`, `PORT`, `OLLAMA_URL`, and `OLLAMA_MODEL`. If Ollama is unavailable, NPC conversations use fallback dialogue; classes show an error and allow a retry. A static-only host cannot provide the Ollama endpoints.
+
+## Optional ELEGOO controller
+
+The current setup uses a Mega 2560, joystick, and photoresistor. See the [wiring and setup guide](docs/ELEGOO-WIRING.md) and [Arduino sketch](hardware/elegoo/NestLifeJoystick/NestLifeJoystick.ino). The joystick controls walking and interaction; the photoresistor changes the sky and lighting from night at 400 or below to day at 600 or above, with a gradual transition. The controller is optional and is disabled when another player connects. Keyboard and mouse remain available.
+
+On Linux, `npm run dev` starts a local serial bridge for the Mega at `/dev/ttyACM0`. Close Arduino IDE's Serial Monitor before enabling the controller. The joystick and light sensor were tested on the demo hardware; other hardware integrations remain unfinished. The local bridge is loopback-only and is not included in `npm run serve`.
+
+## Checks
+
+```sh
+npm run build
+npm run lint
+node scripts/test-demo-relay.mjs
+node scripts/test-campus-contests.mjs
+node scripts/test-hardware-controller.mjs
+```
+
+Additional focused checks live in `scripts/test-*.mjs`. Automated tests cannot replace checking 3D presentation, real hardware, and two physical devices during a demo.

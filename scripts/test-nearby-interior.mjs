@@ -26,3 +26,9 @@ assert.equal(nearbyInterior([isolated],1000,1000),null,'unnamed footprints must 
 assert.equal(nearbyInterior(buildings,10000,10000,10,math.id)?.id,math.id,'selected building remains the travel destination')
 assert.equal(nearbyInterior([isolated],1000,1000,10,isolated.id),null,'unknown footprints cannot be preferred')
 console.log('Unnamed footprints ignored; greenhouse and selected travel destinations remain enterable.')
+
+const hub=buildings.find(b=>b.id==='1504299650')
+assert(hub,'Hornet Hub footprint exists')
+const [h0,h1]=hub.poly
+assert.equal(nearbyInterior(buildings,(h0[0]+h1[0])/2,(h0[1]+h1[1])/2,10,hub.id)?.id,hub.id,'Hornet Hub destination opens its own interior')
+console.log('Hornet Hub remains enterable from its destination.')

@@ -50,6 +50,9 @@ export async function loadCampus(): Promise<Campus> {
   // The Innovation Center is present in the map as an unnamed footprint.
   const innovation = c.buildings.find((b) => b.id === '1556621556')
   if (innovation) { innovation.name = 'Robin and Doug Shore Innovation Center'; innovation.short = innovation.name; innovation.kind = 'university'; innovation.h = 11.4; innovation.levels = 3 }
+  // Give the workshop a stable name before menus and floating labels are built.
+  const hornetHub = c.buildings.find((b) => b.id === '1504299650')
+  if (hornetHub) { hornetHub.name = 'Hornet Hub'; hornetHub.short = 'Hornet Hub'; hornetHub.code = ''; hornetHub.h = 5 }
   // Administration is a two-storey building.
   const administration = c.buildings.find((b) => b.code === 'B')
   if (administration) { administration.h = 7.6; administration.levels = 2 }
@@ -173,4 +176,4 @@ export class Collider {
 }
 
 /** Is this an actual campus building (lettered code like "A", "R100", "S1")? */
-export const isCampusBuilding = (b: Building) => /^[A-Z]\d*$/.test(b.code) || b.name.startsWith('University Columns') || b.name === 'Science Lab Annex' || b.name === 'Robin and Doug Shore Innovation Center'
+export const isCampusBuilding = (b: Building) => b.id === '1504299650' || /^[A-Z]\d*$/.test(b.code) || b.name.startsWith('University Columns') || b.name === 'Science Lab Annex' || b.name === 'Robin and Doug Shore Innovation Center'

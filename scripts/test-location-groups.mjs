@@ -1,8 +1,14 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { isCampusBuilding } from '../src/campus.ts'
+import { isCampusBuilding, loadCampus } from '../src/campus.ts'
 import { groupResidenceLocations } from '../src/ui/locationGroups.ts'
 const {buildings}=JSON.parse(readFileSync(new URL('../public/campus.json',import.meta.url),'utf8'))
+const originalFetch=globalThis.fetch
+globalThis.fetch=async()=>({json:async()=>JSON.parse(readFileSync(new URL('../public/campus.json',import.meta.url),'utf8'))})
+const loaded=await loadCampus()
+globalThis.fetch=originalFetch
+const hub=loaded.buildings.find(b=>b.id==='1504299650')
+assert(hub && isCampusBuilding(hub) && hub.short==='Hornet Hub' && hub.code==='','Hornet Hub must be labeled and selectable')
 const {singles,grouped}=groupResidenceLocations(buildings.filter(isCampusBuilding))
 for(const label of ['University Columns','Courtyard','Commons','Hornet Village']){
  assert.equal(grouped.filter(g=>g.label===label).length,1,`${label} should have one destination`)

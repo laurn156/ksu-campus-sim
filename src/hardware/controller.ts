@@ -5,3 +5,6 @@ export function clearHardware(){hardware.enabled=false;hardware.keys.clear();har
 export function hardwareKeys():Set<string>{if(!hardware.enabled||performance.now()-hardware.updated>500){hardware.keys.clear()}return hardware.keys}
 export function combinedKeys(keys:Set<string>){return new Set([...keys,...hardwareKeys()])}
 export function validSample(value:unknown):value is Sample {if(!value||typeof value!=='object')return false;const s=value as Sample;return s.v===1&&['x','y','joy','b1','b2','cm','tilt','gyro','light'].every(k=>Number.isFinite(s[k as keyof Sample]))&&s.x>=0&&s.x<=1023&&s.y>=0&&s.y<=1023&&s.light>=0&&s.light<=1023}
+
+/** Map the photoresistor's 400–600 range to night–day. */
+export function daylightFromSensor(value:number){return Math.max(0,Math.min(1,(value-400)/200))}

@@ -100,7 +100,7 @@ function GoTo({ campus, onView }: { campus: Campus; onView: (target:{x:number;z:
       }
       return { x, z: z + 12, yaw: 0 }
     }
-    const lm = landmarkSpots(campus).filter(l => !['Library Bell Tower', 'S. Walter Kelly Baseball Field'].includes(l.name)).map((l) => ({ label: `★ ${l.name}`, go: () => ({...near(l.at[0], l.at[1]),buildingId:l.name==='Greenhouse'?campus.buildings.find(b=>b.kind==='greenhouse')?.id:undefined}) }))
+    const lm = landmarkSpots(campus).filter(l => !['Library Bell Tower', 'S. Walter Kelly Baseball Field', 'Bathtub Race', 'Disc Golf'].includes(l.name)).map((l) => ({ label: `★ ${l.name}`, go: () => ({...near(l.at[0], l.at[1]),buildingId:l.name==='Greenhouse'?campus.buildings.find(b=>b.kind==='greenhouse')?.id:undefined}) }))
     const moving = [
       { label: '★ Big Owl Bus', go: () => { const b = busPositions.filter(Boolean).reduce((best, p) => Math.hypot(p.x-player.x,p.z-player.z) < Math.hypot(best.x-player.x,best.z-player.z) ? p : best, busPositions.find(Boolean) ?? { x: -90, z: -311 }); return near(b.x, b.z) } },
       { label: '★ Scrappy the Owl', go: () => near(scrappy.x, scrappy.z) },

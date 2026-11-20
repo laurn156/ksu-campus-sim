@@ -2114,10 +2114,7 @@ function Buildings({ campus }: { campus: Campus }) {
       if (b.code === 'N') return { b, parts: architectureParts(b), flat: true }
       if (b.code === 'M') return { b, parts: textileCenterParts(b), flat: true }
       if (b.id === '517434198') return { b, parts: pumpHouseParts(b), flat: true }
-      if (b.id === '1504299650') {
-        b.name = 'Hornet Hub'; b.short = 'Hornet Hub'; b.h = 5
-        return { b, parts: hornetHubParts(b), flat: false }
-      }
+      if (b.id === '1504299650') return { b, parts: hornetHubParts(b), flat: false }
       if (b.kind === 'greenhouse' && b.poly.length === 4) {
         b.h = 4.55
         return { b, parts: greenhouseParts(b), flat: false }
